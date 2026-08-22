@@ -46,4 +46,3 @@ npm run supabase:start
 
 Consulte o [harness de desenvolvimento](docs/DEVELOPMENT_HARNESS.md) para conhecer
 as regras de qualidade, segurança e testes.
-# dedic
