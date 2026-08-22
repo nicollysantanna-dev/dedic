@@ -49,11 +49,6 @@ const PaymentsPage = lazy(() =>
     default: module.PaymentsPage,
   })),
 )
-const FoundationPage = lazy(() =>
-  import('@/features/foundation/FoundationPage').then((module) => ({
-    default: module.FoundationPage,
-  })),
-)
 const NotFoundPage = lazy(() =>
   import('@/features/foundation/NotFoundPage').then((module) => ({
     default: module.NotFoundPage,
@@ -73,8 +68,8 @@ export function App() {
     >
       <MotionConfig reducedMotion="user" transition={{ duration: 0.24 }}>
         <Routes>
-          <Route path="/" element={<FoundationPage />} />
-          <Route path="/entrar" element={<AuthPage mode="login" />} />
+          <Route path="/" element={<AuthPage mode="login" />} />
+          <Route path="/entrar" element={<Navigate to="/" replace />} />
           <Route path="/cadastro" element={<AuthPage mode="signup" />} />
           <Route element={<RequireAuth />}>
             <Route path="/app" element={<DashboardPage />} />

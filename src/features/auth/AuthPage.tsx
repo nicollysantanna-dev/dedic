@@ -103,15 +103,19 @@ export function AuthPage({ mode }: AuthPageProps) {
   return (
     <main className="min-h-dvh bg-[#f4f1e9] px-5 py-6 text-[#183529] sm:grid sm:place-items-center">
       <section className="mx-auto w-full max-w-md">
-        <Link
-          to="/"
-          className="inline-flex min-h-11 items-center gap-2 rounded-full text-sm font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d6a850]"
-        >
-          <ArrowLeft size={17} aria-hidden="true" />
-          Voltar
-        </Link>
+        {isSignUp && (
+          <Link
+            to="/"
+            className="inline-flex min-h-11 items-center gap-2 rounded-full text-sm font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d6a850]"
+          >
+            <ArrowLeft size={17} aria-hidden="true" />
+            Voltar para entrar
+          </Link>
+        )}
 
-        <div className="mt-8 rounded-[2rem] border border-[#173d2c]/8 bg-white/65 p-6 shadow-[0_24px_70px_rgba(24,53,41,0.1)] sm:p-8">
+        <div
+          className={`${isSignUp ? 'mt-8' : 'mt-12'} rounded-[2rem] border border-[#173d2c]/8 bg-white/65 p-6 shadow-[0_24px_70px_rgba(24,53,41,0.1)] sm:p-8`}
+        >
           <span className="grid size-11 place-items-center rounded-2xl bg-[#173d2c] text-white">
             <Dumbbell size={21} aria-hidden="true" />
           </span>
@@ -233,7 +237,7 @@ export function AuthPage({ mode }: AuthPageProps) {
             {isSignUp ? 'Já possui conta?' : 'Ainda não possui conta?'}{' '}
             <Link
               className="font-bold text-[#173d2c] underline decoration-[#d6a850] decoration-2 underline-offset-4"
-              to={isSignUp ? '/entrar' : '/cadastro'}
+              to={isSignUp ? '/' : '/cadastro'}
             >
               {isSignUp ? 'Entrar' : 'Criar conta'}
             </Link>
