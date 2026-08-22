@@ -14,6 +14,11 @@ const DashboardPage = lazy(() =>
     default: module.DashboardPage,
   })),
 )
+const AgendaHomePage = lazy(() =>
+  import('@/features/appointments/AgendaHomePage').then((module) => ({
+    default: module.AgendaHomePage,
+  })),
+)
 const AvailabilityPage = lazy(() =>
   import('@/features/availability/AvailabilityPage').then((module) => ({
     default: module.AvailabilityPage,
@@ -72,7 +77,8 @@ export function App() {
           <Route path="/entrar" element={<Navigate to="/" replace />} />
           <Route path="/cadastro" element={<AuthPage mode="signup" />} />
           <Route element={<RequireAuth />}>
-            <Route path="/app" element={<DashboardPage />} />
+            <Route path="/app" element={<AgendaHomePage />} />
+            <Route path="/app/resumo" element={<DashboardPage />} />
             <Route path="/app/disponibilidade" element={<AvailabilityPage />} />
             <Route path="/app/calendario" element={<StudentCalendarPage />} />
             <Route path="/app/pacotes" element={<PackagesPage />} />

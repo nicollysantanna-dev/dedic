@@ -19,4 +19,20 @@ describe('AppointmentCalendar', () => {
     expect(screen.getByText('Visão mensal')).toBeInTheDocument()
     expect(container.querySelector('.dedic-day-scheduled')).toBeInTheDocument()
   })
+
+  it('diferencia dias disponíveis e bloqueados', () => {
+    const { container } = render(
+      <AppointmentCalendar
+        appointments={[]}
+        availableSlots={[{ slot_start: '2026-08-25T11:00:00Z' }]}
+        blockedPeriods={[{ starts_at: '2026-08-26T11:00:00Z' }]}
+        onSelect={vi.fn()}
+      />,
+    )
+
+    expect(container.querySelector('.dedic-day-available')).toBeInTheDocument()
+    expect(container.querySelector('.dedic-day-blocked')).toBeInTheDocument()
+    expect(screen.getByText('Disponível')).toBeInTheDocument()
+    expect(screen.getByText('Bloqueio')).toBeInTheDocument()
+  })
 })

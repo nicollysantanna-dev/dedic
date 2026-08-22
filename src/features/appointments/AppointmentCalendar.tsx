@@ -8,10 +8,14 @@ import type { Tables } from '@/lib/supabase/database.types'
 
 export function AppointmentCalendar({
   appointments,
+  availableSlots = [],
+  blockedPeriods = [],
   selected,
   onSelect,
 }: {
   appointments: Tables<'appointments'>[]
+  availableSlots?: Array<{ slot_start: string }>
+  blockedPeriods?: Array<{ starts_at: string }>
   selected?: Date
   onSelect: (date?: Date) => void
 }) {
@@ -20,6 +24,8 @@ export function AppointmentCalendar({
   const noShow = appointments
     .filter((item) => item.status === 'student_no_show')
     .map(toDate)
+  const available = availableSlots.map((slot) => new Date(slot.slot_start))
+  const blocked = blockedPeriods.map((period) => new Date(period.starts_at))
 
   return (
     <motion.section
@@ -49,8 +55,10 @@ export function AppointmentCalendar({
         mode="single"
         selected={selected}
         onSelect={onSelect}
-        modifiers={{ scheduled, completed, noShow }}
+        modifiers={{ available, blocked, scheduled, completed, noShow }}
         modifiersClassNames={{
+          available: 'dedic-day-available',
+          blocked: 'dedic-day-blocked',
           scheduled: 'dedic-day-scheduled',
           completed: 'dedic-day-completed',
           noShow: 'dedic-day-no-show',
@@ -58,6 +66,8 @@ export function AppointmentCalendar({
         className="dedic-calendar mx-auto"
       />
       <div className="mt-4 flex flex-wrap justify-center gap-x-4 gap-y-2 text-xs text-[#687b71]">
+        <Legend color="bg-[#78a987]" text="Disponível" />
+        <Legend color="bg-[#8b8b83]" text="Bloqueio" />
         <Legend color="bg-[#d6a850]" text="Agendada" />
         <Legend color="bg-[#3d7556]" text="Realizada" />
         <Legend color="bg-[#b65f4e]" text="Falta" />
