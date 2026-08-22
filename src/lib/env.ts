@@ -10,7 +10,7 @@ export const publicEnv = publicEnvSchema.parse({
   VITE_SUPABASE_URL: import.meta.env.VITE_SUPABASE_URL || undefined,
   VITE_SUPABASE_PUBLISHABLE_KEY:
     import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || undefined,
-  VITE_APP_TIMEZONE: import.meta.env.VITE_APP_TIMEZONE,
+  VITE_APP_TIMEZONE: import.meta.env.VITE_APP_TIMEZONE || undefined,
 })
 
 export const isSupabaseConfigured = Boolean(
