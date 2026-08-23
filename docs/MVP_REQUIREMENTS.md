@@ -145,8 +145,11 @@ O personal não poderá acessar dados de alunos sem vínculo ativo com ele.
 
 ### RF-03 — Vínculo entre aluno e personal
 
-- O personal deve conseguir criar um convite para um aluno.
-- O aluno deve conseguir aceitar ou recusar o convite.
+- O personal deve conseguir convidar um aluno por e-mail ou celular.
+- Um convite por e-mail deve criar o vínculo automaticamente no primeiro acesso da conta com o mesmo e-mail.
+- Um convite por celular deve criar o vínculo automaticamente após o aluno acessar o link privado recebido.
+- O aluno não deve precisar aceitar manualmente o convite.
+- O link de um convite por e-mail não deve permitir vínculo com uma conta de e-mail diferente.
 - O vínculo deve possuir os estados `pendente`, `ativo` e `encerrado`.
 - Apenas vínculos ativos devem permitir agendamentos e acesso compartilhado.
 - O encerramento de um vínculo não deve apagar o histórico anterior.
@@ -483,7 +486,7 @@ Estas decisões não bloqueiam este rascunho, mas devem ser confirmadas antes de
 3. Será permitido agendar uma aula para o mesmo dia?
 4. Resolvido: créditos não vencem e novos pacotes acumulam saldo.
 5. A ativação do pacote ocorrerá antes ou depois do registro do pagamento?
-6. Como o convite será entregue inicialmente: link, código ou e-mail?
+6. Resolvido: convite por e-mail com vínculo no primeiro acesso, ou por celular com link privado.
 7. O personal poderá editar duração e horário de uma aula existente ou deverá sempre remarcar?
 
 ## 18. Stack aprovada para o MVP

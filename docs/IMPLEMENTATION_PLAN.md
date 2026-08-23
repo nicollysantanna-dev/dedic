@@ -49,6 +49,9 @@ Aplicação React vazia, mas instalável, testável e publicável.
 
 ## Marco 2 — Identidade e vínculo
 
+**Status:** concluído e simplificado em 23/08/2026. O vínculo é automático por
+e-mail no primeiro acesso ou pelo link privado enviado ao celular, sem aceite manual.
+
 ### Resultado
 
 Personal e aluno entram no sistema e estabelecem uma relação segura.
@@ -58,8 +61,8 @@ Personal e aluno entram no sistema e estabelecem uma relação segura.
 - autenticação;
 - escolha e persistência de papel;
 - perfil;
-- convite;
-- aceite, recusa e encerramento de vínculo;
+- convite por e-mail ou celular;
+- ativação automática e encerramento de vínculo;
 - políticas RLS e testes de isolamento.
 
 ### Critério de saída

@@ -202,7 +202,11 @@ export function AgendaHomePage() {
           )}
           <ActionLink to="/app/pacotes" icon={PackageCheck} label="Pacotes" />
           <ActionLink to="/app/pagamentos" icon={ReceiptText} label="Pagamentos" />
-          <ActionLink to="/app/resumo" icon={LayoutDashboard} label="Gestão" />
+          <ActionLink
+            to="/app/resumo"
+            icon={LayoutDashboard}
+            label={isTrainer ? 'Alunos e vínculos' : 'Meu personal'}
+          />
         </nav>
 
         {isTrainer && (

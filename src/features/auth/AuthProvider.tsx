@@ -18,6 +18,30 @@ async function loadProfile(userId: string) {
   return data
 }
 
+const invitationStorageKey = 'dedic.pendingInvitationToken'
+
+function captureInvitationToken() {
+  const token = new URLSearchParams(window.location.search).get('convite')
+  if (
+    token &&
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
+      token,
+    )
+  ) {
+    window.localStorage.setItem(invitationStorageKey, token)
+  }
+}
+
+async function claimPendingInvitation() {
+  if (!supabase) return
+  captureInvitationToken()
+  const token = window.localStorage.getItem(invitationStorageKey)
+  const { error } = await supabase.rpc('claim_student_invitation', {
+    invitation_token: token || undefined,
+  })
+  if (!error && token) window.localStorage.removeItem(invitationStorageKey)
+}
+
 export function AuthProvider({ children }: PropsWithChildren) {
   const [session, setSession] = useState<Session | null>(null)
   const [profile, setProfile] = useState<Profile | null>(null)
@@ -42,6 +66,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
       if (!active) return
 
       setSession(data.session)
+      if (data.session) await claimPendingInvitation()
       setProfile(data.session ? await loadProfile(data.session.user.id) : null)
       setIsLoading(false)
     })
@@ -51,6 +76,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
 
       window.setTimeout(() => {
         void (async () => {
+          if (nextSession) await claimPendingInvitation()
           setProfile(nextSession ? await loadProfile(nextSession.user.id) : null)
           setIsLoading(false)
         })()

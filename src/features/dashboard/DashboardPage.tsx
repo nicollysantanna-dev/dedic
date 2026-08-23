@@ -29,7 +29,7 @@ import { useAuth } from '@/features/auth/auth-context'
 import { requireSupabase } from '@/lib/supabase/client'
 
 const inviteSchema = z.object({
-  email: z.email('Informe um e-mail válido.'),
+  contact: z.string().trim().min(1, 'Informe o contato do aluno.'),
 })
 
 export function DashboardPage() {
@@ -71,7 +71,7 @@ export function DashboardPage() {
           <p className="mt-3 max-w-xl leading-7 text-[#60746a]">
             {profile.role === 'trainer'
               ? 'Convide seus alunos e acompanhe os vínculos ativos.'
-              : 'Aceite um convite para começar a organizar suas aulas.'}
+              : 'Seu vínculo é criado automaticamente pelo convite do personal.'}
           </p>
           <div className="mt-5 flex flex-wrap gap-3">
             {profile.role === 'trainer' && (
@@ -302,9 +302,10 @@ function TrainerDashboard({ trainerId }: { trainerId: string }) {
   const queryClient = useQueryClient()
   const [createdLink, setCreatedLink] = useState<string | null>(null)
   const [copied, setCopied] = useState(false)
+  const [contactType, setContactType] = useState<'email' | 'phone'>('email')
   const form = useForm<z.infer<typeof inviteSchema>>({
     resolver: zodResolver(inviteSchema),
-    defaultValues: { email: '' },
+    defaultValues: { contact: '' },
   })
 
   const invitations = useQuery({
@@ -312,7 +313,7 @@ function TrainerDashboard({ trainerId }: { trainerId: string }) {
     queryFn: async () => {
       const { data, error } = await requireSupabase()
         .from('student_invitations')
-        .select('id, token, student_email, status, expires_at, trainer_id')
+        .select('id, token, student_email, student_phone, status, expires_at, trainer_id')
         .eq('trainer_id', trainerId)
         .order('created_at', { ascending: false })
 
@@ -338,11 +339,15 @@ function TrainerDashboard({ trainerId }: { trainerId: string }) {
   })
 
   const createInvitation = useMutation({
-    mutationFn: async ({ email }: z.infer<typeof inviteSchema>) => {
+    mutationFn: async ({ contact }: z.infer<typeof inviteSchema>) => {
+      const invitationContact =
+        contactType === 'email'
+          ? { student_email: z.email().parse(contact.toLowerCase()), student_phone: null }
+          : { student_email: null, student_phone: normalizeBrazilianPhone(contact) }
       const { data, error } = await requireSupabase()
         .from('student_invitations')
-        .insert({ trainer_id: trainerId, student_email: email })
-        .select('id, token, student_email, status, expires_at, trainer_id')
+        .insert({ trainer_id: trainerId, ...invitationContact })
+        .select('id, token, student_email, student_phone, status, expires_at, trainer_id')
         .single()
 
       if (error) throw error
@@ -364,7 +369,8 @@ function TrainerDashboard({ trainerId }: { trainerId: string }) {
           Convidar aluno
         </h2>
         <p className="mt-2 text-sm leading-6 text-[#b9cdc1]">
-          O convite só poderá ser aceito por uma conta com este mesmo e-mail.
+          Por e-mail, o vínculo é automático no primeiro acesso. Por celular, envie o link
+          privado pelo WhatsApp.
         </p>
 
         <form
@@ -373,25 +379,49 @@ function TrainerDashboard({ trainerId }: { trainerId: string }) {
             void form.handleSubmit((values) => createInvitation.mutate(values))(event)
           }}
         >
-          <label className="text-sm font-semibold" htmlFor="student-email">
-            E-mail do aluno
+          <div
+            className="mb-4 grid grid-cols-2 gap-2"
+            role="group"
+            aria-label="Tipo de contato"
+          >
+            {(['email', 'phone'] as const).map((type) => (
+              <button
+                className={`rounded-full px-4 py-2 text-sm font-bold ${
+                  contactType === type ? 'bg-[#d6a850] text-[#173326]' : 'bg-white/10'
+                }`}
+                key={type}
+                type="button"
+                onClick={() => {
+                  setContactType(type)
+                  form.reset()
+                }}
+              >
+                {type === 'email' ? 'E-mail' : 'Celular'}
+              </button>
+            ))}
+          </div>
+          <label className="text-sm font-semibold" htmlFor="student-contact">
+            {contactType === 'email' ? 'E-mail do aluno' : 'Celular com DDD'}
           </label>
           <input
-            id="student-email"
-            type="email"
+            id="student-contact"
+            type={contactType === 'email' ? 'email' : 'tel'}
             className="field mt-2 border-white/15 bg-white/10 text-white placeholder:text-white/40"
-            placeholder="aluno@email.com"
-            {...form.register('email')}
+            placeholder={contactType === 'email' ? 'aluno@email.com' : '(11) 99999-9999'}
+            {...form.register('contact')}
           />
-          {form.formState.errors.email && (
+          {form.formState.errors.contact && (
             <p className="mt-1 text-xs text-[#f0c3a9]" role="alert">
-              {form.formState.errors.email.message}
+              {form.formState.errors.contact.message}
             </p>
           )}
           {createInvitation.error && (
             <p className="mt-2 text-xs text-[#f0c3a9]" role="alert">
-              Não foi possível criar o convite. Verifique se já existe um convite
-              pendente.
+              {createInvitation.error.message === 'INVALID_PHONE'
+                ? 'Informe um celular válido com DDD.'
+                : createInvitation.error instanceof z.ZodError
+                  ? 'Informe um e-mail válido.'
+                  : 'Não foi possível criar o convite. Verifique se já existe um convite pendente.'}
             </p>
           )}
           <Button
@@ -471,8 +501,10 @@ function TrainerDashboard({ trainerId }: { trainerId: string }) {
                   <Link2 size={18} />
                 </span>
                 <div>
-                  <p className="font-semibold">{invitation.student_email}</p>
-                  <p className="text-xs text-[#718178]">Aguardando aceite</p>
+                  <p className="font-semibold">
+                    {invitation.student_email ?? invitation.student_phone}
+                  </p>
+                  <p className="text-xs text-[#718178]">Aguardando primeiro acesso</p>
                 </div>
               </div>
             ))}
@@ -492,20 +524,6 @@ function TrainerDashboard({ trainerId }: { trainerId: string }) {
 }
 
 function StudentDashboard({ studentId }: { studentId: string }) {
-  const queryClient = useQueryClient()
-  const invitations = useQuery({
-    queryKey: ['student-invitations', studentId],
-    queryFn: async () => {
-      const { data, error } = await requireSupabase()
-        .from('student_invitations')
-        .select('id, token, student_email, status, expires_at, trainer_id')
-        .eq('status', 'pending')
-
-      if (error) throw error
-      return data
-    },
-  })
-
   const relationships = useQuery({
     queryKey: ['student-relationships', studentId],
     queryFn: async () => {
@@ -519,21 +537,6 @@ function StudentDashboard({ studentId }: { studentId: string }) {
 
       if (error) throw error
       return data
-    },
-  })
-
-  const acceptInvitation = useMutation({
-    mutationFn: async (token: string) => {
-      const { error } = await requireSupabase().rpc('accept_student_invitation', {
-        invitation_token: token,
-      })
-      if (error) throw error
-    },
-    onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: ['student-invitations', studentId] })
-      void queryClient.invalidateQueries({
-        queryKey: ['student-relationships', studentId],
-      })
     },
   })
 
@@ -559,52 +562,26 @@ function StudentDashboard({ studentId }: { studentId: string }) {
           </div>
         </div>
       ) : (
-        <>
-          <MailPlus size={24} className="text-[#a47b2e]" aria-hidden="true" />
+        <div className="text-center">
+          <MailPlus size={24} className="mx-auto text-[#a47b2e]" aria-hidden="true" />
           <h2 className="font-display mt-4 text-2xl font-bold tracking-[-0.04em]">
-            Convites recebidos
+            Aguardando vínculo
           </h2>
           <p className="mt-2 text-sm leading-6 text-[#687b71]">
-            Somente convites enviados para o e-mail desta conta aparecem aqui.
+            Entre com o e-mail convidado ou abra o link recebido pelo WhatsApp. O vínculo
+            será criado automaticamente.
           </p>
-
-          <div className="mt-6 space-y-3">
-            {invitations.data?.map((invitation) => (
-              <div
-                key={invitation.id}
-                className="flex flex-col gap-3 rounded-2xl bg-[#eef1ea] p-4 sm:flex-row sm:items-center sm:justify-between"
-              >
-                <div>
-                  <p className="font-semibold">Convite para treinar</p>
-                  <p className="mt-1 text-xs text-[#718178]">
-                    Expira em{' '}
-                    {new Date(invitation.expires_at).toLocaleDateString('pt-BR')}
-                  </p>
-                </div>
-                <Button
-                  type="button"
-                  disabled={acceptInvitation.isPending}
-                  onClick={() => acceptInvitation.mutate(invitation.token)}
-                >
-                  Aceitar vínculo
-                </Button>
-              </div>
-            ))}
-
-            {!invitations.isLoading && !invitations.data?.length && (
-              <p className="rounded-2xl border border-dashed border-[#173d2c]/15 px-4 py-7 text-center text-sm text-[#6a7a72]">
-                Nenhum convite pendente para este e-mail.
-              </p>
-            )}
-
-            {acceptInvitation.error && (
-              <p className="text-sm font-medium text-[#a04432]" role="alert">
-                Não foi possível aceitar o convite. Verifique se ele ainda está válido.
-              </p>
-            )}
-          </div>
-        </>
+        </div>
       )}
     </section>
   )
+}
+
+function normalizeBrazilianPhone(value: string) {
+  const digits = value.replace(/\D/g, '')
+  const nationalNumber = digits.startsWith('55') ? digits.slice(2) : digits
+  if (!/^\d{10,11}$/.test(nationalNumber)) {
+    throw new Error('INVALID_PHONE')
+  }
+  return `+55${nationalNumber}`
 }

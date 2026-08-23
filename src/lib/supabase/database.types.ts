@@ -388,7 +388,8 @@ export type Database = {
           id: string
           token: string
           trainer_id: string
-          student_email: string
+          student_email: string | null
+          student_phone: string | null
           status: Database['public']['Enums']['invitation_status']
           expires_at: string
           accepted_by: string | null
@@ -400,7 +401,8 @@ export type Database = {
           id?: string
           token?: string
           trainer_id: string
-          student_email: string
+          student_email?: string | null
+          student_phone?: string | null
           status?: Database['public']['Enums']['invitation_status']
           expires_at?: string
           accepted_by?: string | null
@@ -409,6 +411,8 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          student_email?: string | null
+          student_phone?: string | null
           status?: Database['public']['Enums']['invitation_status']
           accepted_by?: string | null
           accepted_at?: string | null
@@ -429,6 +433,10 @@ export type Database = {
     Functions: {
       accept_student_invitation: {
         Args: { invitation_token: string }
+        Returns: Database['public']['Tables']['trainer_student_relationships']['Row']
+      }
+      claim_student_invitation: {
+        Args: { invitation_token?: string }
         Returns: Database['public']['Tables']['trainer_student_relationships']['Row']
       }
       get_available_slots: {
