@@ -31,6 +31,7 @@ export function AppointmentsPage() {
   const { profile } = useAuth()
   const queryClient = useQueryClient()
   const [cancelTargetId, setCancelTargetId] = useState<string | null>(null)
+  const [cancellationNote, setCancellationNote] = useState('')
   const [outcomeTargetId, setOutcomeTargetId] = useState<string | null>(null)
   const [correctionTargetId, setCorrectionTargetId] = useState<string | null>(null)
   const [correctionReason, setCorrectionReason] = useState('')
@@ -48,7 +49,14 @@ export function AppointmentsPage() {
         .from('appointments')
         .select(`*, ${counterpart}`)
         .eq(isTrainer ? 'trainer_id' : 'student_id', userId)
-        .in('status', ['scheduled', 'completed', 'student_no_show'])
+        .in('status', [
+          'scheduled',
+          'completed',
+          'student_no_show',
+          'cancelled_by_student',
+          'cancelled_by_trainer',
+          'cancelled_for_reschedule',
+        ])
         .order('starts_at', { ascending: false })
       if (error) throw error
       return data
@@ -63,7 +71,7 @@ export function AppointmentsPage() {
         .from('appointment_events')
         .select('*')
         .eq(isTrainer ? 'trainer_id' : 'student_id', userId)
-        .in('event_type', ['completed', 'student_no_show'])
+        .in('event_type', ['completed', 'student_no_show', 'cancelled'])
         .order('created_at', { ascending: false })
       if (error) throw error
       return data
@@ -74,11 +82,13 @@ export function AppointmentsPage() {
     mutationFn: async (appointmentId: string) => {
       const { error } = await requireSupabase().rpc('cancel_appointment', {
         target_appointment_id: appointmentId,
+        cancellation_note: cancellationNote.trim() || undefined,
       })
       if (error) throw error
     },
     onSuccess: () => {
       setCancelTargetId(null)
+      setCancellationNote('')
       void queryClient.invalidateQueries({ queryKey: ['appointments'] })
       void queryClient.invalidateQueries({ queryKey: ['available-slots'] })
       void queryClient.invalidateQueries({ queryKey: ['credit-balance'] })
@@ -236,7 +246,7 @@ export function AppointmentsPage() {
                   </div>
 
                   {cancelTargetId === appointment.id ? (
-                    <div className="mt-4 rounded-2xl bg-[#f2ded7] p-4 sm:flex sm:items-center sm:justify-between">
+                    <div className="mt-4 rounded-2xl bg-[#f2ded7] p-4 sm:flex sm:flex-wrap sm:items-end sm:justify-between sm:gap-3">
                       <div>
                         <p className="font-semibold text-[#7f382d]">
                           Cancelar esta aula?
@@ -245,6 +255,16 @@ export function AppointmentsPage() {
                           O horário será liberado e 1 crédito será devolvido.
                         </p>
                       </div>
+                      <label className="mt-3 block text-sm font-semibold text-[#7f382d] sm:basis-full">
+                        Motivo ou observação (opcional)
+                        <textarea
+                          className="field mt-2 min-h-20 resize-y bg-white"
+                          maxLength={300}
+                          value={cancellationNote}
+                          onChange={(event) => setCancellationNote(event.target.value)}
+                          placeholder="Ex.: compromisso, indisposição ou viagem."
+                        />
+                      </label>
                       <div className="mt-3 flex gap-2 sm:mt-0">
                         <Button
                           disabled={cancelAppointment.isPending}
@@ -258,7 +278,10 @@ export function AppointmentsPage() {
                         <Button
                           variant="ghost"
                           disabled={cancelAppointment.isPending}
-                          onClick={() => setCancelTargetId(null)}
+                          onClick={() => {
+                            setCancelTargetId(null)
+                            setCancellationNote('')
+                          }}
                         >
                           Voltar
                         </Button>
@@ -405,11 +428,13 @@ export function AppointmentsPage() {
                   {events && events.length > 0 && (
                     <details className="mt-4 border-t border-[#173d2c]/8 pt-4">
                       <summary className="flex min-h-11 cursor-pointer items-center gap-2 text-sm font-semibold">
-                        <History size={16} /> Histórico do resultado
+                        <History size={16} /> Histórico
                       </summary>
                       <ol className="mt-2 space-y-2">
                         {events.map((event) => {
                           const correctionReason = getCorrectionReason(event.details)
+                          const cancellationReason = getCancellationReason(event.details)
+                          const automaticCompletion = isAutomaticCompletion(event.details)
                           return (
                             <li
                               className="rounded-xl bg-[#eef1ea] p-3 text-xs"
@@ -418,12 +443,24 @@ export function AppointmentsPage() {
                               <span className="font-semibold">
                                 {event.event_type === 'completed'
                                   ? 'Aula realizada'
-                                  : 'Falta do aluno'}
+                                  : event.event_type === 'student_no_show'
+                                    ? 'Falta do aluno'
+                                    : 'Aula cancelada'}
                               </span>{' '}
                               · {formatEventDate(event.created_at)}
                               {correctionReason && (
                                 <span className="mt-1 block text-[#687b71]">
                                   Correção: {correctionReason}
+                                </span>
+                              )}
+                              {cancellationReason && (
+                                <span className="mt-1 block text-[#687b71]">
+                                  Motivo: {cancellationReason}
+                                </span>
+                              )}
+                              {automaticCompletion && (
+                                <span className="mt-1 block text-[#687b71]">
+                                  Finalizada automaticamente no término da aula.
                                 </span>
                               )}
                             </li>
@@ -495,4 +532,20 @@ function getCorrectionReason(details: Json) {
   return details.correction === true && typeof details.reason === 'string'
     ? details.reason
     : null
+}
+
+function getCancellationReason(details: Json) {
+  if (!details || Array.isArray(details) || typeof details !== 'object') return null
+  return typeof details.reason === 'string' && details.reason.trim()
+    ? details.reason
+    : null
+}
+
+function isAutomaticCompletion(details: Json) {
+  return Boolean(
+    details &&
+    !Array.isArray(details) &&
+    typeof details === 'object' &&
+    details.automatic === true,
+  )
 }

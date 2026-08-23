@@ -479,7 +479,7 @@ export type Database = {
         Returns: Database['public']['Tables']['appointments']['Row']
       }
       cancel_appointment: {
-        Args: { target_appointment_id: string }
+        Args: { target_appointment_id: string; cancellation_note?: string }
         Returns: Database['public']['Tables']['appointments']['Row']
       }
       reschedule_appointment: {

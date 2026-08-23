@@ -236,7 +236,8 @@ Uma aula finalizada não poderá voltar ao estado `agendada` sem uma ação admi
 
 ### RF-14 — Realização e falta
 
-- O personal deve marcar uma aula passada ou em andamento como realizada.
+- Uma aula ainda agendada deve ser marcada automaticamente como realizada ao atingir
+  o horário de término.
 - O personal deve conseguir registrar falta do aluno.
 - Uma aula realizada ou com falta deve manter o crédito consumido.
 - Alterações posteriores devem exigir justificativa e gerar evento de auditoria.
@@ -294,23 +295,24 @@ Deve exibir:
 
 ## 10. Regras de negócio do MVP
 
-| Código | Regra                                                                               |
-| ------ | ----------------------------------------------------------------------------------- |
-| RN-01  | Um horário livre pode ser agendado automaticamente, sem aprovação do personal.      |
-| RN-02  | Apenas alunos com vínculo ativo podem agendar.                                      |
-| RN-03  | O aluno precisa ter vínculo ativo e crédito disponível em algum pacote ativo.       |
-| RN-04  | Agendar uma aula consome um crédito.                                                |
-| RN-05  | Cancelar uma aula futura devolve um crédito, independentemente da antecedência.     |
-| RN-06  | Uma aula realizada ou com falta mantém o crédito consumido.                         |
-| RN-07  | Uma remarcação deve resultar em exatamente um crédito líquido consumido.            |
-| RN-08  | O personal não pode ter aulas sobrepostas.                                          |
-| RN-09  | O aluno não pode ter aulas sobrepostas.                                             |
-| RN-10  | Nenhuma ação pode deixar o saldo abaixo de zero.                                    |
-| RN-11  | Créditos não vencem e permanecem disponíveis enquanto o pacote não for cancelado.   |
-| RN-12  | Novos pacotes acumulam créditos; o consumo usa primeiro o pacote ativo mais antigo. |
-| RN-13  | Alterações de saldo precisam estar representadas no extrato.                        |
-| RN-14  | Toda ação sensível precisa registrar o usuário responsável.                         |
-| RN-15  | Datas e horários exibidos devem respeitar o fuso definido para o MVP.               |
+| Código | Regra                                                                                  |
+| ------ | -------------------------------------------------------------------------------------- |
+| RN-01  | Um horário livre pode ser agendado automaticamente, sem aprovação do personal.         |
+| RN-02  | Apenas alunos com vínculo ativo podem agendar.                                         |
+| RN-03  | O aluno precisa ter vínculo ativo e crédito disponível em algum pacote ativo.          |
+| RN-04  | Agendar uma aula consome um crédito.                                                   |
+| RN-05  | Cancelar uma aula futura devolve um crédito, independentemente da antecedência.        |
+| RN-06  | Uma aula realizada ou com falta mantém o crédito consumido.                            |
+| RN-07  | Uma remarcação deve resultar em exatamente um crédito líquido consumido.               |
+| RN-08  | O personal não pode ter aulas sobrepostas.                                             |
+| RN-09  | O aluno não pode ter aulas sobrepostas.                                                |
+| RN-10  | Nenhuma ação pode deixar o saldo abaixo de zero.                                       |
+| RN-11  | Créditos não vencem e permanecem disponíveis enquanto o pacote não for cancelado.      |
+| RN-12  | Novos pacotes acumulam créditos; o consumo usa primeiro o pacote ativo mais antigo.    |
+| RN-13  | Alterações de saldo precisam estar representadas no extrato.                           |
+| RN-14  | Toda ação sensível precisa registrar o usuário responsável.                            |
+| RN-15  | Datas e horários exibidos devem respeitar o fuso definido para o MVP.                  |
+| RN-16  | Após o horário de término, uma aula ainda agendada torna-se realizada automaticamente. |
 
 ## 11. Fluxos principais
 
