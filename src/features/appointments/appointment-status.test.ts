@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest'
 
-import { canCompleteAppointment, getAppointmentStatusLabel } from './appointment-status'
+import {
+  canCompleteAppointment,
+  getAppointmentStatusLabel,
+  getAppointmentStatusTone,
+} from './appointment-status'
 
 describe('appointment status', () => {
   const now = new Date('2026-08-23T15:00:00Z')
@@ -14,5 +18,12 @@ describe('appointment status', () => {
   it('apresenta os resultados finais em português', () => {
     expect(getAppointmentStatusLabel('completed')).toBe('Realizada')
     expect(getAppointmentStatusLabel('student_no_show')).toBe('Falta do aluno')
+  })
+
+  it('destaca cancelamentos e remarcações com tons diferentes', () => {
+    expect(getAppointmentStatusTone('cancelled_by_student')).toBe('cancelled')
+    expect(getAppointmentStatusTone('cancelled_by_trainer')).toBe('cancelled')
+    expect(getAppointmentStatusTone('cancelled_for_reschedule')).toBe('rescheduled')
+    expect(getAppointmentStatusTone('scheduled')).toBe('positive')
   })
 })

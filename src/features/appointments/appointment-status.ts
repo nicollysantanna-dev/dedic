@@ -26,3 +26,12 @@ export function getAppointmentStatusLabel(status: AppointmentStatus) {
 
   return labels[status]
 }
+
+export function getAppointmentStatusTone(status: AppointmentStatus) {
+  if (status === 'cancelled_for_reschedule') return 'rescheduled'
+  if (status === 'cancelled_by_student' || status === 'cancelled_by_trainer') {
+    return 'cancelled'
+  }
+  if (status === 'student_no_show') return 'attention'
+  return 'positive'
+}

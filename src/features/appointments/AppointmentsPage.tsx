@@ -20,6 +20,7 @@ import { Button } from '@/components/ui/button'
 import {
   canCompleteAppointment,
   getAppointmentStatusLabel,
+  getAppointmentStatusTone,
   type AppointmentOutcome,
 } from '@/features/appointments/appointment-status'
 import { sortAppointmentsForAgenda } from '@/features/appointments/appointment-order'
@@ -196,6 +197,7 @@ export function AppointmentsPage() {
         <div className="mt-8 space-y-3">
           <AnimatePresence mode="popLayout" initial={false}>
             {displayedAppointments?.map((appointment) => {
+              const statusTone = getAppointmentStatusTone(appointment.status)
               const isFuture = new Date(appointment.starts_at) > new Date()
               const canComplete =
                 isTrainer &&
@@ -214,11 +216,13 @@ export function AppointmentsPage() {
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   exit={{ opacity: 0, y: -8, scale: 0.985 }}
                   transition={{ type: 'spring', stiffness: 340, damping: 30 }}
-                  className="rounded-[1.75rem] border border-[#173d2c]/8 bg-white/60 p-5"
+                  className={`rounded-[1.75rem] border p-5 ${appointmentCardClasses[statusTone]}`}
                   key={appointment.id}
                 >
                   <div className="flex items-center gap-4">
-                    <span className="grid size-12 shrink-0 place-items-center rounded-2xl bg-[#173d2c] text-[#efc86f]">
+                    <span
+                      className={`grid size-12 shrink-0 place-items-center rounded-2xl ${appointmentIconClasses[statusTone]}`}
+                    >
                       <CalendarCheck size={21} />
                     </span>
                     <div className="min-w-0 flex-1">
@@ -239,11 +243,7 @@ export function AppointmentsPage() {
                       </div>
                     </div>
                     <span
-                      className={`rounded-full px-3 py-1 text-xs font-bold ${
-                        appointment.status === 'student_no_show'
-                          ? 'bg-[#f2ded7] text-[#8e483a]'
-                          : 'bg-[#dcebdc] text-[#285b40]'
-                      }`}
+                      className={`rounded-full px-3 py-1 text-xs font-bold ${appointmentBadgeClasses[statusTone]}`}
                     >
                       {getAppointmentStatusLabel(appointment.status)}
                     </span>
@@ -500,6 +500,27 @@ export function AppointmentsPage() {
       </div>
     </main>
   )
+}
+
+const appointmentCardClasses = {
+  positive: 'border-[#173d2c]/8 bg-white/60',
+  attention: 'border-[#b45f4b]/20 bg-[#fbf1ed]',
+  rescheduled: 'border-[#b7832f]/25 bg-[#fbf5e7]',
+  cancelled: 'border-[#b45f4b]/25 bg-[#f9ece7]',
+}
+
+const appointmentIconClasses = {
+  positive: 'bg-[#173d2c] text-[#efc86f]',
+  attention: 'bg-[#8e483a] text-white',
+  rescheduled: 'bg-[#a67828] text-white',
+  cancelled: 'bg-[#a95040] text-white',
+}
+
+const appointmentBadgeClasses = {
+  positive: 'bg-[#dcebdc] text-[#285b40]',
+  attention: 'bg-[#efd3ca] text-[#853d30]',
+  rescheduled: 'bg-[#f2dfb5] text-[#77551f]',
+  cancelled: 'bg-[#efd3ca] text-[#853d30]',
 }
 
 function isSameDay(left: Date, right: Date) {
