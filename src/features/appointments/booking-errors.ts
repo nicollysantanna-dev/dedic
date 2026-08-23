@@ -14,5 +14,11 @@ export function getBookingError(error: Error) {
   ) {
     return 'Este horário acabou de ficar indisponível. Escolha outro.'
   }
+  if (error.message.includes('BLOCKED_PERIOD_CONFLICT')) {
+    return 'Este período está bloqueado na sua agenda.'
+  }
+  if (error.message.includes('PAST_APPOINTMENT_NOT_ALLOWED')) {
+    return 'Escolha uma data e hora futuras.'
+  }
   return 'Não foi possível agendar a aula. Tente novamente.'
 }

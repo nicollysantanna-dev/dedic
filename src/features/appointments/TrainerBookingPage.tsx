@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { ArrowLeft, CalendarDays, Clock3, LoaderCircle } from 'lucide-react'
+import { ArrowLeft, CalendarDays, CalendarPlus, Clock3, LoaderCircle } from 'lucide-react'
 import { useState } from 'react'
 import { Link, Navigate } from 'react-router-dom'
 import { motion } from 'motion/react'
@@ -16,6 +16,7 @@ export function TrainerBookingPage() {
   const { profile } = useAuth()
   const queryClient = useQueryClient()
   const [studentId, setStudentId] = useState('')
+  const [manualStart, setManualStart] = useState('')
   const trainerId = profile?.id ?? ''
   const relationships = useQuery({
     queryKey: ['trainer-booking-students', trainerId],
@@ -65,6 +66,27 @@ export function TrainerBookingPage() {
       void queryClient.invalidateQueries({ queryKey: ['credit-balance'] })
     },
   })
+  const manualBooking = useMutation({
+    mutationFn: async () => {
+      if (!selectedStudent) throw new Error('STUDENT_REQUIRED')
+      if (!manualStart || new Date(manualStart) <= new Date()) {
+        throw new Error('FUTURE_START_REQUIRED')
+      }
+      const { error } = await requireSupabase().rpc('book_appointment_for_student', {
+        target_student_id: selectedStudent,
+        requested_start: new Date(manualStart).toISOString(),
+        requested_booking_id: crypto.randomUUID(),
+      })
+      if (error) throw error
+    },
+    onSuccess: () => {
+      setManualStart('')
+      void queryClient.invalidateQueries({ queryKey: ['trainer-booking-slots'] })
+      void queryClient.invalidateQueries({ queryKey: ['appointments'] })
+      void queryClient.invalidateQueries({ queryKey: ['agenda-home-appointments'] })
+      void queryClient.invalidateQueries({ queryKey: ['credit-balance'] })
+    },
+  })
 
   if (profile?.role !== 'trainer') return <Navigate to="/app" replace />
 
@@ -109,6 +131,51 @@ export function TrainerBookingPage() {
         {!relationships.isLoading && !relationships.data?.length && (
           <EmptyMessage text="Vincule um aluno antes de criar uma aula." />
         )}
+
+        {relationships.data?.length ? (
+          <section className="mt-8 rounded-[2rem] bg-[#173d2c] p-6 text-white">
+            <CalendarPlus className="text-[#efc86f]" size={24} />
+            <h2 className="font-display mt-4 text-2xl font-bold">Escolher data e hora</h2>
+            <p className="mt-2 text-sm leading-6 text-[#b9cdc1]">
+              Você pode criar uma aula fora da disponibilidade publicada. Conflitos e
+              créditos continuam sendo validados automaticamente.
+            </p>
+            <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:items-end">
+              <label className="flex-1 text-sm font-semibold">
+                Início da aula
+                <input
+                  className="field mt-2 border-white/15 bg-white/10 text-white scheme-dark"
+                  type="datetime-local"
+                  min={toLocalDateTimeInput(new Date())}
+                  value={manualStart}
+                  onChange={(event) => setManualStart(event.target.value)}
+                />
+              </label>
+              <button
+                className="inline-flex min-h-11 items-center justify-center gap-2 rounded-full bg-[#d6a850] px-5 text-sm font-bold text-[#173326] disabled:opacity-50"
+                type="button"
+                disabled={!manualStart || manualBooking.isPending || !selectedStudent}
+                onClick={() => manualBooking.mutate()}
+              >
+                {manualBooking.isPending ? (
+                  <LoaderCircle className="animate-spin" size={17} />
+                ) : (
+                  <CalendarPlus size={17} />
+                )}
+                Criar aula
+              </button>
+            </div>
+            {manualBooking.error && (
+              <p className="mt-4 text-sm text-[#f0c3a9]" role="alert">
+                {manualBooking.error.message.includes('FUTURE_START_REQUIRED')
+                  ? 'Escolha uma data e hora futuras.'
+                  : getBookingError(manualBooking.error)}
+              </p>
+            )}
+          </section>
+        ) : null}
+
+        <h2 className="font-display mt-9 text-2xl font-bold">Horários publicados</h2>
         {slots.isLoading && (
           <p className="mt-8 text-sm font-semibold">Carregando horários…</p>
         )}
@@ -182,4 +249,9 @@ function formatTime(value: string) {
   return new Intl.DateTimeFormat('pt-BR', { hour: '2-digit', minute: '2-digit' }).format(
     new Date(value),
   )
+}
+
+function toLocalDateTimeInput(value: Date) {
+  const local = new Date(value.getTime() - value.getTimezoneOffset() * 60_000)
+  return local.toISOString().slice(0, 16)
 }

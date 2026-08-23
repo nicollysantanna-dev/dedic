@@ -18,4 +18,10 @@ describe('booking errors', () => {
       'O pacote não é válido para a nova data escolhida.',
     )
   })
+
+  it('explica conflito com bloqueio do personal', () => {
+    expect(getBookingError(new Error('BLOCKED_PERIOD_CONFLICT'))).toBe(
+      'Este período está bloqueado na sua agenda.',
+    )
+  })
 })
