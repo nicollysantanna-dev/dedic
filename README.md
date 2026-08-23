@@ -32,16 +32,28 @@ npm install
 npm run dev
 ```
 
+Com `make`, os mesmos fluxos ficam disponíveis por comandos curtos:
+
+```bash
+make install
+make dev
+make help
+```
+
 Validação completa:
 
 ```bash
 npm run validate
+# ou
+make check
 ```
 
 O Supabase local requer Docker em execução:
 
 ```bash
 npm run supabase:start
+# ou
+make supabase-start
 ```
 
 Consulte o [harness de desenvolvimento](docs/DEVELOPMENT_HARNESS.md) para conhecer
