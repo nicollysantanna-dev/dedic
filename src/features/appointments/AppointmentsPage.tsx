@@ -22,6 +22,7 @@ import {
   getAppointmentStatusLabel,
   type AppointmentOutcome,
 } from '@/features/appointments/appointment-status'
+import { sortAppointmentsForAgenda } from '@/features/appointments/appointment-order'
 import { AppointmentCalendar } from '@/features/appointments/AppointmentCalendar'
 import { useAuth } from '@/features/auth/auth-context'
 import { requireSupabase } from '@/lib/supabase/client'
@@ -140,11 +141,14 @@ export function AppointmentsPage() {
     },
   })
 
+  const orderedAppointments = appointments.data
+    ? sortAppointmentsForAgenda(appointments.data)
+    : undefined
   const displayedAppointments = selectedDay
-    ? appointments.data?.filter((appointment) =>
+    ? orderedAppointments?.filter((appointment) =>
         isSameDay(new Date(appointment.starts_at), selectedDay),
       )
-    : appointments.data
+    : orderedAppointments
 
   return (
     <main className="min-h-dvh bg-[#f4f1e9] px-5 py-6 text-[#183529] sm:px-8">
