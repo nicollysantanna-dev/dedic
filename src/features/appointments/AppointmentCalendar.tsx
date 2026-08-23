@@ -12,12 +12,14 @@ export function AppointmentCalendar({
   blockedPeriods = [],
   selected,
   onSelect,
+  onDayClick,
 }: {
   appointments: Tables<'appointments'>[]
   availableSlots?: Array<{ slot_start: string }>
   blockedPeriods?: Array<{ starts_at: string }>
   selected?: Date
   onSelect: (date?: Date) => void
+  onDayClick?: (date: Date) => void
 }) {
   const scheduled = appointments.filter((item) => item.status === 'scheduled').map(toDate)
   const completed = appointments.filter((item) => item.status === 'completed').map(toDate)
@@ -55,6 +57,7 @@ export function AppointmentCalendar({
         mode="single"
         selected={selected}
         onSelect={onSelect}
+        onDayClick={onDayClick}
         modifiers={{ available, blocked, scheduled, completed, noShow }}
         modifiersClassNames={{
           available: 'dedic-day-available',

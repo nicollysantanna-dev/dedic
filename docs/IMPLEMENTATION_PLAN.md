@@ -91,6 +91,14 @@ O personal publica horários e bloqueia exceções.
 
 O aluno visualiza apenas slots futuros, livres e compatíveis com a duração configurada.
 
+## Evolução — Agenda operacional unificada
+
+**Status:** primeira etapa implementada em 23/08/2026.
+
+A agenda principal concentra criação, remarcação e cancelamento em painéis móveis,
+com confirmação visual das operações. As rotas anteriores permanecem como fallback
+até a validação do fluxo unificado em produção.
+
 ## Marco 4 — Pacote e extrato
 
 **Status:** implementação e migração remota concluídas em 22/08/2026. A demonstração
