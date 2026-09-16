@@ -5,15 +5,18 @@
 | Campo              | Valor                                       |
 | ------------------ | ------------------------------------------- |
 | Produto            | Dedic                                       |
-| Versão             | 0.1                                         |
-| Status             | Rascunho inicial                            |
-| Data               | 22/08/2026                                  |
+| Versão             | 0.2                                         |
+| Status             | Redescoberta aprovada                       |
+| Data               | 16/09/2026                                  |
 | Plataforma inicial | Aplicação web responsiva e instalável (PWA) |
 | Público inicial    | Personal trainer e seus alunos              |
 
 ## 2. Visão do produto
 
-O Dedic é um sistema mobile-first para organizar a relação entre aluno e personal trainer. O MVP deve substituir controles informais de agenda, saldo de aulas, remarcações, renovações e pagamentos, oferecendo autonomia ao aluno sem retirar do personal o controle da própria disponibilidade.
+O Dedic é uma plataforma mobile-first de gestão completa para personal trainers
+independentes e seus alunos. Agenda, relacionamento, evolução física e financeiro
+formam uma única experiência operacional. O personal começa o dia pela agenda e
+pelos alertas; o aluno começa pela próxima aula e pelo próprio progresso.
 
 O produto deve manter um histórico confiável de todas as ações. Nenhuma alteração relevante de aula ou crédito deve desaparecer quando uma remarcação, cancelamento ou ajuste ocorrer.
 
@@ -38,16 +41,17 @@ O MVP deve permitir que:
 5. Toda alteração relevante fique registrada em histórico.
 6. O personal registre a realização das aulas e os pagamentos.
 7. O aluno visualize a próxima aula, o saldo, a renovação prevista e a situação do pagamento.
+8. Personal e aluno acompanhem metas, peso e fotos comparativas.
+9. O personal identifique alunos que precisam de atenção a partir de alertas objetivos.
+10. Treinos, cargas, volume e recordes possam ser importados do Hevy quando o aluno conectar uma conta compatível.
 
 ## 5. Não objetivos do MVP
 
 Não fazem parte desta primeira versão:
 
-- criação de fichas de treino;
-- biblioteca de exercícios;
-- registro de séries, cargas ou repetições;
-- medidas corporais e fotos de evolução;
-- gráficos de desempenho;
+- criação nativa de fichas ou biblioteca própria de exercícios;
+- edição de séries, cargas ou repetições importadas do Hevy;
+- garantia de integração com Wellhub sem aprovação comercial;
 - chat interno;
 - videochamadas;
 - integração automática com Pix, cartão ou assinatura;
@@ -56,6 +60,8 @@ Não fazem parte desta primeira versão:
 - gestão de academias, equipes ou funcionários;
 - marketplace para descoberta de profissionais;
 - planos comerciais e cobrança pelo uso do Dedic.
+- anotações livres sobre o aluno;
+- especialidades profissionais;
 
 ## 6. Perfis e permissões
 
@@ -65,14 +71,17 @@ O aluno poderá:
 
 - entrar e sair da conta;
 - consultar e atualizar seus dados básicos;
-- aceitar um vínculo com um personal;
+- ter o vínculo ativado automaticamente por convite válido;
 - visualizar a disponibilidade do personal vinculado;
 - agendar uma aula em um horário disponível;
-- cancelar uma aula futura;
-- remarcar uma aula futura;
+- cancelar uma aula até o dia anterior;
+- remarcar uma aula até o dia anterior;
 - consultar suas próximas aulas e seu histórico;
 - consultar pacote, renovação prevista, saldo e extrato de créditos;
 - consultar valor, vencimento e situação do pagamento.
+- registrar peso e enviar ou remover as próprias fotos de evolução;
+- visualizar metas definidas pelo personal;
+- conectar e desconectar a própria conta Hevy quando elegível.
 
 O aluno não poderá:
 
@@ -99,6 +108,9 @@ O personal poderá:
 - lançar ajustes de crédito com justificativa obrigatória;
 - registrar e atualizar pagamentos;
 - consultar históricos de aula, crédito e pagamento.
+- definir metas com prazo para alunos vinculados;
+- consultar peso, fotos e progresso de alunos com vínculo ativo;
+- acompanhar treinos importados pelo próprio aluno.
 
 O personal não poderá acessar dados de alunos sem vínculo ativo com ele.
 
@@ -112,7 +124,7 @@ O personal não poderá acessar dados de alunos sem vínculo ativo com ele.
 - Um horário disponível poderá ser reservado automaticamente pelo aluno.
 - Não haverá aprovação obrigatória do personal para agendar, cancelar ou remarcar.
 - O cancelamento pelo aluno devolverá o crédito no MVP.
-- Não haverá prazo mínimo nem limite de remarcações no MVP.
+- Cancelamento e remarcação só serão permitidos antes do dia da aula.
 - O pagamento será registrado manualmente pelo personal.
 
 ## 8. Glossário
@@ -200,7 +212,7 @@ O personal não poderá acessar dados de alunos sem vínculo ativo com ele.
 
 ### RF-10 — Cancelamento pelo aluno
 
-- O aluno deve conseguir cancelar uma aula futura.
+- O aluno deve conseguir cancelar uma aula até o dia anterior à aula.
 - O cancelamento deve liberar o horário.
 - O crédito consumido deve ser devolvido automaticamente no MVP.
 - A aula deve permanecer no histórico com estado e motivo de cancelamento.
@@ -209,14 +221,14 @@ O personal não poderá acessar dados de alunos sem vínculo ativo com ele.
 
 ### RF-11 — Cancelamento pelo personal
 
-- O personal deve conseguir cancelar uma aula futura.
+- O personal deve conseguir cancelar uma aula até o dia anterior à aula.
 - O crédito deve ser devolvido ao aluno.
 - O horário deve ser liberado.
 - A autoria e o motivo devem ficar registrados.
 
 ### RF-12 — Remarcação
 
-- Aluno e personal devem conseguir remarcar uma aula futura.
+- Aluno e personal devem conseguir remarcar uma aula até o dia anterior à aula.
 - O usuário deve selecionar um novo horário disponível antes de confirmar.
 - A aula original deve ser mantida como `cancelada_por_remarcacao`.
 - Uma nova aula deve ser criada e vinculada à original.
@@ -289,6 +301,58 @@ Deve exibir:
 - pagamentos pendentes ou atrasados;
 - atalhos para bloquear horário e criar aula.
 
+### RF-21 — Dashboard operacional do personal
+
+- A agenda do dia deve ser o primeiro conteúdo do dashboard.
+- Cada aula deve apresentar horário, aluno, local ou formato, estado e ações rápidas.
+- O dashboard deve destacar tarefas, poucos créditos, inadimplência, renovação,
+  inatividade, progresso desatualizado, metas próximas do prazo, faltas e falhas de sincronização.
+- Indicadores secundários devem incluir alunos ativos, frequência e resumo financeiro.
+
+### RF-22 — Metas e peso
+
+- O personal deve definir metas de peso, frequência e, quando houver dados do Hevy, carga por exercício.
+- Uma meta deve possuir valor inicial, valor-alvo, data-alvo e estado.
+- Personal e aluno devem visualizar a evolução do peso em gráfico e por período.
+- Personal e aluno podem registrar peso, com autoria e data preservadas.
+
+### RF-23 — Fotos de evolução
+
+- O aluno deve enviar fotos identificadas por data e posição: frente, lateral ou costas.
+- Aluno e personal com vínculo ativo devem visualizar as fotos.
+- O aluno deve conseguir excluir as próprias fotos.
+- A interface deve permitir comparar duas avaliações e ocultar o rosto na visualização.
+- Arquivos devem permanecer privados e ser entregues por acesso autenticado temporário.
+
+### RF-24 — Integração opcional com Hevy
+
+- O aluno elegível deve conseguir conectar e desconectar a própria conta Hevy.
+- Credenciais do Hevy nunca devem ser expostas ao navegador após a configuração.
+- A sincronização deve importar treinos, exercícios, séries, repetições, cargas, volume e recordes.
+- Dados importados devem ser identificados como externos e manter a última sincronização.
+- Uma falha de sincronização não deve impedir agenda, financeiro ou progresso manual.
+
+### RF-25 — Recorrência e tipos de compromisso
+
+- O personal deve criar aulas recorrentes com período definido.
+- Cada ocorrência deve ser persistida e operada individualmente.
+- Alterar uma ocorrência não deve alterar as demais sem confirmação explícita.
+- O primeiro ciclo deve suportar aula individual, avaliação física e bloqueio.
+
+### RF-26 — Notificações
+
+- O sistema deve exibir notificações internas de aula, crédito, renovação, pagamento,
+  meta, progresso e sincronização.
+- O MVP deve oferecer mensagens prontas para compartilhamento manual pelo WhatsApp.
+- Envio automático por WhatsApp não faz parte do primeiro ciclo.
+
+### RF-27 — Visão financeira
+
+- O personal deve visualizar receita recebida do mês, valores a receber,
+  inadimplência e quantidade de alunos pagantes.
+- O sistema deve apresentar evolução da receita dos últimos seis meses e movimentações recentes.
+- Receita recebida e receita prevista não podem ser misturadas no mesmo indicador.
+
 ### RF-20 — Histórico e auditoria
 
 - O sistema deve registrar criação, cancelamento, remarcação e mudança de estado das aulas.
@@ -304,7 +368,7 @@ Deve exibir:
 | RN-02  | Apenas alunos com vínculo ativo podem agendar.                                         |
 | RN-03  | O aluno precisa ter vínculo ativo e crédito disponível em algum pacote ativo.          |
 | RN-04  | Agendar uma aula consome um crédito.                                                   |
-| RN-05  | Cancelar uma aula futura devolve um crédito, independentemente da antecedência.        |
+| RN-05  | Cancelar até o dia anterior devolve um crédito; no dia da aula não há cancelamento.    |
 | RN-06  | Uma aula realizada ou com falta mantém o crédito consumido.                            |
 | RN-07  | Uma remarcação deve resultar em exatamente um crédito líquido consumido.               |
 | RN-08  | O personal não pode ter aulas sobrepostas.                                             |
@@ -316,6 +380,9 @@ Deve exibir:
 | RN-14  | Toda ação sensível precisa registrar o usuário responsável.                            |
 | RN-15  | Datas e horários exibidos devem respeitar o fuso definido para o MVP.                  |
 | RN-16  | Após o horário de término, uma aula ainda agendada torna-se realizada automaticamente. |
+| RN-17  | Cada ocorrência de uma recorrência possui estado e histórico independentes.            |
+| RN-18  | O acesso do personal a fotos e progresso sensível exige vínculo ativo.                 |
+| RN-19  | Segredos de integrações externas são armazenados apenas em ambiente de servidor.       |
 
 ## 11. Fluxos principais
 
@@ -325,7 +392,7 @@ Deve exibir:
 2. Personal configura duração e disponibilidade.
 3. Personal convida o aluno.
 4. Aluno cria a conta ou entra.
-5. Aluno aceita o vínculo.
+5. O vínculo é ativado automaticamente pelo e-mail ou link privado.
 6. Personal cria e ativa o pacote.
 7. Aluno passa a visualizar horários e saldo.
 
@@ -340,7 +407,7 @@ Deve exibir:
 
 ### 11.3 Cancelamento
 
-1. Aluno abre uma aula futura.
+1. Aluno abre uma aula marcada para um dia futuro.
 2. Aluno solicita o cancelamento.
 3. Sistema apresenta o efeito da ação: horário liberado e crédito devolvido.
 4. Aluno confirma.
@@ -348,7 +415,7 @@ Deve exibir:
 
 ### 11.4 Remarcação
 
-1. Aluno abre uma aula futura e escolhe remarcar.
+1. Aluno abre uma aula marcada para um dia futuro e escolhe remarcar.
 2. Sistema apresenta horários disponíveis.
 3. Aluno seleciona o novo horário.
 4. Sistema apresenta a troca antes da confirmação.
@@ -440,8 +507,8 @@ O MVP estará funcionalmente pronto quando for possível demonstrar que:
 
 ### Personal
 
-- início e agenda do dia;
-- calendário;
+- dashboard operacional e agenda do dia;
+- calendário em dia, três dias, semana e mês;
 - disponibilidade recorrente;
 - bloqueios;
 - alunos e convites;
@@ -449,6 +516,9 @@ O MVP estará funcionalmente pronto quando for possível demonstrar que:
 - criação e gestão de pacote;
 - ajustes de crédito;
 - registro de pagamento.
+- lista e perfil individual de alunos;
+- metas, peso, fotos comparativas e progresso;
+- treinos importados do Hevy.
 
 ## 15. Modelo conceitual inicial
 
@@ -463,6 +533,12 @@ O MVP estará funcionalmente pronto quando for possível demonstrar que:
 | `appointments`                  | Estado atual de cada aula                 |
 | `appointment_events`            | Auditoria das alterações da aula          |
 | `payments`                      | Controle manual de cobranças e pagamentos |
+| `student_goals`                 | Metas, prazos e estado                    |
+| `progress_entries`              | Peso e outros registros manuais           |
+| `progress_photos`               | Metadados de fotos privadas               |
+| `external_connections`          | Estado seguro de integrações              |
+| `imported_workouts`             | Treinos normalizados de fonte externa     |
+| `notifications`                 | Alertas internos por usuário              |
 
 O modelo físico, índices, restrições e políticas de acesso serão detalhados em um documento técnico separado.
 
@@ -481,11 +557,12 @@ As métricas não precisam de uma plataforma analítica externa no primeiro lan�
 
 Estas decisões não bloqueiam este rascunho, mas devem ser confirmadas antes de fechar o modelo técnico:
 
-1. Qual será a duração padrão inicial das aulas: 30, 45 ou 60 minutos?
+1. A duração padrão continua configurável pelo personal.
 2. O aluno poderá agendar até quantos dias no futuro?
 3. Será permitido agendar uma aula para o mesmo dia?
 4. Resolvido: créditos não vencem e novos pacotes acumulam saldo.
-5. A ativação do pacote ocorrerá antes ou depois do registro do pagamento?
+5. Resolvido: a cobrança é prevista; a confirmação do pagamento libera créditos,
+   com liberação antecipada explícita permitida ao personal.
 6. Resolvido: convite por e-mail com vínculo no primeiro acesso, ou por celular com link privado.
 7. O personal poderá editar duração e horário de uma aula existente ou deverá sempre remarcar?
 
@@ -496,6 +573,9 @@ Estas decisões não bloqueiam este rascunho, mas devem ser confirmadas antes de
 - React Router;
 - TanStack Query;
 - Tailwind CSS e shadcn/ui;
+- Motion para transições e microinterações;
+- Recharts para indicadores e evolução;
+- biblioteca especializada para agenda temporal, definida por avaliação técnica;
 - React Hook Form e Zod;
 - Supabase com PostgreSQL, Auth, Storage e Row Level Security;
 - Vitest, Testing Library e Playwright;

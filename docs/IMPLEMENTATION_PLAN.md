@@ -227,3 +227,35 @@ MVP pronto para um piloto controlado.
 ### Critério de saída
 
 Todos os critérios de aceite do MVP foram demonstrados e o quality gate está verde.
+
+## Redescoberta 2026 — Gestão completa do personal
+
+As entrevistas concluídas em 16/09/2026 ampliaram o produto de controle de aulas para
+gestão completa de um personal independente. A implementação seguirá quatro fases.
+
+### Fase 1 — Fundação visual, dashboard e agenda
+
+- tokens e componentes shadcn/ui;
+- shell responsivo com sidebar e navegação inferior;
+- dashboard operacional com agenda do dia e alertas;
+- agenda em dia, três dias, semana e mês;
+- migração gradual das operações para painéis contextuais.
+
+### Fase 2 — Alunos e evolução
+
+- lista e perfil individual;
+- metas com prazo;
+- peso, gráficos e fotos comparativas privadas;
+- frequência derivada das aulas do Dedic.
+
+### Fase 3 — Financeiro consolidado
+
+- pacotes, mensalidades, avulsos e planos personalizados;
+- cobrança prevista e baixa manual;
+- indicadores e histórico conforme a referência aprovada.
+
+### Fase 4 — Integrações
+
+- conexão opcional com Hevy Pro;
+- importação segura de treinos, cargas, volume e recordes;
+- investigação comercial da integração Wellhub.
