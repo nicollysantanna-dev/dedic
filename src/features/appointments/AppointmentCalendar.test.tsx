@@ -13,7 +13,11 @@ describe('AppointmentCalendar', () => {
     } as Tables<'appointments'>
 
     const { container } = render(
-      <AppointmentCalendar appointments={[appointment]} onSelect={vi.fn()} />,
+      <AppointmentCalendar
+        appointments={[appointment]}
+        selected={new Date('2026-08-24T11:00:00Z')}
+        onSelect={vi.fn()}
+      />,
     )
 
     expect(screen.getByText('Visão mensal')).toBeInTheDocument()
@@ -24,6 +28,7 @@ describe('AppointmentCalendar', () => {
     const { container } = render(
       <AppointmentCalendar
         appointments={[]}
+        selected={new Date('2026-08-25T11:00:00Z')}
         availableSlots={[{ slot_start: '2026-08-25T11:00:00Z' }]}
         blockedPeriods={[{ starts_at: '2026-08-26T11:00:00Z' }]}
         onSelect={vi.fn()}

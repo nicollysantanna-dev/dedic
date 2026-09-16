@@ -53,6 +53,7 @@ export function AppointmentCalendar({
       </div>
       <DayPicker
         animate
+        defaultMonth={selected ?? scheduled[0] ?? available[0] ?? blocked[0]}
         locale={ptBR}
         mode="single"
         selected={selected}

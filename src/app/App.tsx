@@ -2,6 +2,7 @@ import { lazy, Suspense } from 'react'
 import { Navigate, Route, Routes } from 'react-router-dom'
 import { MotionConfig } from 'motion/react'
 
+import { AppShell } from '@/components/layout/AppShell'
 import { RequireAuth } from '@/features/auth/RequireAuth'
 import { SupabaseSetupPage } from '@/features/auth/SupabaseSetupPage'
 import { isSupabaseConfigured } from '@/lib/env'
@@ -14,9 +15,14 @@ const DashboardPage = lazy(() =>
     default: module.DashboardPage,
   })),
 )
-const AgendaHomePage = lazy(() =>
-  import('@/features/appointments/AgendaHomePage').then((module) => ({
-    default: module.AgendaHomePage,
+const HomePage = lazy(() =>
+  import('@/features/dashboard/HomePage').then((module) => ({
+    default: module.HomePage,
+  })),
+)
+const AccountPage = lazy(() =>
+  import('@/features/account/AccountPage').then((module) => ({
+    default: module.AccountPage,
   })),
 )
 const AvailabilityPage = lazy(() =>
@@ -77,15 +83,23 @@ export function App() {
           <Route path="/entrar" element={<Navigate to="/" replace />} />
           <Route path="/cadastro" element={<AuthPage mode="signup" />} />
           <Route element={<RequireAuth />}>
-            <Route path="/app" element={<AgendaHomePage />} />
-            <Route path="/app/resumo" element={<DashboardPage />} />
-            <Route path="/app/disponibilidade" element={<AvailabilityPage />} />
-            <Route path="/app/calendario" element={<StudentCalendarPage />} />
-            <Route path="/app/pacotes" element={<PackagesPage />} />
-            <Route path="/app/agenda" element={<AppointmentsPage />} />
-            <Route path="/app/criar-aula" element={<TrainerBookingPage />} />
-            <Route path="/app/remarcar/:appointmentId" element={<ReschedulePage />} />
-            <Route path="/app/pagamentos" element={<PaymentsPage />} />
+            <Route element={<AppShell />}>
+              <Route path="/app" element={<HomePage />} />
+              <Route path="/app/alunos" element={<DashboardPage />} />
+              <Route path="/app/financeiro" element={<PaymentsPage />} />
+              <Route path="/app/conta" element={<AccountPage />} />
+              <Route path="/app/resumo" element={<Navigate to="/app/alunos" replace />} />
+              <Route
+                path="/app/pagamentos"
+                element={<Navigate to="/app/financeiro" replace />}
+              />
+              <Route path="/app/disponibilidade" element={<AvailabilityPage />} />
+              <Route path="/app/calendario" element={<StudentCalendarPage />} />
+              <Route path="/app/pacotes" element={<PackagesPage />} />
+              <Route path="/app/agenda" element={<AppointmentsPage />} />
+              <Route path="/app/criar-aula" element={<TrainerBookingPage />} />
+              <Route path="/app/remarcar/:appointmentId" element={<ReschedulePage />} />
+            </Route>
           </Route>
           <Route path="/inicio" element={<Navigate to="/app" replace />} />
           <Route path="*" element={<NotFoundPage />} />
