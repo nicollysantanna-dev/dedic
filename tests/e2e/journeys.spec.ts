@@ -178,7 +178,8 @@ test('aluna navega pela própria sessão: créditos, extrato e personal', async 
   await expect(page.getByText('Consumo por aula').first()).toBeVisible()
   await expect(page.getByText('Devolução por cancelamento').first()).toBeVisible()
 
-  await page.getByRole('link', { name: 'Personal' }).first().click()
+  await page.goto('/app')
+  await page.getByRole('link', { name: 'Meu personal' }).click()
   await expect(page).toHaveURL(/\/app\/personal$/)
   await expect(page.getByRole('heading', { name: 'Paula P. Silva' })).toBeVisible()
 
@@ -186,4 +187,67 @@ test('aluna navega pela própria sessão: créditos, extrato e personal', async 
   await page.goto('/app/alunos')
   await expect(page).toHaveURL(/\/app\/personal$/)
   await expect(page.getByRole('link', { name: 'Alunos' })).toHaveCount(0)
+})
+
+test('evolução: aluna registra peso e foto, personal define meta e a exclusão some para ambos', async ({
+  page,
+}) => {
+  await login(page, users.student.email)
+  await page.goto('/app/evolucao')
+
+  // Dois registros de peso em datas diferentes para o gráfico aparecer.
+  for (const [date, weight] of [
+    [futureDate(-10), '70'],
+    [futureDate(0), '68,5'],
+  ] as const) {
+    await page.getByRole('button', { name: 'Registrar' }).click()
+    const dialog = page.getByRole('dialog', { name: 'Registrar peso e medidas' })
+    await dialog.getByLabel('Data').fill(date)
+    await dialog.getByLabel('Peso (kg)').fill(weight)
+    await dialog.getByLabel('Cintura').fill('74')
+    await dialog.getByRole('button', { name: 'Salvar registro' }).click()
+    await expect(dialog).toBeHidden()
+  }
+  await expect(page.getByText(/68,5 kg em/)).toBeVisible()
+  await expect(page.getByText('74 cm')).toBeVisible()
+  await expect(page.locator('.recharts-line')).toBeVisible()
+
+  // Envia uma foto: um recorte da própria tela serve como PNG válido.
+  await page.getByTestId('photo-input').setInputFiles({
+    name: 'frente.png',
+    mimeType: 'image/png',
+    buffer: await page.screenshot({ clip: { x: 0, y: 0, width: 60, height: 80 } }),
+  })
+  await expect(page.getByRole('img', { name: 'Frente' })).toBeVisible()
+  await logout(page)
+
+  // Personal vê tudo e define uma meta.
+  await login(page, users.trainer.email)
+  await page.goto('/app/alunos')
+  await page.getByRole('link', { name: /Ana Aluna/ }).click()
+  await expect(page.getByText(/68,5 kg em/)).toBeVisible()
+  await expect(page.getByRole('img', { name: 'Frente' })).toBeVisible()
+  await expect(page.getByLabel(/Excluir foto/)).toHaveCount(0)
+
+  await page.getByRole('button', { name: 'Nova meta' }).click()
+  const goalDialog = page.getByRole('dialog', { name: 'Nova meta' })
+  await goalDialog.getByLabel('Valor-alvo').fill('64')
+  await goalDialog.getByLabel('Data-alvo').fill(futureDate(60))
+  await goalDialog.getByRole('button', { name: 'Salvar meta' }).click()
+  await expect(page.getByText(/Peso: 68,5 → 64 kg/)).toBeVisible()
+  await logout(page)
+
+  // Aluna vê a meta e exclui a foto.
+  await login(page, users.student.email)
+  await page.goto('/app/evolucao')
+  await expect(page.getByText(/Peso: 68,5 → 64 kg/)).toBeVisible()
+  page.once('dialog', (dialog) => void dialog.accept())
+  await page.getByLabel(/Excluir foto/).click()
+  await expect(page.getByRole('img', { name: 'Frente' })).toHaveCount(0)
+  await logout(page)
+
+  await login(page, users.trainer.email)
+  await page.goto('/app/alunos')
+  await page.getByRole('link', { name: /Ana Aluna/ }).click()
+  await expect(page.getByText('Nenhuma foto enviada ainda.')).toBeVisible()
 })

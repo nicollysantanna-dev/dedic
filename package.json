@@ -41,6 +41,7 @@
     "react-dom": "latest",
     "react-hook-form": "latest",
     "react-router-dom": "latest",
+    "recharts": "^3.10.1",
     "tailwind-merge": "latest",
     "zod": "latest"
   },

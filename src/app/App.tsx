@@ -31,6 +31,11 @@ const StudentCreditsPage = lazy(() =>
     default: module.StudentCreditsPage,
   })),
 )
+const StudentProgressPage = lazy(() =>
+  import('@/features/progress/StudentProgressPage').then((module) => ({
+    default: module.StudentProgressPage,
+  })),
+)
 const StudentTrainerPage = lazy(() =>
   import('@/features/students/StudentTrainerPage').then((module) => ({
     default: module.StudentTrainerPage,
@@ -97,6 +102,7 @@ export function App() {
                 <Route path="/app/alunos" element={<StudentsPage />} />
                 <Route path="/app/creditos" element={<StudentCreditsPage />} />
                 <Route path="/app/personal" element={<StudentTrainerPage />} />
+                <Route path="/app/evolucao" element={<StudentProgressPage />} />
                 <Route
                   path="/app/pacotes"
                   element={<Navigate to="/app/creditos" replace />}

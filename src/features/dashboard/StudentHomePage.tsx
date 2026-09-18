@@ -8,6 +8,7 @@ import {
   CircleDollarSign,
   Clock3,
   CreditCard,
+  TrendingUp,
   Target,
   UserRound,
 } from 'lucide-react'
@@ -312,6 +313,7 @@ export function StudentHomePage() {
                     icon={CircleDollarSign}
                     label="Pagamentos"
                   />
+                  <Shortcut to="/app/evolucao" icon={TrendingUp} label="Minha evolução" />
                   <Shortcut to="/app/personal" icon={UserRound} label="Meu personal" />
                 </div>
               </div>

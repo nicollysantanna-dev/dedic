@@ -2,13 +2,11 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   ArrowLeft,
   CalendarDays,
-  Camera,
   CircleDollarSign,
   Dumbbell,
   LoaderCircle,
   PackagePlus,
   Plus,
-  Scale,
   Target,
   X,
 } from 'lucide-react'
@@ -18,6 +16,7 @@ import { Link, Navigate, useNavigate, useParams } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { useAuth } from '@/features/auth/auth-context'
 import { creditAdjustmentSchema, packageSchema } from '@/features/packages/schemas'
+import { ProgressSection } from '@/features/progress/ProgressSection'
 import { buildStudentOverviews } from '@/features/students/student-overview'
 import { appointmentKeys } from '@/features/appointments/keys'
 import { creditKeys } from '@/features/credits/keys'
@@ -221,21 +220,6 @@ export function StudentProfilePage() {
               </div>
 
               <div className="space-y-3">
-                <ComingSoonCard
-                  icon={Scale}
-                  title="Peso e medidas"
-                  description="A evolução corporal será adicionada no próximo incremento."
-                />
-                <ComingSoonCard
-                  icon={Camera}
-                  title="Fotos comparativas"
-                  description="Área privada entre aluno e personal, com exclusão pelo aluno."
-                />
-                <ComingSoonCard
-                  icon={Dumbbell}
-                  title="Treinos Hevy"
-                  description="Aparecerão aqui quando a integração opcional estiver conectada."
-                />
                 <div className="rounded-[1.25rem] border border-white/10 bg-white/5 p-5">
                   <h3 className="font-bold">Encerrar vínculo</h3>
                   <p className="mt-2 text-sm leading-6 text-slate-400">
@@ -287,6 +271,15 @@ export function StudentProfilePage() {
                   )}
                 </div>
               </div>
+            </section>
+
+            <section className="mt-5">
+              <h2 className="mb-3 text-lg font-bold">Evolução física</h2>
+              <ProgressSection
+                studentId={student.data.relationship.student_id}
+                viewerId={trainerId}
+                viewerRole="trainer"
+              />
             </section>
 
             {isCreditManagerOpen && (
@@ -639,24 +632,6 @@ function SummaryCard({
       <Icon className="text-blue-600" size={19} />
       <p className="mt-4 text-xs text-slate-500">{label}</p>
       <p className="mt-1 font-bold">{value}</p>
-    </div>
-  )
-}
-
-function ComingSoonCard({
-  icon: Icon,
-  title,
-  description,
-}: {
-  icon: typeof CalendarDays
-  title: string
-  description: string
-}) {
-  return (
-    <div className="rounded-[1.25rem] border border-white/10 bg-white/5 p-5">
-      <Icon className="text-blue-400" size={20} />
-      <h2 className="mt-3 font-bold">{title}</h2>
-      <p className="mt-1 text-sm leading-6 text-slate-400">{description}</p>
     </div>
   )
 }

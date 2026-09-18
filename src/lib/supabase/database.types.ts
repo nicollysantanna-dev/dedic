@@ -605,6 +605,156 @@ export type Database = {
         }
         Relationships: []
       }
+      progress_entries: {
+        Row: {
+          created_at: string
+          id: string
+          measurements: Json
+          note: string | null
+          recorded_by: string
+          recorded_on: string
+          student_id: string
+          weight_kg: number | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          measurements?: Json
+          note?: string | null
+          recorded_by: string
+          recorded_on: string
+          student_id: string
+          weight_kg?: number | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          measurements?: Json
+          note?: string | null
+          recorded_by?: string
+          recorded_on?: string
+          student_id?: string
+          weight_kg?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'progress_entries_recorded_by_fkey'
+            columns: ['recorded_by']
+            isOneToOne: false
+            referencedRelation: 'profiles'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'progress_entries_student_id_fkey'
+            columns: ['student_id']
+            isOneToOne: false
+            referencedRelation: 'profiles'
+            referencedColumns: ['id']
+          },
+        ]
+      }
+      progress_photos: {
+        Row: {
+          created_at: string
+          deleted_at: string | null
+          id: string
+          position: Database['public']['Enums']['photo_position']
+          storage_path: string
+          student_id: string
+          taken_on: string
+        }
+        Insert: {
+          created_at?: string
+          deleted_at?: string | null
+          id?: string
+          position: Database['public']['Enums']['photo_position']
+          storage_path: string
+          student_id: string
+          taken_on: string
+        }
+        Update: {
+          created_at?: string
+          deleted_at?: string | null
+          id?: string
+          position?: Database['public']['Enums']['photo_position']
+          storage_path?: string
+          student_id?: string
+          taken_on?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'progress_photos_student_id_fkey'
+            columns: ['student_id']
+            isOneToOne: false
+            referencedRelation: 'profiles'
+            referencedColumns: ['id']
+          },
+        ]
+      }
+      student_goals: {
+        Row: {
+          created_at: string
+          created_by: string
+          id: string
+          initial_value: number
+          kind: Database['public']['Enums']['goal_kind']
+          status: Database['public']['Enums']['goal_status']
+          student_id: string
+          target_date: string
+          target_value: number
+          trainer_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          id?: string
+          initial_value: number
+          kind: Database['public']['Enums']['goal_kind']
+          status?: Database['public']['Enums']['goal_status']
+          student_id: string
+          target_date: string
+          target_value: number
+          trainer_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          id?: string
+          initial_value?: number
+          kind?: Database['public']['Enums']['goal_kind']
+          status?: Database['public']['Enums']['goal_status']
+          student_id?: string
+          target_date?: string
+          target_value?: number
+          trainer_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'student_goals_created_by_fkey'
+            columns: ['created_by']
+            isOneToOne: false
+            referencedRelation: 'profiles'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'student_goals_student_id_fkey'
+            columns: ['student_id']
+            isOneToOne: false
+            referencedRelation: 'profiles'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'student_goals_trainer_id_fkey'
+            columns: ['trainer_id']
+            isOneToOne: false
+            referencedRelation: 'profiles'
+            referencedColumns: ['id']
+          },
+        ]
+      }
       student_invitations: {
         Row: {
           accepted_at: string | null
@@ -969,6 +1119,24 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      delete_progress_photo: {
+        Args: { target_photo_id: string }
+        Returns: {
+          created_at: string
+          deleted_at: string | null
+          id: string
+          position: Database['public']['Enums']['photo_position']
+          storage_path: string
+          student_id: string
+          taken_on: string
+        }
+        SetofOptions: {
+          from: '*'
+          to: 'progress_photos'
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       end_relationship: {
         Args: { target_relationship_id: string }
         Returns: {
@@ -1003,6 +1171,10 @@ export type Database = {
       get_credit_balance: {
         Args: { target_student_id: string }
         Returns: number
+      }
+      is_active_trainer_of: {
+        Args: { target_student_id: string }
+        Returns: boolean
       }
       reschedule_appointment: {
         Args: {
@@ -1132,9 +1304,12 @@ export type Database = {
         | 'appointment_consumption'
         | 'cancellation_refund'
         | 'manual_adjustment'
+      goal_kind: 'weight' | 'attendance'
+      goal_status: 'active' | 'achieved' | 'abandoned'
       invitation_status: 'pending' | 'accepted' | 'declined' | 'expired' | 'cancelled'
       package_status: 'draft' | 'active' | 'exhausted' | 'expired' | 'cancelled'
       payment_status: 'pending' | 'paid' | 'overdue' | 'cancelled'
+      photo_position: 'front' | 'side' | 'back'
       relationship_status: 'pending' | 'active' | 'ended'
     }
     CompositeTypes: {
@@ -1285,9 +1460,12 @@ export const Constants = {
         'cancellation_refund',
         'manual_adjustment',
       ],
+      goal_kind: ['weight', 'attendance'],
+      goal_status: ['active', 'achieved', 'abandoned'],
       invitation_status: ['pending', 'accepted', 'declined', 'expired', 'cancelled'],
       package_status: ['draft', 'active', 'exhausted', 'expired', 'cancelled'],
       payment_status: ['pending', 'paid', 'overdue', 'cancelled'],
+      photo_position: ['front', 'side', 'back'],
       relationship_status: ['pending', 'active', 'ended'],
     },
   },
