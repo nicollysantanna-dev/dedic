@@ -1,7 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import {
   ArrowRight,
-  Bell,
   CalendarDays,
   CircleAlert,
   Clock3,
@@ -16,6 +15,7 @@ import { Link } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { getAppointmentStatusLabel } from '@/features/appointments/appointment-status'
 import { useAuth } from '@/features/auth/auth-context'
+import { buildFinancialSummary } from '@/features/payments/financial-summary'
 import { requireSupabase } from '@/lib/supabase/client'
 
 export function TrainerHomePage() {
@@ -61,7 +61,7 @@ export function TrainerHomePage() {
     queryFn: async () => {
       const { data, error } = await requireSupabase()
         .from('payments')
-        .select('amount_cents, status, due_on')
+        .select('student_id, amount_cents, status, due_on, paid_on')
         .eq('trainer_id', trainerId)
         .in('status', ['pending', 'overdue', 'paid'])
       if (error) throw error
@@ -71,9 +71,7 @@ export function TrainerHomePage() {
 
   const todayAppointments = appointments.data ?? []
   const pendingPayments = (payments.data ?? []).filter((item) => item.status !== 'paid')
-  const monthRevenue = (payments.data ?? [])
-    .filter((item) => item.status === 'paid')
-    .reduce((total, item) => total + item.amount_cents, 0)
+  const monthRevenue = buildFinancialSummary(payments.data ?? []).receivedCents
   const hasError = appointments.error || students.error || payments.error
 
   return (
@@ -83,28 +81,14 @@ export function TrainerHomePage() {
           <div>
             <p className="text-sm text-slate-400">{formatFullDate(new Date())}</p>
             <h1 className="mt-1 text-2xl font-bold tracking-[-0.04em] sm:text-3xl">
-              Bom dia, {profile?.full_name.split(' ')[0]}.
+              {getGreeting()}, {profile?.full_name.split(' ')[0]}.
             </h1>
           </div>
-          <div className="flex items-center gap-2">
-            <button
-              className="relative grid size-11 place-items-center rounded-xl border border-white/8 bg-white/4 text-slate-300"
-              type="button"
-              aria-label="Notificações"
-            >
-              <Bell size={19} />
-              {pendingPayments.length > 0 && (
-                <span className="absolute -right-1 -top-1 grid size-5 place-items-center rounded-full bg-red-500 text-[0.65rem] font-bold text-white">
-                  {Math.min(pendingPayments.length, 9)}
-                </span>
-              )}
-            </button>
-            <Button asChild className="hidden sm:inline-flex">
-              <Link to="/app/criar-aula">
-                <Plus size={17} /> Nova aula
-              </Link>
-            </Button>
-          </div>
+          <Button asChild>
+            <Link to="/app/agenda?novo=1">
+              <Plus size={17} /> Nova aula
+            </Link>
+          </Button>
         </header>
 
         {hasError && (
@@ -328,4 +312,11 @@ function formatMoney(value: number) {
     currency: 'BRL',
     maximumFractionDigits: 0,
   }).format(value / 100)
+}
+
+function getGreeting(now = new Date()) {
+  const hour = now.getHours()
+  if (hour < 12) return 'Bom dia'
+  if (hour < 18) return 'Boa tarde'
+  return 'Boa noite'
 }

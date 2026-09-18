@@ -1,4 +1,5 @@
-import { LogOut, ShieldCheck, UserRound } from 'lucide-react'
+import { CalendarClock, LogOut, ShieldCheck, UserRound } from 'lucide-react'
+import { Link } from 'react-router-dom'
 
 import { Button } from '@/components/ui/button'
 import { useAuth } from '@/features/auth/auth-context'
@@ -29,6 +30,19 @@ export function AccountPage() {
           </div>
         </section>
         <section className="mt-5 grid gap-5 sm:grid-cols-2">
+          {profile?.role === 'trainer' && (
+            <div className="rounded-[1.5rem] bg-white p-6 text-slate-950">
+              <CalendarClock className="text-[var(--brand)]" />
+              <h2 className="mt-4 font-bold">Disponibilidade e bloqueios</h2>
+              <p className="mt-2 text-sm leading-6 text-slate-500">
+                Defina os dias e horários em que seus alunos podem agendar e bloqueie
+                períodos específicos.
+              </p>
+              <Button asChild className="mt-5" variant="outline">
+                <Link to="/app/disponibilidade">Gerenciar horários</Link>
+              </Button>
+            </div>
+          )}
           <div className="rounded-[1.5rem] bg-white p-6 text-slate-950">
             <ShieldCheck className="text-[var(--brand)]" />
             <h2 className="mt-4 font-bold">Segurança e acesso</h2>

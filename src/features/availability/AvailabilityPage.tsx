@@ -23,6 +23,10 @@ import { requireSupabase } from '@/lib/supabase/client'
 export function AvailabilityPage() {
   const { profile } = useAuth()
   const queryClient = useQueryClient()
+  const invalidateAgenda = () => {
+    void queryClient.invalidateQueries({ queryKey: ['agenda-scheduler-slots'] })
+    void queryClient.invalidateQueries({ queryKey: ['agenda-scheduler-blocks'] })
+  }
   const trainerId = profile?.id ?? ''
 
   const ruleForm = useForm<AvailabilityRuleValues>({
@@ -77,6 +81,7 @@ export function AvailabilityPage() {
     },
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ['availability-rules', trainerId] })
+      invalidateAgenda()
     },
   })
 
@@ -90,6 +95,7 @@ export function AvailabilityPage() {
     },
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ['availability-rules', trainerId] })
+      invalidateAgenda()
     },
   })
 
@@ -110,6 +116,7 @@ export function AvailabilityPage() {
       void queryClient.invalidateQueries({
         queryKey: ['availability-exceptions', trainerId],
       })
+      invalidateAgenda()
     },
   })
 
@@ -125,6 +132,7 @@ export function AvailabilityPage() {
       void queryClient.invalidateQueries({
         queryKey: ['availability-exceptions', trainerId],
       })
+      invalidateAgenda()
     },
   })
 

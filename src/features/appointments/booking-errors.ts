@@ -1,4 +1,12 @@
-export function getBookingError(error: Error) {
+export type BookingOperation = 'book' | 'reschedule' | 'cancel'
+
+const fallbackMessages: Record<BookingOperation, string> = {
+  book: 'Não foi possível agendar a aula. Tente novamente.',
+  reschedule: 'Não foi possível remarcar a aula. Tente novamente.',
+  cancel: 'Não foi possível cancelar esta aula. Tente novamente.',
+}
+
+export function getBookingError(error: Error, operation: BookingOperation = 'book') {
   if (error.message.includes('ACTIVE_PACKAGE_REQUIRED')) {
     return 'Você precisa de um pacote ativo para agendar.'
   }
@@ -23,5 +31,8 @@ export function getBookingError(error: Error) {
   if (error.message.includes('SAME_DAY_APPOINTMENT_LOCKED')) {
     return 'No dia da aula não é mais possível cancelar ou remarcar.'
   }
-  return 'Não foi possível agendar a aula. Tente novamente.'
+  if (error.message.includes('APPOINTMENT_CANNOT_BE_CANCELLED')) {
+    return 'Esta aula não pode mais ser cancelada.'
+  }
+  return fallbackMessages[operation]
 }

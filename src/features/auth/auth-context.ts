@@ -6,6 +6,7 @@ import type { Profile } from '@/features/auth/types'
 export type AuthState = {
   session: Session | null
   profile: Profile | null
+  profileError: boolean
   isLoading: boolean
   invitationClaimStatus: 'idle' | 'claiming' | 'success' | 'error'
   refreshProfile: () => Promise<void>

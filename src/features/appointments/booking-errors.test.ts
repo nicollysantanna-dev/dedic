@@ -31,3 +31,23 @@ describe('booking errors', () => {
     )
   })
 })
+
+describe('booking errors por operação', () => {
+  it('usa mensagem genérica adequada ao cancelamento', () => {
+    expect(getBookingError(new Error('boom'), 'cancel')).toBe(
+      'Não foi possível cancelar esta aula. Tente novamente.',
+    )
+  })
+
+  it('usa mensagem genérica adequada à remarcação', () => {
+    expect(getBookingError(new Error('boom'), 'reschedule')).toBe(
+      'Não foi possível remarcar a aula. Tente novamente.',
+    )
+  })
+
+  it('explica a trava de mesmo dia no cancelamento', () => {
+    expect(getBookingError(new Error('SAME_DAY_APPOINTMENT_LOCKED'), 'cancel')).toBe(
+      'No dia da aula não é mais possível cancelar ou remarcar.',
+    )
+  })
+})

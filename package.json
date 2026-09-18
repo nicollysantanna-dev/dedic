@@ -36,12 +36,10 @@
     "lucide-react": "latest",
     "motion": "^13.1.1",
     "react": "latest",
-    "react-day-picker": "^10.0.1",
     "react-dom": "latest",
     "react-hook-form": "latest",
     "react-router-dom": "latest",
     "tailwind-merge": "latest",
-    "temporal-polyfill": "^1.0.5",
     "zod": "latest"
   },
   "devDependencies": {

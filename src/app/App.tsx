@@ -102,10 +102,6 @@ export function App() {
               />
               <Route path="/app/pacotes" element={<PackagesPage />} />
               <Route path="/app/agenda" element={<AppointmentsPage />} />
-              <Route
-                path="/app/criar-aula"
-                element={<Navigate to="/app/agenda" replace />}
-              />
               <Route path="/app/remarcar/:appointmentId" element={<ReschedulePage />} />
             </Route>
           </Route>

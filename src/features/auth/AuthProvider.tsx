@@ -22,6 +22,14 @@ async function loadProfile(userId: string) {
   return data
 }
 
+async function loadProfileSafely(userId: string) {
+  try {
+    return { profile: await loadProfile(userId), failed: false }
+  } catch {
+    return { profile: null, failed: true }
+  }
+}
+
 async function claimPendingInvitation() {
   if (!supabase) return 'idle' as const
   const token = window.localStorage.getItem(invitationStorageKey)
@@ -42,12 +50,15 @@ export function AuthProvider({ children }: PropsWithChildren) {
   const [session, setSession] = useState<Session | null>(null)
   const [profile, setProfile] = useState<Profile | null>(null)
   const [isLoading, setIsLoading] = useState(Boolean(supabase))
+  const [profileError, setProfileError] = useState(false)
   const [invitationClaimStatus, setInvitationClaimStatus] =
     useState<AuthState['invitationClaimStatus']>('idle')
 
   const refreshProfile = useCallback(async () => {
     if (!session?.user) return
-    setProfile(await loadProfile(session.user.id))
+    const result = await loadProfileSafely(session.user.id)
+    setProfile(result.profile)
+    setProfileError(result.failed)
   }, [session])
 
   const signOut = useCallback(async () => {
@@ -63,6 +74,18 @@ export function AuthProvider({ children }: PropsWithChildren) {
     let active = true
     let pendingClaim: ReturnType<typeof claimPendingInvitation> | null = null
 
+    const applyProfile = async (userId: string | undefined) => {
+      if (!userId) {
+        setProfile(null)
+        setProfileError(false)
+        return
+      }
+      const result = await loadProfileSafely(userId)
+      if (!active) return
+      setProfile(result.profile)
+      setProfileError(result.failed)
+    }
+
     const claimInvitation = async () => {
       setInvitationClaimStatus('claiming')
       pendingClaim ??= claimPendingInvitation()
@@ -76,7 +99,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
 
       setSession(data.session)
       if (data.session) await claimInvitation()
-      setProfile(data.session ? await loadProfile(data.session.user.id) : null)
+      await applyProfile(data.session?.user.id)
       setIsLoading(false)
     })
 
@@ -87,7 +110,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
         void (async () => {
           if (nextSession) await claimInvitation()
           else setInvitationClaimStatus('idle')
-          setProfile(nextSession ? await loadProfile(nextSession.user.id) : null)
+          await applyProfile(nextSession?.user.id)
           setIsLoading(false)
         })()
       }, 0)
@@ -103,12 +126,21 @@ export function AuthProvider({ children }: PropsWithChildren) {
     () => ({
       session,
       profile,
+      profileError,
       isLoading,
       invitationClaimStatus,
       refreshProfile,
       signOut,
     }),
-    [session, profile, isLoading, invitationClaimStatus, refreshProfile, signOut],
+    [
+      session,
+      profile,
+      profileError,
+      isLoading,
+      invitationClaimStatus,
+      refreshProfile,
+      signOut,
+    ],
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

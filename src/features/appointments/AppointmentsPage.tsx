@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
+  CalendarClock,
   CalendarPlus,
   CheckCircle2,
   Clock3,
@@ -11,6 +12,7 @@ import {
   XCircle,
 } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
+import { Link, useSearchParams } from 'react-router-dom'
 import { AnimatePresence, motion } from 'motion/react'
 
 import { Button } from '@/components/ui/button'
@@ -25,21 +27,30 @@ import { getBookingError } from '@/features/appointments/booking-errors'
 import { InteractiveAgendaCalendar } from '@/features/appointments/InteractiveAgendaCalendar'
 import { useAuth } from '@/features/auth/auth-context'
 import { requireSupabase } from '@/lib/supabase/client'
+import { cn } from '@/lib/utils'
 
 type AgendaPanel = 'create' | 'appointment' | 'reschedule' | 'cancel' | null
 
 export function AppointmentsPage() {
   const { profile } = useAuth()
   const queryClient = useQueryClient()
+  const [searchParams, setSearchParams] = useSearchParams()
+  const opensCreatePanel = profile?.role === 'trainer' && searchParams.get('novo') === '1'
   const [cancellationNote, setCancellationNote] = useState('')
   const [outcomeTargetId, setOutcomeTargetId] = useState<string | null>(null)
   const [correctionTargetId, setCorrectionTargetId] = useState<string | null>(null)
   const [correctionReason, setCorrectionReason] = useState('')
-  const [panel, setPanel] = useState<AgendaPanel>(null)
+  const [panel, setPanel] = useState<AgendaPanel>(opensCreatePanel ? 'create' : null)
   const [selectedAppointmentId, setSelectedAppointmentId] = useState<string | null>(null)
   const [bookingStudentId, setBookingStudentId] = useState('')
-  const [bookingStart, setBookingStart] = useState('')
-  const [toast, setToast] = useState<string | null>(null)
+  const [bookingStart, setBookingStart] = useState(() =>
+    opensCreatePanel ? toLocalDateTimeInput(nextHalfHour()) : '',
+  )
+  const [toast, setToast] = useState<{ text: string; tone: 'success' | 'error' } | null>(
+    null,
+  )
+  const notify = (text: string, tone: 'success' | 'error' = 'success') =>
+    setToast({ text, tone })
   const [calendarRange, setCalendarRange] = useState(() => initialCalendarRange())
   const userId = profile?.id ?? ''
   const isTrainer = profile?.role === 'trainer'
@@ -160,6 +171,23 @@ export function AppointmentsPage() {
     },
   })
 
+  const openCreatePanel = () => {
+    setBookingStudentId('')
+    setBookingStart(toLocalDateTimeInput(nextHalfHour()))
+    setPanel('create')
+  }
+
+  useEffect(() => {
+    if (!opensCreatePanel) return
+    setSearchParams(
+      (params) => {
+        params.delete('novo')
+        return params
+      },
+      { replace: true },
+    )
+  }, [opensCreatePanel, setSearchParams])
+
   useEffect(() => {
     if (!toast) return
     const timeout = window.setTimeout(() => setToast(null), 4200)
@@ -198,7 +226,7 @@ export function AppointmentsPage() {
       const student = students.data?.find(
         (item) => item.student_id === effectiveBookingStudentId,
       )
-      setToast(
+      notify(
         `Aula agendada${student?.profiles?.full_name ? ` com ${student.profiles.full_name}` : ''}.`,
       )
       setPanel(null)
@@ -223,7 +251,7 @@ export function AppointmentsPage() {
       if (error) throw error
     },
     onSuccess: (_data, variables) => {
-      setToast(`Aula remarcada para ${formatDateTime(variables.startsAt)}.`)
+      notify(`Aula remarcada para ${formatDateTime(variables.startsAt)}.`)
       setPanel(null)
       setSelectedAppointmentId(null)
       refreshAgenda()
@@ -242,7 +270,7 @@ export function AppointmentsPage() {
       setCancellationNote('')
       setPanel(null)
       setSelectedAppointmentId(null)
-      setToast('Aula cancelada e crédito devolvido ao aluno.')
+      notify('Aula cancelada e crédito devolvido ao aluno.')
       refreshAgenda()
     },
   })
@@ -309,15 +337,20 @@ export function AppointmentsPage() {
             </h1>
           </div>
           {isTrainer && (
-            <Button
-              onClick={() => {
-                setBookingStudentId('')
-                setBookingStart(toLocalDateTimeInput(nextHalfHour()))
-                setPanel('create')
-              }}
-            >
-              <Plus size={17} /> Nova aula
-            </Button>
+            <div className="flex flex-wrap gap-2">
+              <Button
+                asChild
+                className="border-white/15 bg-white/5 text-white hover:bg-white/10"
+                variant="outline"
+              >
+                <Link to="/app/disponibilidade">
+                  <CalendarClock size={17} /> Disponibilidade e bloqueios
+                </Link>
+              </Button>
+              <Button onClick={openCreatePanel}>
+                <Plus size={17} /> Nova aula
+              </Button>
+            </div>
           )}
         </header>
 
@@ -376,10 +409,11 @@ export function AppointmentsPage() {
                 rescheduleAppointment.mutate(
                   { appointmentId, startsAt },
                   {
-                    onError: () => {
+                    onError: (error) => {
                       revert()
-                      setToast(
-                        'Não foi possível remarcar. O horário original foi mantido.',
+                      notify(
+                        `${getBookingError(error, 'reschedule')} O horário original foi mantido.`,
+                        'error',
                       )
                     },
                   },
@@ -657,7 +691,9 @@ export function AppointmentsPage() {
                   estiver ocupado, a aula original será mantida.
                 </p>
                 {rescheduleAppointment.error && (
-                  <PanelError text={getBookingError(rescheduleAppointment.error)} />
+                  <PanelError
+                    text={getBookingError(rescheduleAppointment.error, 'reschedule')}
+                  />
                 )}
                 <Button
                   className="w-full"
@@ -693,7 +729,7 @@ export function AppointmentsPage() {
                   O horário será liberado e o crédito será devolvido ao aluno.
                 </p>
                 {cancelAppointment.error && (
-                  <PanelError text="Não foi possível cancelar esta aula." />
+                  <PanelError text={getBookingError(cancelAppointment.error, 'cancel')} />
                 )}
                 <Button
                   className="w-full"
@@ -715,12 +751,15 @@ export function AppointmentsPage() {
         {toast && (
           <motion.div
             animate={{ opacity: 1, y: 0 }}
-            className="fixed bottom-24 left-4 right-4 z-[60] mx-auto max-w-md rounded-2xl bg-emerald-600 p-4 text-sm font-semibold text-white shadow-2xl lg:bottom-6"
+            className={cn(
+              'fixed bottom-24 left-4 right-4 z-[60] mx-auto max-w-md rounded-2xl p-4 text-sm font-semibold text-white shadow-2xl lg:bottom-6',
+              toast.tone === 'error' ? 'bg-red-600' : 'bg-emerald-600',
+            )}
             exit={{ opacity: 0, y: 12 }}
             initial={{ opacity: 0, y: 12 }}
-            role="status"
+            role={toast.tone === 'error' ? 'alert' : 'status'}
           >
-            {toast}
+            {toast.text}
           </motion.div>
         )}
       </AnimatePresence>
