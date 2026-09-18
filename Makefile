@@ -2,7 +2,7 @@
 
 NPM ?= npm
 
-.PHONY: help install ci dev preview format format-check lint typecheck test test-watch coverage e2e build validate check supabase-start supabase-status supabase-stop supabase-reset
+.PHONY: help install ci dev preview format format-check lint typecheck test test-watch coverage e2e test-db build validate check supabase-start supabase-status supabase-stop supabase-reset
 
 help: ## Lista os comandos disponíveis
 	@awk 'BEGIN {FS = ":.*## "; printf "Uso: make <comando>\n\nComandos:\n"} /^[a-zA-Z0-9_-]+:.*## / {printf "  %-18s %s\n", $$1, $$2}' $(MAKEFILE_LIST)
@@ -50,6 +50,9 @@ validate: ## Executa o quality gate completo
 	$(NPM) run validate
 
 check: validate ## Alias curto para o quality gate
+
+test-db: ## Executa os testes pgTAP no Supabase local
+	$(NPM) run test:db
 
 supabase-start: ## Inicia o Supabase local
 	$(NPM) run supabase:start
