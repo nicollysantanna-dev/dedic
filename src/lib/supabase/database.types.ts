@@ -2,75 +2,189 @@ export type Json =
   string | number | boolean | null | { [key: string]: Json | undefined } | Json[]
 
 export type Database = {
+  graphql_public: {
+    Tables: {
+      [_ in never]: never
+    }
+    Views: {
+      [_ in never]: never
+    }
+    Functions: {
+      graphql: {
+        Args: {
+          extensions?: Json
+          operationName?: string
+          query?: string
+          variables?: Json
+        }
+        Returns: Json
+      }
+    }
+    Enums: {
+      [_ in never]: never
+    }
+    CompositeTypes: {
+      [_ in never]: never
+    }
+  }
   public: {
     Tables: {
-      profiles: {
+      appointment_events: {
         Row: {
-          id: string
-          full_name: string
-          phone: string | null
-          role: Database['public']['Enums']['app_role']
-          default_lesson_duration_minutes: number | null
-          timezone: string
+          actor_id: string
+          appointment_id: string
           created_at: string
-          updated_at: string
-        }
-        Insert: {
+          details: Json
+          event_type: Database['public']['Enums']['appointment_event_type']
           id: string
-          full_name: string
-          phone?: string | null
-          role: Database['public']['Enums']['app_role']
-          default_lesson_duration_minutes?: number | null
-          timezone?: string
-          created_at?: string
-          updated_at?: string
-        }
-        Update: {
-          full_name?: string
-          phone?: string | null
-          default_lesson_duration_minutes?: number | null
-          timezone?: string
-          updated_at?: string
-        }
-        Relationships: []
-      }
-      availability_rules: {
-        Row: {
-          id: string
+          student_id: string
           trainer_id: string
-          iso_weekday: number
-          start_time: string
-          end_time: string
-          active: boolean
-          valid_from: string
-          valid_until: string | null
-          created_at: string
-          updated_at: string
         }
         Insert: {
+          actor_id: string
+          appointment_id: string
+          created_at?: string
+          details?: Json
+          event_type: Database['public']['Enums']['appointment_event_type']
           id?: string
+          student_id: string
           trainer_id: string
-          iso_weekday: number
-          start_time: string
-          end_time: string
-          active?: boolean
-          valid_from?: string
-          valid_until?: string | null
+        }
+        Update: {
+          actor_id?: string
+          appointment_id?: string
           created_at?: string
+          details?: Json
+          event_type?: Database['public']['Enums']['appointment_event_type']
+          id?: string
+          student_id?: string
+          trainer_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'appointment_events_actor_id_fkey'
+            columns: ['actor_id']
+            isOneToOne: false
+            referencedRelation: 'profiles'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'appointment_events_appointment_id_fkey'
+            columns: ['appointment_id']
+            isOneToOne: false
+            referencedRelation: 'appointments'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'appointment_events_student_id_fkey'
+            columns: ['student_id']
+            isOneToOne: false
+            referencedRelation: 'profiles'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'appointment_events_trainer_id_fkey'
+            columns: ['trainer_id']
+            isOneToOne: false
+            referencedRelation: 'profiles'
+            referencedColumns: ['id']
+          },
+        ]
+      }
+      appointments: {
+        Row: {
+          booking_request_id: string
+          cancelled_at: string | null
+          created_at: string
+          created_by: string
+          ends_at: string
+          id: string
+          package_id: string
+          relationship_id: string
+          rescheduled_from_id: string | null
+          starts_at: string
+          status: Database['public']['Enums']['appointment_status']
+          student_id: string
+          trainer_id: string
+          updated_at: string
+        }
+        Insert: {
+          booking_request_id: string
+          cancelled_at?: string | null
+          created_at?: string
+          created_by: string
+          ends_at: string
+          id?: string
+          package_id: string
+          relationship_id: string
+          rescheduled_from_id?: string | null
+          starts_at: string
+          status?: Database['public']['Enums']['appointment_status']
+          student_id: string
+          trainer_id: string
           updated_at?: string
         }
         Update: {
-          iso_weekday?: number
-          start_time?: string
-          end_time?: string
-          active?: boolean
-          valid_from?: string
-          valid_until?: string | null
+          booking_request_id?: string
+          cancelled_at?: string | null
+          created_at?: string
+          created_by?: string
+          ends_at?: string
+          id?: string
+          package_id?: string
+          relationship_id?: string
+          rescheduled_from_id?: string | null
+          starts_at?: string
+          status?: Database['public']['Enums']['appointment_status']
+          student_id?: string
+          trainer_id?: string
           updated_at?: string
         }
         Relationships: [
           {
-            foreignKeyName: 'availability_rules_trainer_id_fkey'
+            foreignKeyName: 'appointment_package_parties'
+            columns: ['package_id', 'trainer_id', 'student_id']
+            isOneToOne: false
+            referencedRelation: 'lesson_packages'
+            referencedColumns: ['id', 'trainer_id', 'student_id']
+          },
+          {
+            foreignKeyName: 'appointment_relationship_parties'
+            columns: ['relationship_id', 'trainer_id', 'student_id']
+            isOneToOne: false
+            referencedRelation: 'trainer_student_relationships'
+            referencedColumns: ['id', 'trainer_id', 'student_id']
+          },
+          {
+            foreignKeyName: 'appointments_created_by_fkey'
+            columns: ['created_by']
+            isOneToOne: false
+            referencedRelation: 'profiles'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'appointments_package_id_fkey'
+            columns: ['package_id']
+            isOneToOne: false
+            referencedRelation: 'lesson_packages'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'appointments_rescheduled_from_id_fkey'
+            columns: ['rescheduled_from_id']
+            isOneToOne: false
+            referencedRelation: 'appointments'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'appointments_student_id_fkey'
+            columns: ['student_id']
+            isOneToOne: false
+            referencedRelation: 'profiles'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'appointments_trainer_id_fkey'
             columns: ['trainer_id']
             isOneToOne: false
             referencedRelation: 'profiles'
@@ -80,27 +194,30 @@ export type Database = {
       }
       availability_exceptions: {
         Row: {
-          id: string
-          trainer_id: string
-          starts_at: string
-          ends_at: string
-          reason: string | null
           created_at: string
+          ends_at: string
+          id: string
+          reason: string | null
+          starts_at: string
+          trainer_id: string
           updated_at: string
         }
         Insert: {
-          id?: string
-          trainer_id: string
-          starts_at: string
-          ends_at: string
-          reason?: string | null
           created_at?: string
+          ends_at: string
+          id?: string
+          reason?: string | null
+          starts_at: string
+          trainer_id: string
           updated_at?: string
         }
         Update: {
-          starts_at?: string
+          created_at?: string
           ends_at?: string
+          id?: string
           reason?: string | null
+          starts_at?: string
+          trainer_id?: string
           updated_at?: string
         }
         Relationships: [
@@ -113,44 +230,182 @@ export type Database = {
           },
         ]
       }
+      availability_rules: {
+        Row: {
+          active: boolean
+          created_at: string
+          end_time: string
+          id: string
+          iso_weekday: number
+          start_time: string
+          trainer_id: string
+          updated_at: string
+          valid_from: string
+          valid_until: string | null
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          end_time: string
+          id?: string
+          iso_weekday: number
+          start_time: string
+          trainer_id: string
+          updated_at?: string
+          valid_from?: string
+          valid_until?: string | null
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          end_time?: string
+          id?: string
+          iso_weekday?: number
+          start_time?: string
+          trainer_id?: string
+          updated_at?: string
+          valid_from?: string
+          valid_until?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'availability_rules_trainer_id_fkey'
+            columns: ['trainer_id']
+            isOneToOne: false
+            referencedRelation: 'profiles'
+            referencedColumns: ['id']
+          },
+        ]
+      }
+      credit_transactions: {
+        Row: {
+          amount: number
+          appointment_id: string | null
+          created_at: string
+          created_by: string
+          id: string
+          package_id: string | null
+          reason: string | null
+          student_id: string
+          trainer_id: string
+          transaction_type: Database['public']['Enums']['credit_transaction_type']
+        }
+        Insert: {
+          amount: number
+          appointment_id?: string | null
+          created_at?: string
+          created_by: string
+          id?: string
+          package_id?: string | null
+          reason?: string | null
+          student_id: string
+          trainer_id: string
+          transaction_type: Database['public']['Enums']['credit_transaction_type']
+        }
+        Update: {
+          amount?: number
+          appointment_id?: string | null
+          created_at?: string
+          created_by?: string
+          id?: string
+          package_id?: string | null
+          reason?: string | null
+          student_id?: string
+          trainer_id?: string
+          transaction_type?: Database['public']['Enums']['credit_transaction_type']
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'credit_transactions_appointment_id_fkey'
+            columns: ['appointment_id']
+            isOneToOne: false
+            referencedRelation: 'appointments'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'credit_transactions_created_by_fkey'
+            columns: ['created_by']
+            isOneToOne: false
+            referencedRelation: 'profiles'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'credit_transactions_package_id_fkey'
+            columns: ['package_id']
+            isOneToOne: false
+            referencedRelation: 'lesson_packages'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'credit_transactions_student_id_fkey'
+            columns: ['student_id']
+            isOneToOne: false
+            referencedRelation: 'profiles'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'credit_transactions_trainer_id_fkey'
+            columns: ['trainer_id']
+            isOneToOne: false
+            referencedRelation: 'profiles'
+            referencedColumns: ['id']
+          },
+        ]
+      }
       lesson_packages: {
         Row: {
-          id: string
-          trainer_id: string
-          student_id: string
-          relationship_id: string
-          lesson_count: number
-          price_cents: number
-          starts_on: string
-          expires_on: string
-          status: Database['public']['Enums']['package_status']
           activated_at: string | null
           cancelled_at: string | null
           created_at: string
+          expires_on: string
+          id: string
+          lesson_count: number
+          price_cents: number
+          relationship_id: string
+          starts_on: string
+          status: Database['public']['Enums']['package_status']
+          student_id: string
+          trainer_id: string
           updated_at: string
         }
         Insert: {
-          id?: string
-          trainer_id: string
-          student_id: string
-          relationship_id: string
-          lesson_count: number
-          price_cents: number
-          starts_on: string
-          expires_on: string
-          status?: Database['public']['Enums']['package_status']
           activated_at?: string | null
           cancelled_at?: string | null
           created_at?: string
+          expires_on: string
+          id?: string
+          lesson_count: number
+          price_cents: number
+          relationship_id: string
+          starts_on: string
+          status?: Database['public']['Enums']['package_status']
+          student_id: string
+          trainer_id: string
           updated_at?: string
         }
         Update: {
-          status?: Database['public']['Enums']['package_status']
           activated_at?: string | null
           cancelled_at?: string | null
+          created_at?: string
+          expires_on?: string
+          id?: string
+          lesson_count?: number
+          price_cents?: number
+          relationship_id?: string
+          starts_on?: string
+          status?: Database['public']['Enums']['package_status']
+          student_id?: string
+          trainer_id?: string
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: 'lesson_package_relationship_parties'
+            columns: ['relationship_id', 'trainer_id', 'student_id']
+            isOneToOne: false
+            referencedRelation: 'trainer_student_relationships'
+            referencedColumns: ['id', 'trainer_id', 'student_id']
+          },
           {
             foreignKeyName: 'lesson_packages_relationship_id_fkey'
             columns: ['relationship_id']
@@ -174,133 +429,67 @@ export type Database = {
           },
         ]
       }
-      credit_transactions: {
-        Row: {
-          id: string
-          trainer_id: string
-          student_id: string
-          package_id: string | null
-          appointment_id: string | null
-          amount: number
-          transaction_type: Database['public']['Enums']['credit_transaction_type']
-          reason: string | null
-          created_by: string
-          created_at: string
-        }
-        Insert: {
-          id?: string
-          trainer_id: string
-          student_id: string
-          package_id?: string | null
-          appointment_id?: string | null
-          amount: number
-          transaction_type: Database['public']['Enums']['credit_transaction_type']
-          reason?: string | null
-          created_by: string
-          created_at?: string
-        }
-        Update: Record<never, never>
-        Relationships: [
-          {
-            foreignKeyName: 'credit_transactions_package_id_fkey'
-            columns: ['package_id']
-            isOneToOne: false
-            referencedRelation: 'lesson_packages'
-            referencedColumns: ['id']
-          },
-        ]
-      }
-      payments: {
-        Row: {
-          id: string
-          trainer_id: string
-          student_id: string
-          package_id: string
-          amount_cents: number
-          due_on: string
-          status: Database['public']['Enums']['payment_status']
-          paid_on: string | null
-          created_by: string
-          created_at: string
-          updated_at: string
-        }
-        Insert: Record<never, never>
-        Update: Record<never, never>
-        Relationships: []
-      }
       payment_events: {
         Row: {
-          id: string
-          payment_id: string
-          trainer_id: string
-          student_id: string
-          status: Database['public']['Enums']['payment_status']
-          amount_cents: number
-          due_on: string
-          paid_on: string | null
           actor_id: string
+          amount_cents: number
           created_at: string
-        }
-        Insert: Record<never, never>
-        Update: Record<never, never>
-        Relationships: []
-      }
-      appointments: {
-        Row: {
+          due_on: string
           id: string
-          trainer_id: string
+          paid_on: string | null
+          payment_id: string
+          status: Database['public']['Enums']['payment_status']
           student_id: string
-          relationship_id: string
-          package_id: string
-          starts_at: string
-          ends_at: string
-          status: Database['public']['Enums']['appointment_status']
-          booking_request_id: string
-          rescheduled_from_id: string | null
-          created_by: string
-          cancelled_at: string | null
-          created_at: string
-          updated_at: string
+          trainer_id: string
         }
         Insert: {
-          id?: string
-          trainer_id: string
-          student_id: string
-          relationship_id: string
-          package_id: string
-          starts_at: string
-          ends_at: string
-          status?: Database['public']['Enums']['appointment_status']
-          booking_request_id: string
-          rescheduled_from_id?: string | null
-          created_by: string
-          cancelled_at?: string | null
+          actor_id: string
+          amount_cents: number
           created_at?: string
-          updated_at?: string
+          due_on: string
+          id?: string
+          paid_on?: string | null
+          payment_id: string
+          status: Database['public']['Enums']['payment_status']
+          student_id: string
+          trainer_id: string
         }
         Update: {
-          status?: Database['public']['Enums']['appointment_status']
-          cancelled_at?: string | null
-          rescheduled_from_id?: string | null
-          updated_at?: string
+          actor_id?: string
+          amount_cents?: number
+          created_at?: string
+          due_on?: string
+          id?: string
+          paid_on?: string | null
+          payment_id?: string
+          status?: Database['public']['Enums']['payment_status']
+          student_id?: string
+          trainer_id?: string
         }
         Relationships: [
           {
-            foreignKeyName: 'appointments_package_id_fkey'
-            columns: ['package_id']
+            foreignKeyName: 'payment_events_actor_id_fkey'
+            columns: ['actor_id']
             isOneToOne: false
-            referencedRelation: 'lesson_packages'
+            referencedRelation: 'profiles'
             referencedColumns: ['id']
           },
           {
-            foreignKeyName: 'appointments_student_id_fkey'
+            foreignKeyName: 'payment_events_payment_id_fkey'
+            columns: ['payment_id']
+            isOneToOne: false
+            referencedRelation: 'payments'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'payment_events_student_id_fkey'
             columns: ['student_id']
             isOneToOne: false
             referencedRelation: 'profiles'
             referencedColumns: ['id']
           },
           {
-            foreignKeyName: 'appointments_trainer_id_fkey'
+            foreignKeyName: 'payment_events_trainer_id_fkey'
             columns: ['trainer_id']
             isOneToOne: false
             referencedRelation: 'profiles'
@@ -308,62 +497,200 @@ export type Database = {
           },
         ]
       }
-      appointment_events: {
+      payments: {
         Row: {
-          id: string
-          appointment_id: string
-          trainer_id: string
-          student_id: string
-          event_type: Database['public']['Enums']['appointment_event_type']
-          actor_id: string
-          details: Json
+          amount_cents: number
           created_at: string
+          created_by: string
+          due_on: string
+          id: string
+          package_id: string
+          paid_on: string | null
+          status: Database['public']['Enums']['payment_status']
+          student_id: string
+          trainer_id: string
+          updated_at: string
         }
         Insert: {
-          id?: string
-          appointment_id: string
-          trainer_id: string
-          student_id: string
-          event_type: Database['public']['Enums']['appointment_event_type']
-          actor_id: string
-          details?: Json
+          amount_cents: number
           created_at?: string
+          created_by: string
+          due_on: string
+          id: string
+          package_id: string
+          paid_on?: string | null
+          status?: Database['public']['Enums']['payment_status']
+          student_id: string
+          trainer_id: string
+          updated_at?: string
         }
-        Update: Record<never, never>
+        Update: {
+          amount_cents?: number
+          created_at?: string
+          created_by?: string
+          due_on?: string
+          id?: string
+          package_id?: string
+          paid_on?: string | null
+          status?: Database['public']['Enums']['payment_status']
+          student_id?: string
+          trainer_id?: string
+          updated_at?: string
+        }
         Relationships: [
           {
-            foreignKeyName: 'appointment_events_appointment_id_fkey'
-            columns: ['appointment_id']
+            foreignKeyName: 'payment_package_parties'
+            columns: ['package_id', 'trainer_id', 'student_id']
             isOneToOne: false
-            referencedRelation: 'appointments'
+            referencedRelation: 'lesson_packages'
+            referencedColumns: ['id', 'trainer_id', 'student_id']
+          },
+          {
+            foreignKeyName: 'payments_created_by_fkey'
+            columns: ['created_by']
+            isOneToOne: false
+            referencedRelation: 'profiles'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'payments_package_id_fkey'
+            columns: ['package_id']
+            isOneToOne: false
+            referencedRelation: 'lesson_packages'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'payments_student_id_fkey'
+            columns: ['student_id']
+            isOneToOne: false
+            referencedRelation: 'profiles'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'payments_trainer_id_fkey'
+            columns: ['trainer_id']
+            isOneToOne: false
+            referencedRelation: 'profiles'
+            referencedColumns: ['id']
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          default_lesson_duration_minutes: number | null
+          full_name: string
+          id: string
+          phone: string | null
+          role: Database['public']['Enums']['app_role']
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          default_lesson_duration_minutes?: number | null
+          full_name: string
+          id: string
+          phone?: string | null
+          role: Database['public']['Enums']['app_role']
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          default_lesson_duration_minutes?: number | null
+          full_name?: string
+          id?: string
+          phone?: string | null
+          role?: Database['public']['Enums']['app_role']
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      student_invitations: {
+        Row: {
+          accepted_at: string | null
+          accepted_by: string | null
+          created_at: string
+          expires_at: string
+          id: string
+          status: Database['public']['Enums']['invitation_status']
+          student_email: string | null
+          student_phone: string | null
+          token: string
+          trainer_id: string
+          updated_at: string
+        }
+        Insert: {
+          accepted_at?: string | null
+          accepted_by?: string | null
+          created_at?: string
+          expires_at?: string
+          id?: string
+          status?: Database['public']['Enums']['invitation_status']
+          student_email?: string | null
+          student_phone?: string | null
+          token?: string
+          trainer_id: string
+          updated_at?: string
+        }
+        Update: {
+          accepted_at?: string | null
+          accepted_by?: string | null
+          created_at?: string
+          expires_at?: string
+          id?: string
+          status?: Database['public']['Enums']['invitation_status']
+          student_email?: string | null
+          student_phone?: string | null
+          token?: string
+          trainer_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'student_invitations_accepted_by_fkey'
+            columns: ['accepted_by']
+            isOneToOne: false
+            referencedRelation: 'profiles'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'student_invitations_trainer_id_fkey'
+            columns: ['trainer_id']
+            isOneToOne: false
+            referencedRelation: 'profiles'
             referencedColumns: ['id']
           },
         ]
       }
       trainer_student_relationships: {
         Row: {
-          id: string
-          trainer_id: string
-          student_id: string
-          status: Database['public']['Enums']['relationship_status']
-          started_at: string | null
-          ended_at: string | null
           created_at: string
+          ended_at: string | null
+          id: string
+          started_at: string | null
+          status: Database['public']['Enums']['relationship_status']
+          student_id: string
+          trainer_id: string
           updated_at: string
         }
         Insert: {
-          id?: string
-          trainer_id: string
-          student_id: string
-          status?: Database['public']['Enums']['relationship_status']
-          started_at?: string | null
-          ended_at?: string | null
           created_at?: string
+          ended_at?: string | null
+          id?: string
+          started_at?: string | null
+          status?: Database['public']['Enums']['relationship_status']
+          student_id: string
+          trainer_id: string
           updated_at?: string
         }
         Update: {
-          status?: Database['public']['Enums']['relationship_status']
+          created_at?: string
           ended_at?: string | null
+          id?: string
+          started_at?: string | null
+          status?: Database['public']['Enums']['relationship_status']
+          student_id?: string
+          trainer_id?: string
           updated_at?: string
         }
         Relationships: [
@@ -383,159 +710,415 @@ export type Database = {
           },
         ]
       }
-      student_invitations: {
-        Row: {
-          id: string
-          token: string
-          trainer_id: string
-          student_email: string | null
-          student_phone: string | null
-          status: Database['public']['Enums']['invitation_status']
-          expires_at: string
-          accepted_by: string | null
-          accepted_at: string | null
-          created_at: string
-          updated_at: string
-        }
-        Insert: {
-          id?: string
-          token?: string
-          trainer_id: string
-          student_email?: string | null
-          student_phone?: string | null
-          status?: Database['public']['Enums']['invitation_status']
-          expires_at?: string
-          accepted_by?: string | null
-          accepted_at?: string | null
-          created_at?: string
-          updated_at?: string
-        }
-        Update: {
-          student_email?: string | null
-          student_phone?: string | null
-          status?: Database['public']['Enums']['invitation_status']
-          accepted_by?: string | null
-          accepted_at?: string | null
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: 'student_invitations_trainer_id_fkey'
-            columns: ['trainer_id']
-            isOneToOne: false
-            referencedRelation: 'profiles'
-            referencedColumns: ['id']
-          },
-        ]
-      }
     }
-    Views: Record<never, never>
+    Views: {
+      [_ in never]: never
+    }
     Functions: {
-      accept_student_invitation: {
-        Args: { invitation_token: string }
-        Returns: Database['public']['Tables']['trainer_student_relationships']['Row']
-      }
-      claim_student_invitation: {
-        Args: { invitation_token?: string }
-        Returns: Database['public']['Tables']['trainer_student_relationships']['Row']
-      }
-      get_available_slots: {
-        Args: {
-          target_trainer_id: string
-          range_start: string
-          range_end: string
-        }
-        Returns: Array<{
-          slot_start: string
-          slot_end: string
-        }>
-      }
       activate_lesson_package: {
         Args: { target_package_id: string }
-        Returns: Database['public']['Tables']['lesson_packages']['Row']
+        Returns: {
+          activated_at: string | null
+          cancelled_at: string | null
+          created_at: string
+          expires_on: string
+          id: string
+          lesson_count: number
+          price_cents: number
+          relationship_id: string
+          starts_on: string
+          status: Database['public']['Enums']['package_status']
+          student_id: string
+          trainer_id: string
+          updated_at: string
+        }
+        SetofOptions: {
+          from: '*'
+          to: 'lesson_packages'
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
       adjust_student_credits: {
         Args: {
-          target_student_id: string
           adjustment_amount: number
           adjustment_reason: string
+          target_student_id: string
         }
-        Returns: Database['public']['Tables']['credit_transactions']['Row']
+        Returns: {
+          amount: number
+          appointment_id: string | null
+          created_at: string
+          created_by: string
+          id: string
+          package_id: string | null
+          reason: string | null
+          student_id: string
+          trainer_id: string
+          transaction_type: Database['public']['Enums']['credit_transaction_type']
+        }
+        SetofOptions: {
+          from: '*'
+          to: 'credit_transactions'
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      book_appointment: {
+        Args: {
+          requested_booking_id: string
+          requested_start: string
+          target_trainer_id: string
+        }
+        Returns: {
+          booking_request_id: string
+          cancelled_at: string | null
+          created_at: string
+          created_by: string
+          ends_at: string
+          id: string
+          package_id: string
+          relationship_id: string
+          rescheduled_from_id: string | null
+          starts_at: string
+          status: Database['public']['Enums']['appointment_status']
+          student_id: string
+          trainer_id: string
+          updated_at: string
+        }
+        SetofOptions: {
+          from: '*'
+          to: 'appointments'
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      book_appointment_for_student: {
+        Args: {
+          requested_booking_id: string
+          requested_start: string
+          target_student_id: string
+        }
+        Returns: {
+          booking_request_id: string
+          cancelled_at: string | null
+          created_at: string
+          created_by: string
+          ends_at: string
+          id: string
+          package_id: string
+          relationship_id: string
+          rescheduled_from_id: string | null
+          starts_at: string
+          status: Database['public']['Enums']['appointment_status']
+          student_id: string
+          trainer_id: string
+          updated_at: string
+        }
+        SetofOptions: {
+          from: '*'
+          to: 'appointments'
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      cancel_appointment: {
+        Args: { cancellation_note?: string; target_appointment_id: string }
+        Returns: {
+          booking_request_id: string
+          cancelled_at: string | null
+          created_at: string
+          created_by: string
+          ends_at: string
+          id: string
+          package_id: string
+          relationship_id: string
+          rescheduled_from_id: string | null
+          starts_at: string
+          status: Database['public']['Enums']['appointment_status']
+          student_id: string
+          trainer_id: string
+          updated_at: string
+        }
+        SetofOptions: {
+          from: '*'
+          to: 'appointments'
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
       cancel_lesson_package: {
         Args: { target_package_id: string }
-        Returns: Database['public']['Tables']['lesson_packages']['Row']
+        Returns: {
+          activated_at: string | null
+          cancelled_at: string | null
+          created_at: string
+          expires_on: string
+          id: string
+          lesson_count: number
+          price_cents: number
+          relationship_id: string
+          starts_on: string
+          status: Database['public']['Enums']['package_status']
+          student_id: string
+          trainer_id: string
+          updated_at: string
+        }
+        SetofOptions: {
+          from: '*'
+          to: 'lesson_packages'
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      cancel_student_invitation: {
+        Args: { target_invitation_id: string }
+        Returns: {
+          accepted_at: string | null
+          accepted_by: string | null
+          created_at: string
+          expires_at: string
+          id: string
+          status: Database['public']['Enums']['invitation_status']
+          student_email: string | null
+          student_phone: string | null
+          token: string
+          trainer_id: string
+          updated_at: string
+        }
+        SetofOptions: {
+          from: '*'
+          to: 'student_invitations'
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      claim_student_invitation: {
+        Args: { invitation_token?: string }
+        Returns: {
+          created_at: string
+          ended_at: string | null
+          id: string
+          started_at: string | null
+          status: Database['public']['Enums']['relationship_status']
+          student_id: string
+          trainer_id: string
+          updated_at: string
+        }
+        SetofOptions: {
+          from: '*'
+          to: 'trainer_student_relationships'
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      complete_appointment: {
+        Args: {
+          requested_outcome: Database['public']['Enums']['appointment_status']
+          target_appointment_id: string
+        }
+        Returns: {
+          booking_request_id: string
+          cancelled_at: string | null
+          created_at: string
+          created_by: string
+          ends_at: string
+          id: string
+          package_id: string
+          relationship_id: string
+          rescheduled_from_id: string | null
+          starts_at: string
+          status: Database['public']['Enums']['appointment_status']
+          student_id: string
+          trainer_id: string
+          updated_at: string
+        }
+        SetofOptions: {
+          from: '*'
+          to: 'appointments'
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      correct_appointment_outcome: {
+        Args: {
+          correction_reason: string
+          requested_outcome: Database['public']['Enums']['appointment_status']
+          target_appointment_id: string
+        }
+        Returns: {
+          booking_request_id: string
+          cancelled_at: string | null
+          created_at: string
+          created_by: string
+          ends_at: string
+          id: string
+          package_id: string
+          relationship_id: string
+          rescheduled_from_id: string | null
+          starts_at: string
+          status: Database['public']['Enums']['appointment_status']
+          student_id: string
+          trainer_id: string
+          updated_at: string
+        }
+        SetofOptions: {
+          from: '*'
+          to: 'appointments'
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      end_relationship: {
+        Args: { target_relationship_id: string }
+        Returns: {
+          created_at: string
+          ended_at: string | null
+          id: string
+          started_at: string | null
+          status: Database['public']['Enums']['relationship_status']
+          student_id: string
+          trainer_id: string
+          updated_at: string
+        }
+        SetofOptions: {
+          from: '*'
+          to: 'trainer_student_relationships'
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      finalize_elapsed_appointments: { Args: never; Returns: number }
+      get_available_slots: {
+        Args: {
+          range_end: string
+          range_start: string
+          target_trainer_id: string
+        }
+        Returns: {
+          slot_end: string
+          slot_start: string
+        }[]
       }
       get_credit_balance: {
         Args: { target_student_id: string }
         Returns: number
       }
-      book_appointment: {
-        Args: {
-          target_trainer_id: string
-          requested_start: string
-          requested_booking_id: string
-        }
-        Returns: Database['public']['Tables']['appointments']['Row']
-      }
-      book_appointment_for_student: {
-        Args: {
-          target_student_id: string
-          requested_start: string
-          requested_booking_id: string
-        }
-        Returns: Database['public']['Tables']['appointments']['Row']
-      }
-      cancel_appointment: {
-        Args: { target_appointment_id: string; cancellation_note?: string }
-        Returns: Database['public']['Tables']['appointments']['Row']
-      }
       reschedule_appointment: {
         Args: {
-          target_appointment_id: string
-          requested_start: string
           requested_reschedule_id: string
-        }
-        Returns: Database['public']['Tables']['appointments']['Row']
-      }
-      complete_appointment: {
-        Args: {
+          requested_start: string
           target_appointment_id: string
-          requested_outcome: Database['public']['Enums']['appointment_status']
         }
-        Returns: Database['public']['Tables']['appointments']['Row']
-      }
-      correct_appointment_outcome: {
-        Args: {
-          target_appointment_id: string
-          requested_outcome: Database['public']['Enums']['appointment_status']
-          correction_reason: string
+        Returns: {
+          booking_request_id: string
+          cancelled_at: string | null
+          created_at: string
+          created_by: string
+          ends_at: string
+          id: string
+          package_id: string
+          relationship_id: string
+          rescheduled_from_id: string | null
+          starts_at: string
+          status: Database['public']['Enums']['appointment_status']
+          student_id: string
+          trainer_id: string
+          updated_at: string
         }
-        Returns: Database['public']['Tables']['appointments']['Row']
+        SetofOptions: {
+          from: '*'
+          to: 'appointments'
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
       save_payment: {
         Args: {
-          target_payment_id: string
-          target_package_id: string
           requested_amount_cents: number
           requested_due_on: string
+          requested_paid_on?: string
           requested_status: Database['public']['Enums']['payment_status']
-          requested_paid_on?: string | null
+          target_package_id: string
+          target_payment_id: string
         }
-        Returns: Database['public']['Tables']['payments']['Row']
+        Returns: {
+          amount_cents: number
+          created_at: string
+          created_by: string
+          due_on: string
+          id: string
+          package_id: string
+          paid_on: string | null
+          status: Database['public']['Enums']['payment_status']
+          student_id: string
+          trainer_id: string
+          updated_at: string
+        }
+        SetofOptions: {
+          from: '*'
+          to: 'payments'
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      schedule_appointment: {
+        Args: {
+          requested_booking_id: string
+          requested_start: string
+          target_student_id: string
+          target_trainer_id: string
+        }
+        Returns: {
+          booking_request_id: string
+          cancelled_at: string | null
+          created_at: string
+          created_by: string
+          ends_at: string
+          id: string
+          package_id: string
+          relationship_id: string
+          rescheduled_from_id: string | null
+          starts_at: string
+          status: Database['public']['Enums']['appointment_status']
+          student_id: string
+          trainer_id: string
+          updated_at: string
+        }
+        SetofOptions: {
+          from: '*'
+          to: 'appointments'
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      update_own_profile: {
+        Args: {
+          requested_full_name: string
+          requested_lesson_duration_minutes?: number
+          requested_phone?: string
+        }
+        Returns: {
+          created_at: string
+          default_lesson_duration_minutes: number | null
+          full_name: string
+          id: string
+          phone: string | null
+          role: Database['public']['Enums']['app_role']
+          updated_at: string
+        }
+        SetofOptions: {
+          from: '*'
+          to: 'profiles'
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
     }
     Enums: {
       app_role: 'student' | 'trainer'
-      relationship_status: 'pending' | 'active' | 'ended'
-      invitation_status: 'pending' | 'accepted' | 'declined' | 'expired' | 'cancelled'
-      package_status: 'draft' | 'active' | 'exhausted' | 'expired' | 'cancelled'
-      credit_transaction_type:
-        | 'package_activation'
-        | 'package_cancellation'
-        | 'appointment_consumption'
-        | 'cancellation_refund'
-        | 'manual_adjustment'
+      appointment_event_type:
+        'created' | 'cancelled' | 'rescheduled' | 'completed' | 'student_no_show'
       appointment_status:
         | 'scheduled'
         | 'completed'
@@ -543,13 +1126,169 @@ export type Database = {
         | 'cancelled_by_trainer'
         | 'cancelled_for_reschedule'
         | 'student_no_show'
-      appointment_event_type:
-        'created' | 'cancelled' | 'rescheduled' | 'completed' | 'student_no_show'
+      credit_transaction_type:
+        | 'package_activation'
+        | 'package_cancellation'
+        | 'appointment_consumption'
+        | 'cancellation_refund'
+        | 'manual_adjustment'
+      invitation_status: 'pending' | 'accepted' | 'declined' | 'expired' | 'cancelled'
+      package_status: 'draft' | 'active' | 'exhausted' | 'expired' | 'cancelled'
       payment_status: 'pending' | 'paid' | 'overdue' | 'cancelled'
+      relationship_status: 'pending' | 'active' | 'ended'
     }
-    CompositeTypes: Record<never, never>
+    CompositeTypes: {
+      [_ in never]: never
+    }
   }
 }
 
-export type Tables<T extends keyof Database['public']['Tables']> =
-  Database['public']['Tables'][T]['Row']
+type DatabaseWithoutInternals = Omit<Database, '__InternalSupabase'>
+
+type DefaultSchema = DatabaseWithoutInternals[Extract<keyof Database, 'public'>]
+
+export type Tables<
+  DefaultSchemaTableNameOrOptions extends
+    | keyof (DefaultSchema['Tables'] & DefaultSchema['Views'])
+    | { schema: keyof DatabaseWithoutInternals },
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions['schema']]['Tables'] &
+        DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions['schema']]['Views'])
+    : never) = never,
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions['schema']]['Tables'] &
+      DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions['schema']]['Views'])[TableName] extends {
+      Row: infer R
+    }
+    ? R
+    : never
+  : DefaultSchemaTableNameOrOptions extends keyof (DefaultSchema['Tables'] &
+        DefaultSchema['Views'])
+    ? (DefaultSchema['Tables'] &
+        DefaultSchema['Views'])[DefaultSchemaTableNameOrOptions] extends {
+        Row: infer R
+      }
+      ? R
+      : never
+    : never
+
+export type TablesInsert<
+  DefaultSchemaTableNameOrOptions extends
+    keyof DefaultSchema['Tables'] | { schema: keyof DatabaseWithoutInternals },
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions['schema']]['Tables']
+    : never) = never,
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions['schema']]['Tables'][TableName] extends {
+      Insert: infer I
+    }
+    ? I
+    : never
+  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema['Tables']
+    ? DefaultSchema['Tables'][DefaultSchemaTableNameOrOptions] extends {
+        Insert: infer I
+      }
+      ? I
+      : never
+    : never
+
+export type TablesUpdate<
+  DefaultSchemaTableNameOrOptions extends
+    keyof DefaultSchema['Tables'] | { schema: keyof DatabaseWithoutInternals },
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions['schema']]['Tables']
+    : never) = never,
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions['schema']]['Tables'][TableName] extends {
+      Update: infer U
+    }
+    ? U
+    : never
+  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema['Tables']
+    ? DefaultSchema['Tables'][DefaultSchemaTableNameOrOptions] extends {
+        Update: infer U
+      }
+      ? U
+      : never
+    : never
+
+export type Enums<
+  DefaultSchemaEnumNameOrOptions extends
+    keyof DefaultSchema['Enums'] | { schema: keyof DatabaseWithoutInternals },
+  EnumName extends (DefaultSchemaEnumNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions['schema']]['Enums']
+    : never) = never,
+> = DefaultSchemaEnumNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions['schema']]['Enums'][EnumName]
+  : DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema['Enums']
+    ? DefaultSchema['Enums'][DefaultSchemaEnumNameOrOptions]
+    : never
+
+export type CompositeTypes<
+  PublicCompositeTypeNameOrOptions extends
+    keyof DefaultSchema['CompositeTypes'] | { schema: keyof DatabaseWithoutInternals },
+  CompositeTypeName extends (PublicCompositeTypeNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions['schema']]['CompositeTypes']
+    : never) = never,
+> = PublicCompositeTypeNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions['schema']]['CompositeTypes'][CompositeTypeName]
+  : PublicCompositeTypeNameOrOptions extends keyof DefaultSchema['CompositeTypes']
+    ? DefaultSchema['CompositeTypes'][PublicCompositeTypeNameOrOptions]
+    : never
+
+export const Constants = {
+  graphql_public: {
+    Enums: {},
+  },
+  public: {
+    Enums: {
+      app_role: ['student', 'trainer'],
+      appointment_event_type: [
+        'created',
+        'cancelled',
+        'rescheduled',
+        'completed',
+        'student_no_show',
+      ],
+      appointment_status: [
+        'scheduled',
+        'completed',
+        'cancelled_by_student',
+        'cancelled_by_trainer',
+        'cancelled_for_reschedule',
+        'student_no_show',
+      ],
+      credit_transaction_type: [
+        'package_activation',
+        'package_cancellation',
+        'appointment_consumption',
+        'cancellation_refund',
+        'manual_adjustment',
+      ],
+      invitation_status: ['pending', 'accepted', 'declined', 'expired', 'cancelled'],
+      package_status: ['draft', 'active', 'exhausted', 'expired', 'cancelled'],
+      payment_status: ['pending', 'paid', 'overdue', 'cancelled'],
+      relationship_status: ['pending', 'active', 'ended'],
+    },
+  },
+} as const

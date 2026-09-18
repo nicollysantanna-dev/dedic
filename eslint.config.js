@@ -13,6 +13,7 @@ export default tseslint.config(
       'playwright-report',
       'test-results',
       'supabase/.temp',
+      'src/lib/supabase/database.types.ts',
     ],
   },
   {

@@ -10,6 +10,16 @@ import { isSupabaseConfigured } from '@/lib/env'
 const AuthPage = lazy(() =>
   import('@/features/auth/AuthPage').then((module) => ({ default: module.AuthPage })),
 )
+const PasswordRecoveryPage = lazy(() =>
+  import('@/features/auth/PasswordRecoveryPage').then((module) => ({
+    default: module.PasswordRecoveryPage,
+  })),
+)
+const NewPasswordPage = lazy(() =>
+  import('@/features/auth/PasswordRecoveryPage').then((module) => ({
+    default: module.NewPasswordPage,
+  })),
+)
 const InviteStudentPage = lazy(() =>
   import('@/features/students/InviteStudentPage').then((module) => ({
     default: module.InviteStudentPage,
@@ -77,6 +87,8 @@ export function App() {
           <Route path="/" element={<AuthPage mode="login" />} />
           <Route path="/entrar" element={<Navigate to="/" replace />} />
           <Route path="/cadastro" element={<AuthPage mode="signup" />} />
+          <Route path="/recuperar" element={<PasswordRecoveryPage />} />
+          <Route path="/nova-senha" element={<NewPasswordPage />} />
           <Route element={<RequireAuth />}>
             <Route element={<AppShell />}>
               <Route path="/app" element={<HomePage />} />

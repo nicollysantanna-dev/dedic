@@ -89,7 +89,7 @@ function TrainerPayments({ trainerId }: { trainerId: string }) {
         requested_amount_cents: Math.round(values.amountReais * 100),
         requested_due_on: values.dueOn,
         requested_status: values.status,
-        requested_paid_on: values.status === 'paid' ? values.paidOn : null,
+        requested_paid_on: values.status === 'paid' ? values.paidOn : undefined,
       })
       if (error) throw error
     },

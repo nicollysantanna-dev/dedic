@@ -78,12 +78,13 @@ export function AuthProvider({ children }: PropsWithChildren) {
       if (!userId) {
         setProfile(null)
         setProfileError(false)
-        return
+        return null
       }
       const result = await loadProfileSafely(userId)
-      if (!active) return
+      if (!active) return null
       setProfile(result.profile)
       setProfileError(result.failed)
+      return result.profile
     }
 
     const claimInvitation = async () => {
@@ -92,14 +93,26 @@ export function AuthProvider({ children }: PropsWithChildren) {
       const result = await pendingClaim
       pendingClaim = null
       if (active && result !== 'idle') setInvitationClaimStatus(result)
+      return result
+    }
+
+    // Só alunos reivindicam convites; o claim pode preencher o telefone do perfil.
+    const syncSession = async (userId: string | undefined) => {
+      const loaded = await applyProfile(userId)
+      if (!loaded) {
+        setInvitationClaimStatus('idle')
+        return
+      }
+      if (loaded.role !== 'student') return
+      const result = await claimInvitation()
+      if (result === 'success') await applyProfile(userId)
     }
 
     void supabase.auth.getSession().then(async ({ data }) => {
       if (!active) return
 
       setSession(data.session)
-      if (data.session) await claimInvitation()
-      await applyProfile(data.session?.user.id)
+      await syncSession(data.session?.user.id)
       setIsLoading(false)
     })
 
@@ -108,9 +121,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
 
       window.setTimeout(() => {
         void (async () => {
-          if (nextSession) await claimInvitation()
-          else setInvitationClaimStatus('idle')
-          await applyProfile(nextSession?.user.id)
+          await syncSession(nextSession?.user.id)
           setIsLoading(false)
         })()
       }, 0)

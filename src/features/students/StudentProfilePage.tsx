@@ -13,7 +13,7 @@ import {
   X,
 } from 'lucide-react'
 import { useState, type FormEvent } from 'react'
-import { Link, Navigate, useParams } from 'react-router-dom'
+import { Link, Navigate, useNavigate, useParams } from 'react-router-dom'
 
 import { Button } from '@/components/ui/button'
 import { useAuth } from '@/features/auth/auth-context'
@@ -26,7 +26,22 @@ export function StudentProfilePage() {
   const { profile } = useAuth()
   const queryClient = useQueryClient()
   const [isCreditManagerOpen, setIsCreditManagerOpen] = useState(false)
+  const [isEndingRelationship, setIsEndingRelationship] = useState(false)
   const [notice, setNotice] = useState('')
+  const navigate = useNavigate()
+
+  const endRelationship = useMutation({
+    mutationFn: async (relationshipId: string) => {
+      const { error } = await requireSupabase().rpc('end_relationship', {
+        target_relationship_id: relationshipId,
+      })
+      if (error) throw error
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ['student-overviews'] })
+      void navigate('/app/alunos', { replace: true })
+    },
+  })
   const trainerId = profile?.id ?? ''
 
   const student = useQuery({
@@ -218,6 +233,56 @@ export function StudentProfilePage() {
                   title="Treinos Hevy"
                   description="Aparecerão aqui quando a integração opcional estiver conectada."
                 />
+                <div className="rounded-[1.25rem] border border-white/10 bg-white/5 p-5">
+                  <h3 className="font-bold">Encerrar vínculo</h3>
+                  <p className="mt-2 text-sm leading-6 text-slate-400">
+                    O histórico de aulas, créditos e pagamentos é preservado. O aluno
+                    deixa de ver sua agenda e não consegue mais agendar.
+                  </p>
+                  {isEndingRelationship ? (
+                    <div className="mt-4 space-y-3">
+                      <p className="text-sm font-semibold text-red-200" role="alert">
+                        Confirma o encerramento do vínculo com{' '}
+                        {student.data.overview.name}?
+                      </p>
+                      <div className="flex flex-wrap gap-2">
+                        <Button
+                          className="bg-red-600 hover:bg-red-700"
+                          disabled={endRelationship.isPending}
+                          onClick={() =>
+                            endRelationship.mutate(student.data!.relationship.id)
+                          }
+                        >
+                          {endRelationship.isPending && (
+                            <LoaderCircle className="animate-spin" size={17} />
+                          )}
+                          Sim, encerrar
+                        </Button>
+                        <Button
+                          className="border-white/15 bg-transparent text-white hover:bg-white/10"
+                          disabled={endRelationship.isPending}
+                          onClick={() => setIsEndingRelationship(false)}
+                          variant="outline"
+                        >
+                          Manter vínculo
+                        </Button>
+                      </div>
+                      {endRelationship.error && (
+                        <p className="text-sm text-red-200" role="alert">
+                          Não foi possível encerrar o vínculo. Tente novamente.
+                        </p>
+                      )}
+                    </div>
+                  ) : (
+                    <Button
+                      className="mt-4 border-white/15 bg-transparent text-white hover:bg-white/10"
+                      onClick={() => setIsEndingRelationship(true)}
+                      variant="outline"
+                    >
+                      Encerrar vínculo
+                    </Button>
+                  )}
+                </div>
               </div>
             </section>
 

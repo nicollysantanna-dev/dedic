@@ -223,6 +223,17 @@ export function AuthPage({ mode }: AuthPageProps) {
               />
             </Field>
 
+            {!isSignUp && (
+              <p className="text-right text-sm">
+                <Link
+                  className="font-semibold text-[#173d2c] underline decoration-[#d6a850] decoration-2 underline-offset-4"
+                  to="/recuperar"
+                >
+                  Esqueci minha senha
+                </Link>
+              </p>
+            )}
+
             {serverMessage && (
               <p className="rounded-2xl bg-[#e9e1ce] px-4 py-3 text-sm" role="status">
                 {serverMessage}

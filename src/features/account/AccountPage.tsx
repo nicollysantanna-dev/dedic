@@ -1,10 +1,15 @@
 import { LogOut, ShieldCheck, UserRound } from 'lucide-react'
+import { useState } from 'react'
 
 import { Button } from '@/components/ui/button'
+import { EditProfileDialog } from '@/features/account/EditProfileDialog'
 import { useAuth } from '@/features/auth/auth-context'
+import { formatPhoneInput } from '@/features/students/invitation-contact'
 
 export function AccountPage() {
-  const { profile, session, signOut } = useAuth()
+  const { profile, session, signOut, refreshProfile } = useAuth()
+  const [isEditing, setIsEditing] = useState(false)
+  const [notice, setNotice] = useState('')
 
   return (
     <main className="min-h-dvh px-4 pb-28 pt-6 text-white sm:px-7 lg:px-8 lg:pb-8">
@@ -22,12 +27,39 @@ export function AccountPage() {
               <h2 className="text-xl font-bold">{profile?.full_name}</h2>
               <p className="mt-1 text-sm text-slate-500">{session?.user.email}</p>
               <p className="mt-1 text-sm text-slate-500">
-                {profile?.phone || 'Telefone não informado'}
+                {profile?.phone
+                  ? formatPhoneInput(profile.phone.replace(/^\+55/, ''))
+                  : 'Celular não informado'}
               </p>
+              {profile?.role === 'trainer' && (
+                <p className="mt-1 text-sm text-slate-500">
+                  Aulas de {profile.default_lesson_duration_minutes} minutos
+                </p>
+              )}
             </div>
-            <Button variant="outline">Editar perfil</Button>
+            <Button onClick={() => setIsEditing(true)} variant="outline">
+              Editar perfil
+            </Button>
           </div>
+          {notice && (
+            <p
+              className="mt-4 rounded-xl bg-emerald-50 p-3 text-sm text-emerald-800"
+              role="status"
+            >
+              {notice}
+            </p>
+          )}
         </section>
+        {isEditing && profile && (
+          <EditProfileDialog
+            profile={profile}
+            onClose={() => setIsEditing(false)}
+            onSaved={async () => {
+              await refreshProfile()
+              setNotice('Perfil atualizado.')
+            }}
+          />
+        )}
         <section className="mt-5 grid gap-5 sm:grid-cols-2">
           <div className="rounded-[1.5rem] bg-white p-6 text-slate-950">
             <ShieldCheck className="text-[var(--brand)]" />

@@ -124,3 +124,44 @@ test('personal registra um pagamento e a aluna vê a situação', async ({ page 
   await expect(page.getByText('R$ 500,00').first()).toBeVisible()
   await expect(page.getByText('Pago', { exact: true }).first()).toBeVisible()
 })
+
+test('personal edita a duração padrão e os horários publicados mudam', async ({
+  page,
+}) => {
+  await login(page, users.trainer.email)
+  await page.goto('/app/conta')
+  await page.getByRole('button', { name: 'Editar perfil' }).click()
+  const dialog = page.getByRole('dialog', { name: 'Editar perfil' })
+  await dialog.getByLabel('Nome completo').fill('Paula P. Silva')
+  await dialog.getByLabel('Celular').fill('11988887777')
+  await dialog.getByLabel(/Duração padrão da aula/).selectOption('30')
+  await dialog.getByRole('button', { name: 'Salvar perfil' }).click()
+
+  await expect(page.getByRole('status')).toContainText('Perfil atualizado.')
+  await expect(page.getByRole('heading', { name: 'Paula P. Silva' })).toBeVisible()
+  await expect(page.getByText('(11) 98888-7777')).toBeVisible()
+  await expect(page.getByText('Aulas de 30 minutos')).toBeVisible()
+
+  // Com 30 minutos, a remarcação passa a oferecer horários de meia em meia hora.
+  await openAgendaOnBookingDay(page)
+  const scheduled = page.locator('.fc-event.dedic-calendar-event--scheduled')
+  await scheduled.click()
+  await page.getByRole('button', { name: 'Remarcar aula' }).click()
+  await page.getByLabel('Nova data').fill(futureDate(bookingDay + 1))
+  await expect(page.getByRole('button', { name: '06:30' })).toBeVisible()
+})
+
+test('personal encerra o vínculo e a aluna deixa de ver a agenda', async ({ page }) => {
+  await login(page, users.trainer.email)
+  await page.goto('/app/alunos')
+  await page.getByRole('link', { name: /Bruno Aluno/ }).click()
+  await page.getByRole('button', { name: 'Encerrar vínculo' }).click()
+  await page.getByRole('button', { name: 'Sim, encerrar' }).click()
+
+  await expect(page).toHaveURL(/\/app\/alunos$/)
+  await expect(page.getByRole('link', { name: /Bruno Aluno/ })).toHaveCount(0)
+  await logout(page)
+
+  await login(page, 'aluno@dedic.local')
+  await expect(page.getByText('Aguardando vínculo com o personal.')).toBeVisible()
+})

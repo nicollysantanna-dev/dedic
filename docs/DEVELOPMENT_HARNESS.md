@@ -175,7 +175,6 @@ Somente estas variáveis públicas poderão ser consumidas pelo frontend:
 ```text
 VITE_SUPABASE_URL
 VITE_SUPABASE_PUBLISHABLE_KEY
-VITE_APP_TIMEZONE
 ```
 
 Segredos administrativos pertencem exclusivamente a ambientes de servidor e não devem usar o prefixo `VITE_`.

@@ -99,12 +99,9 @@ export function InviteStudentPage() {
 
   const cancelInvitation = useMutation({
     mutationFn: async (invitationId: string) => {
-      const { error } = await requireSupabase()
-        .from('student_invitations')
-        .update({ status: 'cancelled' })
-        .eq('id', invitationId)
-        .eq('trainer_id', trainerId)
-        .eq('status', 'pending')
+      const { error } = await requireSupabase().rpc('cancel_student_invitation', {
+        target_invitation_id: invitationId,
+      })
       if (error) throw error
       return invitationId
     },
