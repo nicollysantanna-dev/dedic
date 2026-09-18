@@ -555,16 +555,12 @@ As métricas não precisam de uma plataforma analítica externa no primeiro lan�
 
 ## 17. Decisões pendentes antes da implementação
 
-Estas decisões não bloqueiam este rascunho, mas devem ser confirmadas antes de fechar o modelo técnico:
-
-1. A duração padrão continua configurável pelo personal.
-2. O aluno poderá agendar até quantos dias no futuro?
-3. Será permitido agendar uma aula para o mesmo dia?
-4. Resolvido: créditos não vencem e novos pacotes acumulam saldo.
-5. Resolvido: a cobrança é prevista; a confirmação do pagamento libera créditos,
-   com liberação antecipada explícita permitida ao personal.
-6. Resolvido: convite por e-mail com vínculo no primeiro acesso, ou por celular com link privado.
-7. O personal poderá editar duração e horário de uma aula existente ou deverá sempre remarcar?
+Todas as decisões pendentes foram resolvidas em 18/09/2026 e estão registradas na
+[ADR 0005](adr/0005-decisoes-de-produto-para-o-mvp.md): autocadastro como personal,
+agendamento no mesmo dia permitido, remarcação como única forma de mover uma aula,
+fuso fixo em São Paulo, fotos sem ocultação de rosto, Hevy opcional com registro
+manual, cobrança por pacote e aula avulsa, cancelamento sem penalidade até o dia
+anterior, exclusão de conta por anonimização e recorrência fora do MVP.
 
 ## 18. Stack aprovada para o MVP
 
