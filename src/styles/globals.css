@@ -169,6 +169,10 @@ button {
   text-decoration: line-through;
 }
 
+.dedic-scheduler .fc-bg-event {
+  pointer-events: none;
+}
+
 .dedic-scheduler .dedic-calendar-availability {
   background: rgb(37 99 235 / 8%);
 }

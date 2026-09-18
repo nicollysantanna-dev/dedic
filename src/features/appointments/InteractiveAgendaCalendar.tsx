@@ -252,6 +252,8 @@ function CalendarControl({
 }
 
 function renderEventContent(info: EventContentArg) {
+  // Faixas de disponibilidade e bloqueio são só fundo: sem texto nem interação.
+  if (info.event.display === 'background') return null
   const status = info.event.extendedProps.status as Tables<'appointments'>['status']
   return (
     <div className="min-w-0 px-1 py-0.5">
