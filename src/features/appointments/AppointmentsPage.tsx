@@ -27,6 +27,9 @@ import { getBookingError } from '@/features/appointments/booking-errors'
 import { InteractiveAgendaCalendar } from '@/features/appointments/InteractiveAgendaCalendar'
 import { useAuth } from '@/features/auth/auth-context'
 import { AvailabilityPanel } from '@/features/availability/AvailabilityPanel'
+import { appointmentKeys } from '@/features/appointments/keys'
+import { creditKeys } from '@/features/credits/keys'
+import { formatDateTime, formatTime, toIsoDate } from '@/lib/format'
 import { requireSupabase } from '@/lib/supabase/client'
 import { cn } from '@/lib/utils'
 
@@ -59,12 +62,7 @@ export function AppointmentsPage() {
   const isTrainer = profile?.role === 'trainer'
   const lessonDurationMinutes = profile?.default_lesson_duration_minutes ?? 60
   const appointments = useQuery({
-    queryKey: [
-      'appointments',
-      userId,
-      calendarRange.start.toISOString(),
-      calendarRange.end.toISOString(),
-    ],
+    queryKey: appointmentKeys.range(userId, calendarRange.start, calendarRange.end),
     enabled: Boolean(userId),
     queryFn: async () => {
       const counterpart = isTrainer
@@ -128,18 +126,17 @@ export function AppointmentsPage() {
     : (studentRelationship.data?.trainer_id ?? '')
 
   const availableSlots = useQuery({
-    queryKey: [
-      'agenda-scheduler-slots',
+    queryKey: appointmentKeys.slots(
       schedulerTrainerId,
       calendarRange.start.toISOString(),
       calendarRange.end.toISOString(),
-    ],
+    ),
     enabled: Boolean(schedulerTrainerId),
     queryFn: async () => {
       const { data, error } = await requireSupabase().rpc('get_available_slots', {
         target_trainer_id: schedulerTrainerId,
-        range_start: formatIsoDate(calendarRange.start),
-        range_end: formatIsoDate(calendarRange.end),
+        range_start: toIsoDate(calendarRange.start),
+        range_end: toIsoDate(calendarRange.end),
       })
       if (error) throw error
       return data
@@ -147,7 +144,7 @@ export function AppointmentsPage() {
   })
 
   const rescheduleSlots = useQuery({
-    queryKey: ['agenda-scheduler-slots', schedulerTrainerId, rescheduleDate],
+    queryKey: appointmentKeys.slots(schedulerTrainerId, rescheduleDate, rescheduleDate),
     enabled:
       Boolean(schedulerTrainerId) && panel === 'reschedule' && Boolean(rescheduleDate),
     queryFn: async () => {
@@ -162,12 +159,7 @@ export function AppointmentsPage() {
   })
 
   const blockedPeriods = useQuery({
-    queryKey: [
-      'agenda-scheduler-blocks',
-      userId,
-      calendarRange.start.toISOString(),
-      calendarRange.end.toISOString(),
-    ],
+    queryKey: appointmentKeys.blocks(userId, calendarRange.start, calendarRange.end),
     enabled: Boolean(userId) && isTrainer,
     queryFn: async () => {
       const { data, error } = await requireSupabase()
@@ -185,7 +177,7 @@ export function AppointmentsPage() {
     ? bookingStudentId || students.data?.[0]?.student_id || ''
     : userId
   const bookingBalance = useQuery({
-    queryKey: ['credit-balance', effectiveBookingStudentId],
+    queryKey: creditKeys.balance(effectiveBookingStudentId),
     enabled: Boolean(effectiveBookingStudentId) && panel === 'create',
     queryFn: async () => {
       const { data, error } = await requireSupabase().rpc('get_credit_balance', {
@@ -220,11 +212,8 @@ export function AppointmentsPage() {
   }, [toast])
 
   const refreshAgenda = () => {
-    void queryClient.invalidateQueries({ queryKey: ['appointments'] })
-    void queryClient.invalidateQueries({ queryKey: ['agenda-scheduler-slots'] })
-    void queryClient.invalidateQueries({ queryKey: ['credit-balance'] })
-    void queryClient.invalidateQueries({ queryKey: ['credit-ledger'] })
-    void queryClient.invalidateQueries({ queryKey: ['trainer-home-appointments'] })
+    void queryClient.invalidateQueries({ queryKey: appointmentKeys.all })
+    void queryClient.invalidateQueries({ queryKey: creditKeys.all })
   }
 
   const booking = useMutation({
@@ -316,8 +305,7 @@ export function AppointmentsPage() {
     },
     onSuccess: () => {
       setOutcomeTargetId(null)
-      void queryClient.invalidateQueries({ queryKey: ['appointments'] })
-      void queryClient.invalidateQueries({ queryKey: ['appointment-events'] })
+      void queryClient.invalidateQueries({ queryKey: appointmentKeys.all })
     },
   })
 
@@ -339,8 +327,7 @@ export function AppointmentsPage() {
     onSuccess: () => {
       setCorrectionTargetId(null)
       setCorrectionReason('')
-      void queryClient.invalidateQueries({ queryKey: ['appointments'] })
-      void queryClient.invalidateQueries({ queryKey: ['appointment-events'] })
+      void queryClient.invalidateQueries({ queryKey: appointmentKeys.all })
     },
   })
 
@@ -579,7 +566,7 @@ export function AppointmentsPage() {
                     <Button
                       onClick={() => {
                         setRescheduleDate(
-                          formatIsoDate(new Date(selectedAppointment.starts_at)),
+                          toIsoDate(new Date(selectedAppointment.starts_at)),
                         )
                         setBookingStart('')
                         setPanel('reschedule')
@@ -712,7 +699,7 @@ export function AppointmentsPage() {
                   Nova data
                   <input
                     className="field mt-2"
-                    min={formatIsoDate(new Date())}
+                    min={toIsoDate(new Date())}
                     onChange={(event) => {
                       setRescheduleDate(event.target.value)
                       setBookingStart('')
@@ -894,26 +881,4 @@ function initialCalendarRange() {
   const end = new Date(start)
   end.setDate(end.getDate() + 7)
   return { start, end }
-}
-
-function formatIsoDate(value: Date) {
-  const year = value.getFullYear()
-  const month = String(value.getMonth() + 1).padStart(2, '0')
-  const day = String(value.getDate()).padStart(2, '0')
-  return `${year}-${month}-${day}`
-}
-
-function formatTime(value: Date) {
-  return new Intl.DateTimeFormat('pt-BR', { hour: '2-digit', minute: '2-digit' }).format(
-    value,
-  )
-}
-
-function formatDateTime(value: Date) {
-  return new Intl.DateTimeFormat('pt-BR', {
-    day: '2-digit',
-    month: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-  }).format(value)
 }

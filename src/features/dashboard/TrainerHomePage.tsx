@@ -16,6 +16,9 @@ import { Button } from '@/components/ui/button'
 import { getAppointmentStatusLabel } from '@/features/appointments/appointment-status'
 import { useAuth } from '@/features/auth/auth-context'
 import { buildFinancialSummary } from '@/features/payments/financial-summary'
+import { appointmentKeys } from '@/features/appointments/keys'
+import { paymentKeys } from '@/features/payments/keys'
+import { formatCurrency, formatDateOnly, formatLongDate, formatTime } from '@/lib/format'
 import { requireSupabase } from '@/lib/supabase/client'
 
 export function TrainerHomePage() {
@@ -24,7 +27,7 @@ export function TrainerHomePage() {
   const today = dayRange(new Date())
 
   const appointments = useQuery({
-    queryKey: ['trainer-home-appointments', trainerId, today.start.toISOString()],
+    queryKey: appointmentKeys.trainerToday(trainerId, today.start.toISOString()),
     enabled: Boolean(trainerId),
     queryFn: async () => {
       const { data, error } = await requireSupabase()
@@ -56,7 +59,7 @@ export function TrainerHomePage() {
   })
 
   const payments = useQuery({
-    queryKey: ['trainer-home-payments', trainerId],
+    queryKey: paymentKeys.trainerSummary(trainerId),
     enabled: Boolean(trainerId),
     queryFn: async () => {
       const { data, error } = await requireSupabase()
@@ -79,7 +82,7 @@ export function TrainerHomePage() {
       <div className="mx-auto max-w-7xl">
         <header className="flex items-center justify-between gap-4">
           <div>
-            <p className="text-sm text-slate-400">{formatFullDate(new Date())}</p>
+            <p className="text-sm text-slate-400">{formatLongDate(new Date())}</p>
             <h1 className="mt-1 text-2xl font-bold tracking-[-0.04em] sm:text-3xl">
               {getGreeting()}, {profile?.full_name.split(' ')[0]}.
             </h1>
@@ -172,7 +175,7 @@ export function TrainerHomePage() {
           <MetricCard
             icon={WalletCards}
             label="Receita do mês"
-            value={formatMoney(monthRevenue)}
+            value={formatCurrency(monthRevenue)}
             detail={`${pendingPayments.length} pendência(s)`}
           />
         </section>
@@ -194,10 +197,12 @@ export function TrainerHomePage() {
                       Pagamento {payment.status === 'overdue' ? 'atrasado' : 'pendente'}
                     </p>
                     <p className="mt-0.5 text-xs text-slate-500">
-                      Vencimento em {formatDate(payment.due_on)}
+                      Vencimento em {formatDateOnly(payment.due_on)}
                     </p>
                   </div>
-                  <strong className="text-sm">{formatMoney(payment.amount_cents)}</strong>
+                  <strong className="text-sm">
+                    {formatCurrency(payment.amount_cents)}
+                  </strong>
                 </div>
               ))}
               {!pendingPayments.length && (
@@ -283,35 +288,6 @@ function dayRange(value: Date) {
   const end = new Date(start)
   end.setDate(end.getDate() + 1)
   return { start, end }
-}
-
-function formatTime(value: string) {
-  return new Intl.DateTimeFormat('pt-BR', { hour: '2-digit', minute: '2-digit' }).format(
-    new Date(value),
-  )
-}
-
-function formatDate(value: string) {
-  return new Intl.DateTimeFormat('pt-BR', { timeZone: 'UTC' }).format(
-    new Date(`${value}T00:00:00Z`),
-  )
-}
-
-function formatFullDate(value: Date) {
-  return new Intl.DateTimeFormat('pt-BR', {
-    weekday: 'long',
-    day: '2-digit',
-    month: 'long',
-    year: 'numeric',
-  }).format(value)
-}
-
-function formatMoney(value: number) {
-  return new Intl.NumberFormat('pt-BR', {
-    style: 'currency',
-    currency: 'BRL',
-    maximumFractionDigits: 0,
-  }).format(value / 100)
 }
 
 function getGreeting(now = new Date()) {

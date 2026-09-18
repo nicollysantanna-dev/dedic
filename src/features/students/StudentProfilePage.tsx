@@ -19,6 +19,9 @@ import { Button } from '@/components/ui/button'
 import { useAuth } from '@/features/auth/auth-context'
 import { creditAdjustmentSchema, packageSchema } from '@/features/packages/schemas'
 import { buildStudentOverviews } from '@/features/students/student-overview'
+import { appointmentKeys } from '@/features/appointments/keys'
+import { creditKeys } from '@/features/credits/keys'
+import { formatDateTime, formatTime, toIsoDate } from '@/lib/format'
 import { requireSupabase } from '@/lib/supabase/client'
 
 export function StudentProfilePage() {
@@ -38,14 +41,14 @@ export function StudentProfilePage() {
       if (error) throw error
     },
     onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ['student-overviews'] })
+      await queryClient.invalidateQueries({ queryKey: appointmentKeys.all })
       void navigate('/app/alunos', { replace: true })
     },
   })
   const trainerId = profile?.id ?? ''
 
   const student = useQuery({
-    queryKey: ['student-profile', trainerId, studentId],
+    queryKey: appointmentKeys.studentProfile(trainerId, studentId!),
     enabled: Boolean(trainerId && studentId) && profile?.role === 'trainer',
     queryFn: async () => {
       const { data: relationship, error: relationshipError } = await requireSupabase()
@@ -299,10 +302,8 @@ export function StudentProfilePage() {
                   setIsCreditManagerOpen(false)
                   await Promise.all([
                     student.refetch(),
-                    queryClient.invalidateQueries({ queryKey: ['student-overviews'] }),
-                    queryClient.invalidateQueries({ queryKey: ['packages'] }),
-                    queryClient.invalidateQueries({ queryKey: ['credit-ledger'] }),
-                    queryClient.invalidateQueries({ queryKey: ['credit-balance'] }),
+                    queryClient.invalidateQueries({ queryKey: appointmentKeys.all }),
+                    queryClient.invalidateQueries({ queryKey: creditKeys.all }),
                   ])
                 }}
               />
@@ -336,8 +337,8 @@ export function CreditManagerDialog({
   const [mode, setMode] = useState<CreditManagerMode>('package')
   const [lessonCount, setLessonCount] = useState(8)
   const [priceReais, setPriceReais] = useState(500)
-  const [startsOn, setStartsOn] = useState(toDateInput(new Date()))
-  const [expiresOn, setExpiresOn] = useState(toDateInput(addDays(new Date(), 30)))
+  const [startsOn, setStartsOn] = useState(toIsoDate(new Date()))
+  const [expiresOn, setExpiresOn] = useState(toIsoDate(addDays(new Date(), 30)))
   const [adjustmentAmount, setAdjustmentAmount] = useState(1)
   const [adjustmentReason, setAdjustmentReason] = useState('')
   const [formError, setFormError] = useState('')
@@ -618,7 +619,6 @@ function DialogDateField({
   )
 }
 
-const toDateInput = (date: Date) => date.toISOString().slice(0, 10)
 const addDays = (date: Date, days: number) => {
   const result = new Date(date)
   result.setDate(result.getDate() + days)
@@ -677,20 +677,4 @@ function statusLabel(status: string) {
     cancelled_for_reschedule: 'Remarcada',
   }
   return labels[status] ?? status
-}
-
-function formatDateTime(value: string) {
-  return new Intl.DateTimeFormat('pt-BR', {
-    day: '2-digit',
-    month: 'short',
-    hour: '2-digit',
-    minute: '2-digit',
-  }).format(new Date(value))
-}
-
-function formatTime(value: string) {
-  return new Intl.DateTimeFormat('pt-BR', {
-    hour: '2-digit',
-    minute: '2-digit',
-  }).format(new Date(value))
 }

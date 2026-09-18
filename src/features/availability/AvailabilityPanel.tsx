@@ -15,13 +15,14 @@ import {
   type AvailabilityExceptionValues,
   type AvailabilityRuleValues,
 } from '@/features/availability/schemas'
+import { appointmentKeys } from '@/features/appointments/keys'
 import { requireSupabase } from '@/lib/supabase/client'
 
 export function AvailabilityPanel({ trainerId }: { trainerId: string }) {
   const queryClient = useQueryClient()
   const invalidateAgenda = () => {
-    void queryClient.invalidateQueries({ queryKey: ['agenda-scheduler-slots'] })
-    void queryClient.invalidateQueries({ queryKey: ['agenda-scheduler-blocks'] })
+    void queryClient.invalidateQueries({ queryKey: appointmentKeys.allSlots })
+    void queryClient.invalidateQueries({ queryKey: appointmentKeys.allBlocks })
   }
 
   const ruleForm = useForm<AvailabilityRuleValues>({

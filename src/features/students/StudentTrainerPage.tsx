@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom'
 
 import { Button } from '@/components/ui/button'
 import { useAuth } from '@/features/auth/auth-context'
+import { initials } from '@/lib/format'
 import { requireSupabase } from '@/lib/supabase/client'
 
 export function StudentTrainerPage() {
@@ -122,15 +123,6 @@ export function StudentTrainerPage() {
       </div>
     </main>
   )
-}
-
-function initials(name: string) {
-  return name
-    .split(' ')
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((part) => part[0]?.toUpperCase())
-    .join('')
 }
 
 function formatDate(value: string) {

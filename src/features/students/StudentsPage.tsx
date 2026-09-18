@@ -9,15 +9,16 @@ import {
 } from 'lucide-react'
 import { motion } from 'motion/react'
 import { useMemo, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, Navigate } from 'react-router-dom'
 
 import { Button } from '@/components/ui/button'
 import { useAuth } from '@/features/auth/auth-context'
-import { StudentTrainerPage } from '@/features/students/StudentTrainerPage'
 import {
   buildStudentOverviews,
   type StudentOverview,
 } from '@/features/students/student-overview'
+import { appointmentKeys } from '@/features/appointments/keys'
+import { initials } from '@/lib/format'
 import { requireSupabase } from '@/lib/supabase/client'
 import { cn } from '@/lib/utils'
 
@@ -30,7 +31,7 @@ export function StudentsPage() {
   const trainerId = profile?.id ?? ''
 
   const students = useQuery({
-    queryKey: ['student-overviews', trainerId],
+    queryKey: appointmentKeys.studentOverviews(trainerId),
     enabled: Boolean(trainerId) && profile?.role === 'trainer',
     queryFn: async () => {
       const { data: relationships, error: relationshipError } = await requireSupabase()
@@ -92,7 +93,7 @@ export function StudentsPage() {
     })
   }, [filter, search, students.data])
 
-  if (profile?.role !== 'trainer') return <StudentTrainerPage />
+  if (profile?.role !== 'trainer') return <Navigate to="/app/personal" replace />
 
   return (
     <main className="min-h-dvh px-4 pb-28 pt-5 text-white sm:px-7 lg:px-8 lg:pb-8 lg:pt-7">
@@ -293,15 +294,6 @@ function PaymentBadge({ status }: { status: StudentOverview['paymentStatus'] }) 
       {status === 'overdue' ? 'Atrasado' : 'Pendente'}
     </span>
   )
-}
-
-function initials(name: string) {
-  return name
-    .split(' ')
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((part) => part[0]?.toUpperCase())
-    .join('')
 }
 
 function formatAppointment(value: string) {

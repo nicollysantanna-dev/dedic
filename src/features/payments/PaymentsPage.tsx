@@ -21,6 +21,9 @@ import { Button } from '@/components/ui/button'
 import { useAuth } from '@/features/auth/auth-context'
 import { buildFinancialSummary } from '@/features/payments/financial-summary'
 import { paymentSchema, type PaymentValues } from '@/features/payments/schemas'
+import { appointmentKeys } from '@/features/appointments/keys'
+import { paymentKeys } from '@/features/payments/keys'
+import { formatCurrency } from '@/lib/format'
 import { requireSupabase } from '@/lib/supabase/client'
 import type { Tables } from '@/lib/supabase/database.types'
 import { cn } from '@/lib/utils'
@@ -96,10 +99,8 @@ function TrainerPayments({ trainerId }: { trainerId: string }) {
     onSuccess: () => {
       resetForm()
       setFormOpen(false)
-      void queryClient.invalidateQueries({ queryKey: ['payments'] })
-      void queryClient.invalidateQueries({ queryKey: ['dashboard-payments'] })
-      void queryClient.invalidateQueries({ queryKey: ['trainer-home-payments'] })
-      void queryClient.invalidateQueries({ queryKey: ['student-overviews'] })
+      void queryClient.invalidateQueries({ queryKey: paymentKeys.all })
+      void queryClient.invalidateQueries({ queryKey: appointmentKeys.all })
     },
   })
 
@@ -286,7 +287,7 @@ function StudentPayments({ studentId }: { studentId: string }) {
 
 function usePayments(column: 'trainer_id' | 'student_id', userId: string) {
   return useQuery({
-    queryKey: ['payments', column, userId],
+    queryKey: paymentKeys.list(column, userId),
     queryFn: async () => {
       const { data, error } = await requireSupabase()
         .from('payments')
@@ -521,11 +522,6 @@ const statusLabels = {
   overdue: 'Atrasado',
   cancelled: 'Cancelado',
 }
-
-const formatCurrency = (cents: number) =>
-  new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(
-    cents / 100,
-  )
 
 const formatCompactCurrency = (cents: number) =>
   new Intl.NumberFormat('pt-BR', {

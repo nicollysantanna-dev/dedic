@@ -11,6 +11,7 @@ import { motion } from 'motion/react'
 import { NavLink, Outlet } from 'react-router-dom'
 
 import { useAuth } from '@/features/auth/auth-context'
+import { initials } from '@/lib/format'
 import { cn } from '@/lib/utils'
 
 const trainerNavigation = [
@@ -24,8 +25,8 @@ const trainerNavigation = [
 const studentNavigation = [
   { to: '/app', label: 'Início', icon: House, end: true },
   { to: '/app/agenda', label: 'Agenda', icon: CalendarDays },
-  { to: '/app/alunos', label: 'Personal', icon: UsersRound },
-  { to: '/app/financeiro', label: 'Financeiro', icon: CircleDollarSign },
+  { to: '/app/creditos', label: 'Créditos', icon: CircleDollarSign },
+  { to: '/app/personal', label: 'Personal', icon: UsersRound },
   { to: '/app/conta', label: 'Conta', icon: UserRound },
 ]
 
@@ -150,13 +151,4 @@ function MobileShellLink(props: {
       <span>{label}</span>
     </NavLink>
   )
-}
-
-function initials(name: string) {
-  return name
-    .split(' ')
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((part) => part[0]?.toUpperCase())
-    .join('')
 }

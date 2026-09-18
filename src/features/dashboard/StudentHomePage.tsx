@@ -3,14 +3,11 @@ import {
   ArrowRight,
   CalendarCheck,
   CalendarDays,
-  Camera,
   CheckCircle2,
   CircleAlert,
   CircleDollarSign,
   Clock3,
   CreditCard,
-  Dumbbell,
-  Scale,
   Target,
   UserRound,
 } from 'lucide-react'
@@ -20,6 +17,16 @@ import { Link } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { useAuth } from '@/features/auth/auth-context'
 import { buildStudentHomeSummary } from '@/features/dashboard/student-home-summary'
+import { appointmentKeys } from '@/features/appointments/keys'
+import { creditKeys } from '@/features/credits/keys'
+import { paymentKeys } from '@/features/payments/keys'
+import {
+  formatCurrency,
+  formatDateOnly,
+  formatLongDate,
+  formatTime,
+  initials,
+} from '@/lib/format'
 import { requireSupabase } from '@/lib/supabase/client'
 
 export function StudentHomePage() {
@@ -43,7 +50,7 @@ export function StudentHomePage() {
     },
   })
   const appointments = useQuery({
-    queryKey: ['student-home-appointments', studentId],
+    queryKey: appointmentKeys.studentHistory(studentId),
     enabled: Boolean(studentId),
     queryFn: async () => {
       const { data, error } = await requireSupabase()
@@ -56,7 +63,7 @@ export function StudentHomePage() {
     },
   })
   const activePackage = useQuery({
-    queryKey: ['student-home-package', studentId],
+    queryKey: creditKeys.activePackage(studentId),
     enabled: Boolean(studentId),
     queryFn: async () => {
       const { data, error } = await requireSupabase()
@@ -72,7 +79,7 @@ export function StudentHomePage() {
     },
   })
   const balance = useQuery({
-    queryKey: ['credit-balance', studentId],
+    queryKey: creditKeys.balance(studentId),
     enabled: Boolean(studentId),
     queryFn: async () => {
       const { data, error } = await requireSupabase().rpc('get_credit_balance', {
@@ -83,7 +90,7 @@ export function StudentHomePage() {
     },
   })
   const payment = useQuery({
-    queryKey: ['student-home-payment', studentId],
+    queryKey: paymentKeys.next(studentId),
     enabled: Boolean(studentId),
     queryFn: async () => {
       const { data, error } = await requireSupabase()
@@ -125,7 +132,7 @@ export function StudentHomePage() {
       <div className="mx-auto max-w-7xl">
         <header>
           <p className="text-sm capitalize text-slate-400">
-            {formatFullDate(new Date())}
+            {formatLongDate(new Date())}
           </p>
           <h1 className="mt-1 text-2xl font-bold tracking-[-0.04em] sm:text-3xl">
             Olá, {profile?.full_name.split(' ')[0]}.
@@ -282,41 +289,30 @@ export function StudentHomePage() {
                 value={paymentStatusLabel(payment.data?.status)}
                 detail={
                   payment.data
-                    ? `${formatMoney(payment.data.amount_cents)} · ${formatDate(payment.data.due_on)}`
+                    ? `${formatCurrency(payment.data.amount_cents)} · ${formatDateOnly(payment.data.due_on)}`
                     : activePackage.data
-                      ? `Renovação ${formatDate(activePackage.data.expires_on)}`
+                      ? `Renovação ${formatDateOnly(activePackage.data.expires_on)}`
                       : 'Sem pacote ativo'
                 }
               />
             </section>
 
-            <section className="mt-5 grid gap-5 lg:grid-cols-[1fr_0.7fr]">
-              <div className="rounded-[1.5rem] bg-white p-5 text-slate-950 sm:p-6">
-                <div className="flex items-center justify-between gap-4">
-                  <div>
-                    <h2 className="font-bold">Seu progresso</h2>
-                    <p className="mt-1 text-xs text-slate-500">
-                      Acompanhe sua evolução em um só lugar
-                    </p>
-                  </div>
-                  <Scale className="text-blue-600" size={20} />
-                </div>
-                <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-3">
-                  <ProgressShortcut icon={Scale} label="Peso" value="Em breve" />
-                  <ProgressShortcut icon={Camera} label="Fotos" value="Em breve" />
-                  <ProgressShortcut icon={Dumbbell} label="Treinos" value="Hevy" />
-                </div>
-              </div>
+            <section className="mt-5 grid gap-5 lg:grid-cols-2">
               <div className="rounded-[1.5rem] border border-white/10 bg-white/5 p-5 sm:p-6">
                 <h2 className="font-bold">Atalhos</h2>
                 <div className="mt-4 space-y-2">
                   <Shortcut to="/app/agenda" icon={CalendarDays} label="Minhas aulas" />
                   <Shortcut
+                    to="/app/creditos"
+                    icon={CreditCard}
+                    label="Créditos e extrato"
+                  />
+                  <Shortcut
                     to="/app/financeiro"
                     icon={CircleDollarSign}
                     label="Pagamentos"
                   />
-                  <Shortcut to="/app/conta" icon={UserRound} label="Minha conta" />
+                  <Shortcut to="/app/personal" icon={UserRound} label="Meu personal" />
                 </div>
               </div>
             </section>
@@ -348,24 +344,6 @@ function SummaryCard({
   )
 }
 
-function ProgressShortcut({
-  icon: Icon,
-  label,
-  value,
-}: {
-  icon: typeof CalendarDays
-  label: string
-  value: string
-}) {
-  return (
-    <div className="rounded-xl border border-slate-100 bg-slate-50 p-4">
-      <Icon className="text-blue-600" size={17} />
-      <p className="mt-3 text-sm font-semibold">{label}</p>
-      <p className="mt-1 text-xs text-slate-400">{value}</p>
-    </div>
-  )
-}
-
 function Shortcut({
   to,
   icon: Icon,
@@ -388,27 +366,10 @@ function Shortcut({
   )
 }
 
-function initials(name: string) {
-  return name
-    .split(' ')
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((part) => part[0]?.toUpperCase())
-    .join('')
-}
-
 function paymentStatusLabel(status?: 'pending' | 'overdue' | 'paid' | 'cancelled') {
   if (status === 'overdue') return 'Atrasado'
   if (status === 'pending') return 'Pendente'
   return 'Em dia'
-}
-
-function formatFullDate(value: Date) {
-  return new Intl.DateTimeFormat('pt-BR', {
-    weekday: 'long',
-    day: '2-digit',
-    month: 'long',
-  }).format(value)
 }
 
 function formatAppointmentDay(value: string) {
@@ -417,24 +378,4 @@ function formatAppointmentDay(value: string) {
     day: '2-digit',
     month: 'long',
   }).format(new Date(value))
-}
-
-function formatTime(value: string) {
-  return new Intl.DateTimeFormat('pt-BR', {
-    hour: '2-digit',
-    minute: '2-digit',
-  }).format(new Date(value))
-}
-
-function formatDate(value: string) {
-  return new Intl.DateTimeFormat('pt-BR', { timeZone: 'UTC' }).format(
-    new Date(`${value}T00:00:00Z`),
-  )
-}
-
-function formatMoney(value: number) {
-  return new Intl.NumberFormat('pt-BR', {
-    style: 'currency',
-    currency: 'BRL',
-  }).format(value / 100)
 }

@@ -2,6 +2,7 @@ import { lazy, Suspense } from 'react'
 import { Navigate, Route, Routes } from 'react-router-dom'
 import { MotionConfig } from 'motion/react'
 
+import { ErrorBoundary } from '@/app/ErrorBoundary'
 import { AppShell } from '@/components/layout/AppShell'
 import { RequireAuth } from '@/features/auth/RequireAuth'
 import { SupabaseSetupPage } from '@/features/auth/SupabaseSetupPage'
@@ -25,6 +26,16 @@ const InviteStudentPage = lazy(() =>
     default: module.InviteStudentPage,
   })),
 )
+const StudentCreditsPage = lazy(() =>
+  import('@/features/credits/StudentCreditsPage').then((module) => ({
+    default: module.StudentCreditsPage,
+  })),
+)
+const StudentTrainerPage = lazy(() =>
+  import('@/features/students/StudentTrainerPage').then((module) => ({
+    default: module.StudentTrainerPage,
+  })),
+)
 const StudentsPage = lazy(() =>
   import('@/features/students/StudentsPage').then((module) => ({
     default: module.StudentsPage,
@@ -45,19 +56,9 @@ const AccountPage = lazy(() =>
     default: module.AccountPage,
   })),
 )
-const PackagesPage = lazy(() =>
-  import('@/features/packages/PackagesPage').then((module) => ({
-    default: module.PackagesPage,
-  })),
-)
 const AppointmentsPage = lazy(() =>
   import('@/features/appointments/AppointmentsPage').then((module) => ({
     default: module.AppointmentsPage,
-  })),
-)
-const ReschedulePage = lazy(() =>
-  import('@/features/appointments/ReschedulePage').then((module) => ({
-    default: module.ReschedulePage,
   })),
 )
 const PaymentsPage = lazy(() =>
@@ -83,37 +84,46 @@ export function App() {
       }
     >
       <MotionConfig reducedMotion="user" transition={{ duration: 0.24 }}>
-        <Routes>
-          <Route path="/" element={<AuthPage mode="login" />} />
-          <Route path="/entrar" element={<Navigate to="/" replace />} />
-          <Route path="/cadastro" element={<AuthPage mode="signup" />} />
-          <Route path="/recuperar" element={<PasswordRecoveryPage />} />
-          <Route path="/nova-senha" element={<NewPasswordPage />} />
-          <Route element={<RequireAuth />}>
-            <Route element={<AppShell />}>
-              <Route path="/app" element={<HomePage />} />
-              <Route path="/app/alunos" element={<StudentsPage />} />
-              <Route path="/app/alunos/:studentId" element={<StudentProfilePage />} />
-              <Route path="/app/alunos/convidar" element={<InviteStudentPage />} />
-              <Route path="/app/financeiro" element={<PaymentsPage />} />
-              <Route path="/app/conta" element={<AccountPage />} />
-              <Route path="/app/resumo" element={<Navigate to="/app/alunos" replace />} />
-              <Route
-                path="/app/pagamentos"
-                element={<Navigate to="/app/financeiro" replace />}
-              />
-              <Route
-                path="/app/calendario"
-                element={<Navigate to="/app/agenda" replace />}
-              />
-              <Route path="/app/pacotes" element={<PackagesPage />} />
-              <Route path="/app/agenda" element={<AppointmentsPage />} />
-              <Route path="/app/remarcar/:appointmentId" element={<ReschedulePage />} />
+        <ErrorBoundary>
+          <Routes>
+            <Route path="/" element={<AuthPage mode="login" />} />
+            <Route path="/entrar" element={<Navigate to="/" replace />} />
+            <Route path="/cadastro" element={<AuthPage mode="signup" />} />
+            <Route path="/recuperar" element={<PasswordRecoveryPage />} />
+            <Route path="/nova-senha" element={<NewPasswordPage />} />
+            <Route element={<RequireAuth />}>
+              <Route element={<AppShell />}>
+                <Route path="/app" element={<HomePage />} />
+                <Route path="/app/alunos" element={<StudentsPage />} />
+                <Route path="/app/creditos" element={<StudentCreditsPage />} />
+                <Route path="/app/personal" element={<StudentTrainerPage />} />
+                <Route
+                  path="/app/pacotes"
+                  element={<Navigate to="/app/creditos" replace />}
+                />
+                <Route path="/app/alunos/:studentId" element={<StudentProfilePage />} />
+                <Route path="/app/alunos/convidar" element={<InviteStudentPage />} />
+                <Route path="/app/financeiro" element={<PaymentsPage />} />
+                <Route path="/app/conta" element={<AccountPage />} />
+                <Route
+                  path="/app/resumo"
+                  element={<Navigate to="/app/alunos" replace />}
+                />
+                <Route
+                  path="/app/pagamentos"
+                  element={<Navigate to="/app/financeiro" replace />}
+                />
+                <Route
+                  path="/app/calendario"
+                  element={<Navigate to="/app/agenda" replace />}
+                />
+                <Route path="/app/agenda" element={<AppointmentsPage />} />
+              </Route>
             </Route>
-          </Route>
-          <Route path="/inicio" element={<Navigate to="/app" replace />} />
-          <Route path="*" element={<NotFoundPage />} />
-        </Routes>
+            <Route path="/inicio" element={<Navigate to="/app" replace />} />
+            <Route path="*" element={<NotFoundPage />} />
+          </Routes>
+        </ErrorBoundary>
       </MotionConfig>
     </Suspense>
   )

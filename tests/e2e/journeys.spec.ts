@@ -165,3 +165,25 @@ test('personal encerra o vínculo e a aluna deixa de ver a agenda', async ({ pag
   await login(page, 'aluno@dedic.local')
   await expect(page.getByText('Aguardando vínculo com o personal.')).toBeVisible()
 })
+
+test('aluna navega pela própria sessão: créditos, extrato e personal', async ({
+  page,
+}) => {
+  await login(page, users.student.email)
+
+  await page.getByRole('link', { name: 'Créditos' }).first().click()
+  await expect(page).toHaveURL(/\/app\/creditos$/)
+  await expect(page.getByRole('heading', { name: 'Créditos' })).toBeVisible()
+  await expect(page.getByText('Ativação do pacote').first()).toBeVisible()
+  await expect(page.getByText('Consumo por aula').first()).toBeVisible()
+  await expect(page.getByText('Devolução por cancelamento').first()).toBeVisible()
+
+  await page.getByRole('link', { name: 'Personal' }).first().click()
+  await expect(page).toHaveURL(/\/app\/personal$/)
+  await expect(page.getByRole('heading', { name: 'Paula P. Silva' })).toBeVisible()
+
+  // A área de alunos é do personal: aluna é redirecionada.
+  await page.goto('/app/alunos')
+  await expect(page).toHaveURL(/\/app\/personal$/)
+  await expect(page.getByRole('link', { name: 'Alunos' })).toHaveCount(0)
+})
