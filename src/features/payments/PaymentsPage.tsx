@@ -170,7 +170,7 @@ function TrainerPayments({ trainerId }: { trainerId: string }) {
                 <label className="text-sm font-semibold sm:col-span-2">
                   Pacote e aluno
                   <select
-                    className="field mt-2 border-white/15 bg-white/10 text-white"
+                    className="field field-dark mt-2"
                     {...form.register('packageId')}
                   >
                     <option className="text-slate-950" value="">
@@ -187,7 +187,7 @@ function TrainerPayments({ trainerId }: { trainerId: string }) {
                 <label className="text-sm font-semibold">
                   Valor (R$)
                   <input
-                    className="field mt-2 border-white/15 bg-white/10"
+                    className="field field-dark mt-2"
                     step="0.01"
                     type="number"
                     {...form.register('amountReais', { valueAsNumber: true })}
@@ -197,17 +197,14 @@ function TrainerPayments({ trainerId }: { trainerId: string }) {
                 <label className="text-sm font-semibold">
                   Vencimento
                   <input
-                    className="field mt-2 border-white/15 bg-white/10"
+                    className="field field-dark mt-2"
                     type="date"
                     {...form.register('dueOn')}
                   />
                 </label>
                 <label className="text-sm font-semibold">
                   Situação
-                  <select
-                    className="field mt-2 border-white/15 bg-white/10 text-white"
-                    {...form.register('status')}
-                  >
+                  <select className="field field-dark mt-2" {...form.register('status')}>
                     {Object.entries(statusLabels).map(([value, label]) => (
                       <option className="text-slate-950" key={value} value={value}>
                         {label}
@@ -219,7 +216,7 @@ function TrainerPayments({ trainerId }: { trainerId: string }) {
                   <label className="text-sm font-semibold">
                     Data do pagamento
                     <input
-                      className="field mt-2 border-white/15 bg-white/10"
+                      className="field field-dark mt-2"
                       type="date"
                       {...form.register('paidOn')}
                     />

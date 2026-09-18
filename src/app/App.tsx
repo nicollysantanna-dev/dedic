@@ -78,7 +78,7 @@ export function App() {
   return (
     <Suspense
       fallback={
-        <main className="grid min-h-dvh place-items-center bg-[#f4f1e9] text-sm font-semibold text-[#183529]">
+        <main className="grid min-h-dvh place-items-center bg-[var(--app-bg)] text-sm font-semibold text-slate-300">
           Preparando o Dedic…
         </main>
       }

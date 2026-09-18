@@ -103,12 +103,12 @@ export function AuthPage({ mode }: AuthPageProps) {
     : loginForm.formState.errors.password?.message
 
   return (
-    <main className="min-h-dvh bg-[#f4f1e9] px-5 py-6 text-[#183529] sm:grid sm:place-items-center">
+    <main className="min-h-dvh bg-[var(--app-bg)] px-4 py-6 text-white sm:grid sm:place-items-center sm:px-5">
       <section className="mx-auto w-full max-w-md">
         {isSignUp && (
           <Link
             to={authPathWithInvitation('/', location.search)}
-            className="inline-flex min-h-11 items-center gap-2 rounded-full text-sm font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d6a850]"
+            className="inline-flex min-h-11 items-center gap-2 rounded-full text-sm font-semibold text-slate-300 transition hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400"
           >
             <ArrowLeft size={17} aria-hidden="true" />
             Voltar para entrar
@@ -116,15 +116,15 @@ export function AuthPage({ mode }: AuthPageProps) {
         )}
 
         <div
-          className={`${isSignUp ? 'mt-8' : 'mt-12'} rounded-[2rem] border border-[#173d2c]/8 bg-white/65 p-6 shadow-[0_24px_70px_rgba(24,53,41,0.1)] sm:p-8`}
+          className={`${isSignUp ? 'mt-6' : 'mt-10'} rounded-[1.75rem] bg-white p-6 text-slate-950 shadow-[0_24px_70px_rgba(0,0,0,0.35)] sm:p-8`}
         >
-          <span className="grid size-11 place-items-center rounded-2xl bg-[#173d2c] text-white">
+          <span className="grid size-11 place-items-center rounded-2xl bg-[var(--brand)] text-white">
             <Dumbbell size={21} aria-hidden="true" />
           </span>
-          <h1 className="font-display mt-6 text-4xl font-bold tracking-[-0.055em]">
+          <h1 className="mt-6 text-3xl font-bold tracking-[-0.04em] sm:text-4xl">
             {isSignUp ? 'Crie seu espaço.' : 'Que bom ter você de volta.'}
           </h1>
-          <p className="mt-2 text-sm leading-6 text-[#65786e]">
+          <p className="mt-2 text-sm leading-6 text-slate-500">
             {isSignUp
               ? 'Escolha como você vai usar o Dedic. Esse papel não poderá ser trocado no MVP.'
               : 'Entre para acompanhar sua agenda e seus créditos.'}
@@ -161,8 +161,8 @@ export function AuthPage({ mode }: AuthPageProps) {
                         key={option.value}
                         className={`cursor-pointer rounded-2xl border px-4 py-3 text-center text-sm font-semibold transition ${
                           role === option.value
-                            ? 'border-[#173d2c] bg-[#e3ebe3]'
-                            : 'border-[#173d2c]/10 bg-white/60'
+                            ? 'border-[var(--brand)] bg-blue-50 text-blue-900'
+                            : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50'
                         }`}
                       >
                         <input
@@ -226,7 +226,7 @@ export function AuthPage({ mode }: AuthPageProps) {
             {!isSignUp && (
               <p className="text-right text-sm">
                 <Link
-                  className="font-semibold text-[#173d2c] underline decoration-[#d6a850] decoration-2 underline-offset-4"
+                  className="font-semibold text-[var(--brand)] underline decoration-2 underline-offset-4 hover:text-[var(--brand-hover)]"
                   to="/recuperar"
                 >
                   Esqueci minha senha
@@ -235,7 +235,10 @@ export function AuthPage({ mode }: AuthPageProps) {
             )}
 
             {serverMessage && (
-              <p className="rounded-2xl bg-[#e9e1ce] px-4 py-3 text-sm" role="status">
+              <p
+                className="rounded-2xl bg-blue-50 px-4 py-3 text-sm text-blue-950"
+                role="status"
+              >
                 {serverMessage}
               </p>
             )}
@@ -246,10 +249,10 @@ export function AuthPage({ mode }: AuthPageProps) {
             </Button>
           </form>
 
-          <p className="mt-6 text-center text-sm text-[#65786e]">
+          <p className="mt-6 text-center text-sm text-slate-500">
             {isSignUp ? 'Já possui conta?' : 'Ainda não possui conta?'}{' '}
             <Link
-              className="font-bold text-[#173d2c] underline decoration-[#d6a850] decoration-2 underline-offset-4"
+              className="font-bold text-[var(--brand)] underline decoration-2 underline-offset-4 hover:text-[var(--brand-hover)]"
               to={authPathWithInvitation(isSignUp ? '/' : '/cadastro', location.search)}
             >
               {isSignUp ? 'Entrar' : 'Criar conta'}
@@ -275,7 +278,7 @@ function Field({
       {label}
       <span className="mt-2 block">{children}</span>
       {error && (
-        <span className="mt-1 block text-xs font-medium text-[#a04432]" role="alert">
+        <span className="mt-1 block text-xs font-medium text-red-700" role="alert">
           {error}
         </span>
       )}

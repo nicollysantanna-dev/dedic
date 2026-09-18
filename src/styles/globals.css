@@ -17,8 +17,8 @@
   --warning: #f59e0b;
   --danger: #ef4444;
   font-family: var(--font-sans);
-  color: #183529;
-  background: #f4f1e9;
+  color: var(--app-text);
+  background: var(--app-bg);
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
@@ -30,7 +30,7 @@
 
 html {
   min-width: 320px;
-  background: #f4f1e9;
+  background: var(--app-bg);
 }
 
 body {
@@ -49,14 +49,15 @@ button {
   cursor: pointer;
 }
 
+/* Campo padrão para superfícies claras (cartões brancos e painéis). */
 @utility field {
   width: 100%;
   min-height: 2.9rem;
-  border: 1px solid rgb(23 61 44 / 12%);
-  border-radius: 1rem;
-  background: rgb(255 255 255 / 72%);
+  border: 1px solid #e2e8f0;
+  border-radius: 0.9rem;
+  background: #fff;
   padding-inline: 0.95rem;
-  color: inherit;
+  color: #0f172a;
   font-size: 0.9rem;
   outline: none;
   transition:
@@ -67,15 +68,37 @@ button {
 
 @utility field {
   &:focus {
-    border-color: #d6a850;
-    box-shadow: 0 0 0 3px rgb(214 168 80 / 18%);
-    background: #fff;
+    border-color: var(--brand);
+    box-shadow: 0 0 0 3px rgb(47 111 237 / 18%);
+  }
+}
+
+/* Variante para superfícies escuras: mantém o fundo translúcido também no foco. */
+@utility field-dark {
+  border-color: rgb(255 255 255 / 15%);
+  background: rgb(255 255 255 / 8%);
+  color: #f8fafc;
+  color-scheme: dark;
+}
+
+@utility field-dark {
+  &:focus {
+    border-color: var(--brand);
+    background: rgb(255 255 255 / 12%);
+  }
+
+  & option {
+    color: #0f172a;
+  }
+
+  &::placeholder {
+    color: rgb(248 250 252 / 45%);
   }
 }
 
 ::selection {
   color: #fff;
-  background: #2c5a42;
+  background: var(--brand);
 }
 
 .dedic-scheduler {

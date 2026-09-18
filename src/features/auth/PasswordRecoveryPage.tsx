@@ -47,7 +47,10 @@ export function PasswordRecoveryPage() {
       description="Informe o e-mail da sua conta. Você receberá um link para criar uma nova senha."
     >
       {sent ? (
-        <p className="mt-6 rounded-2xl bg-[#e9e1ce] px-4 py-3 text-sm" role="status">
+        <p
+          className="mt-6 rounded-2xl bg-blue-50 px-4 py-3 text-sm text-blue-950"
+          role="status"
+        >
           Se existir uma conta com este e-mail, o link de redefinição foi enviado.
           Verifique também a caixa de spam.
         </p>
@@ -67,7 +70,7 @@ export function PasswordRecoveryPage() {
           </Field>
           {serverError && (
             <p
-              className="rounded-2xl bg-[#f2ded7] px-4 py-3 text-sm text-[#8e483a]"
+              className="rounded-2xl bg-red-50 px-4 py-3 text-sm text-red-800"
               role="alert"
             >
               {serverError}
@@ -108,10 +111,10 @@ export function NewPasswordPage() {
   return (
     <AuthShell title="Nova senha" description="Escolha uma senha nova para a sua conta.">
       {isLoading ? (
-        <p className="mt-6 text-sm text-[#65786e]">Validando o link…</p>
+        <p className="mt-6 text-sm text-slate-500">Validando o link…</p>
       ) : !session ? (
         <p
-          className="mt-6 rounded-2xl bg-[#f2ded7] px-4 py-3 text-sm text-[#8e483a]"
+          className="mt-6 rounded-2xl bg-red-50 px-4 py-3 text-sm text-red-800"
           role="alert"
         >
           Este link expirou ou já foi usado.{' '}
@@ -147,7 +150,7 @@ export function NewPasswordPage() {
           </Field>
           {serverError && (
             <p
-              className="rounded-2xl bg-[#f2ded7] px-4 py-3 text-sm text-[#8e483a]"
+              className="rounded-2xl bg-red-50 px-4 py-3 text-sm text-red-800"
               role="alert"
             >
               {serverError}
@@ -175,23 +178,23 @@ function AuthShell({
   children: ReactNode
 }) {
   return (
-    <main className="min-h-dvh bg-[#f4f1e9] px-5 py-6 text-[#183529] sm:grid sm:place-items-center">
+    <main className="min-h-dvh bg-[var(--app-bg)] px-4 py-6 text-white sm:grid sm:place-items-center sm:px-5">
       <section className="mx-auto w-full max-w-md">
         <Link
           to="/"
-          className="inline-flex min-h-11 items-center gap-2 rounded-full text-sm font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d6a850]"
+          className="inline-flex min-h-11 items-center gap-2 rounded-full text-sm font-semibold text-slate-300 transition hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400"
         >
           <ArrowLeft size={17} aria-hidden="true" />
           Voltar para entrar
         </Link>
-        <div className="mt-8 rounded-[2rem] border border-[#173d2c]/8 bg-white/65 p-6 shadow-[0_24px_70px_rgba(24,53,41,0.1)] sm:p-8">
-          <span className="grid size-11 place-items-center rounded-2xl bg-[#173d2c] text-white">
+        <div className="mt-6 rounded-[1.75rem] bg-white p-6 text-slate-950 shadow-[0_24px_70px_rgba(0,0,0,0.35)] sm:p-8">
+          <span className="grid size-11 place-items-center rounded-2xl bg-[var(--brand)] text-white">
             <Dumbbell size={21} aria-hidden="true" />
           </span>
-          <h1 className="font-display mt-6 text-4xl font-bold tracking-[-0.055em]">
+          <h1 className="mt-6 text-3xl font-bold tracking-[-0.04em] sm:text-4xl">
             {title}
           </h1>
-          <p className="mt-2 text-sm leading-6 text-[#65786e]">{description}</p>
+          <p className="mt-2 text-sm leading-6 text-slate-500">{description}</p>
           {children}
         </div>
       </section>
@@ -213,7 +216,7 @@ function Field({
       {label}
       <span className="mt-2 block">{children}</span>
       {error && (
-        <span className="mt-1 block text-xs font-medium text-[#a04432]" role="alert">
+        <span className="mt-1 block text-xs font-medium text-red-700" role="alert">
           {error}
         </span>
       )}
