@@ -84,9 +84,7 @@ export function DashboardPage() {
             )}
             <Button variant="outline" asChild>
               <Link
-                to={
-                  profile.role === 'trainer' ? '/app/disponibilidade' : '/app/calendario'
-                }
+                to={profile.role === 'trainer' ? '/app/disponibilidade' : '/app/agenda'}
               >
                 {profile.role === 'trainer' ? (
                   <CalendarClock size={17} aria-hidden="true" />

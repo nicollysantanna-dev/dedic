@@ -1,45 +1,49 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
-  ArrowLeft,
-  CalendarCheck,
-  CalendarRange,
+  CalendarPlus,
   CheckCircle2,
   Clock3,
-  History,
   LoaderCircle,
   PencilLine,
-  UserRound,
+  Plus,
   UserX,
+  X,
   XCircle,
 } from 'lucide-react'
-import { useState } from 'react'
-import { Link } from 'react-router-dom'
+import { useEffect, useMemo, useState } from 'react'
 import { AnimatePresence, motion } from 'motion/react'
 
 import { Button } from '@/components/ui/button'
+import { AgendaPanelShell } from '@/features/appointments/AgendaPanelShell'
 import {
   canCompleteAppointment,
   getAppointmentStatusLabel,
-  getAppointmentStatusTone,
   type AppointmentOutcome,
 } from '@/features/appointments/appointment-status'
-import { sortAppointmentsForAgenda } from '@/features/appointments/appointment-order'
-import { AppointmentCalendar } from '@/features/appointments/AppointmentCalendar'
+import { canMoveAppointment } from '@/features/appointments/appointment-drag'
+import { getBookingError } from '@/features/appointments/booking-errors'
+import { InteractiveAgendaCalendar } from '@/features/appointments/InteractiveAgendaCalendar'
 import { useAuth } from '@/features/auth/auth-context'
 import { requireSupabase } from '@/lib/supabase/client'
-import type { Json } from '@/lib/supabase/database.types'
+
+type AgendaPanel = 'create' | 'appointment' | 'reschedule' | 'cancel' | null
 
 export function AppointmentsPage() {
   const { profile } = useAuth()
   const queryClient = useQueryClient()
-  const [cancelTargetId, setCancelTargetId] = useState<string | null>(null)
   const [cancellationNote, setCancellationNote] = useState('')
   const [outcomeTargetId, setOutcomeTargetId] = useState<string | null>(null)
   const [correctionTargetId, setCorrectionTargetId] = useState<string | null>(null)
   const [correctionReason, setCorrectionReason] = useState('')
-  const [selectedDay, setSelectedDay] = useState<Date>()
+  const [panel, setPanel] = useState<AgendaPanel>(null)
+  const [selectedAppointmentId, setSelectedAppointmentId] = useState<string | null>(null)
+  const [bookingStudentId, setBookingStudentId] = useState('')
+  const [bookingStart, setBookingStart] = useState('')
+  const [toast, setToast] = useState<string | null>(null)
+  const [calendarRange, setCalendarRange] = useState(() => initialCalendarRange())
   const userId = profile?.id ?? ''
   const isTrainer = profile?.role === 'trainer'
+  const lessonDurationMinutes = profile?.default_lesson_duration_minutes ?? 60
   const appointments = useQuery({
     queryKey: ['appointments', userId],
     enabled: Boolean(userId),
@@ -65,18 +69,164 @@ export function AppointmentsPage() {
     },
   })
 
-  const appointmentEvents = useQuery({
-    queryKey: ['appointment-events', userId],
-    enabled: Boolean(userId),
+  const students = useQuery({
+    queryKey: ['agenda-students', userId],
+    enabled: Boolean(userId) && isTrainer,
     queryFn: async () => {
       const { data, error } = await requireSupabase()
-        .from('appointment_events')
-        .select('*')
-        .eq(isTrainer ? 'trainer_id' : 'student_id', userId)
-        .in('event_type', ['completed', 'student_no_show', 'cancelled'])
-        .order('created_at', { ascending: false })
+        .from('trainer_student_relationships')
+        .select(
+          'student_id, profiles!trainer_student_relationships_student_id_fkey(full_name)',
+        )
+        .eq('trainer_id', userId)
+        .eq('status', 'active')
       if (error) throw error
       return data
+    },
+  })
+
+  const studentRelationship = useQuery({
+    queryKey: ['agenda-student-relationship', userId],
+    enabled: Boolean(userId) && !isTrainer,
+    queryFn: async () => {
+      const { data, error } = await requireSupabase()
+        .from('trainer_student_relationships')
+        .select(
+          'trainer_id, profiles!trainer_student_relationships_trainer_id_fkey(full_name)',
+        )
+        .eq('student_id', userId)
+        .eq('status', 'active')
+        .maybeSingle()
+      if (error) throw error
+      return data
+    },
+  })
+
+  const schedulerTrainerId = isTrainer
+    ? userId
+    : (studentRelationship.data?.trainer_id ?? '')
+
+  const availableSlots = useQuery({
+    queryKey: [
+      'agenda-scheduler-slots',
+      schedulerTrainerId,
+      calendarRange.start.toISOString(),
+      calendarRange.end.toISOString(),
+    ],
+    enabled: Boolean(schedulerTrainerId),
+    queryFn: async () => {
+      const { data, error } = await requireSupabase().rpc('get_available_slots', {
+        target_trainer_id: schedulerTrainerId,
+        range_start: formatIsoDate(calendarRange.start),
+        range_end: formatIsoDate(calendarRange.end),
+      })
+      if (error) throw error
+      return data
+    },
+  })
+
+  const blockedPeriods = useQuery({
+    queryKey: [
+      'agenda-scheduler-blocks',
+      userId,
+      calendarRange.start.toISOString(),
+      calendarRange.end.toISOString(),
+    ],
+    enabled: Boolean(userId) && isTrainer,
+    queryFn: async () => {
+      const { data, error } = await requireSupabase()
+        .from('availability_exceptions')
+        .select('id, starts_at, ends_at')
+        .eq('trainer_id', userId)
+        .lt('starts_at', calendarRange.end.toISOString())
+        .gt('ends_at', calendarRange.start.toISOString())
+      if (error) throw error
+      return data
+    },
+  })
+
+  const effectiveBookingStudentId = isTrainer
+    ? bookingStudentId || students.data?.[0]?.student_id || ''
+    : userId
+  const bookingBalance = useQuery({
+    queryKey: ['credit-balance', effectiveBookingStudentId],
+    enabled: Boolean(effectiveBookingStudentId) && panel === 'create',
+    queryFn: async () => {
+      const { data, error } = await requireSupabase().rpc('get_credit_balance', {
+        target_student_id: effectiveBookingStudentId,
+      })
+      if (error) throw error
+      return data
+    },
+  })
+
+  useEffect(() => {
+    if (!toast) return
+    const timeout = window.setTimeout(() => setToast(null), 4200)
+    return () => window.clearTimeout(timeout)
+  }, [toast])
+
+  const refreshAgenda = () => {
+    void queryClient.invalidateQueries({ queryKey: ['appointments'] })
+    void queryClient.invalidateQueries({ queryKey: ['agenda-scheduler-slots'] })
+    void queryClient.invalidateQueries({ queryKey: ['credit-balance'] })
+    void queryClient.invalidateQueries({ queryKey: ['credit-ledger'] })
+    void queryClient.invalidateQueries({ queryKey: ['trainer-home-appointments'] })
+  }
+
+  const booking = useMutation({
+    mutationFn: async () => {
+      if (!effectiveBookingStudentId) throw new Error('STUDENT_REQUIRED')
+      if (!bookingStart || new Date(bookingStart) <= new Date()) {
+        throw new Error('FUTURE_START_REQUIRED')
+      }
+      const request = isTrainer
+        ? requireSupabase().rpc('book_appointment_for_student', {
+            target_student_id: effectiveBookingStudentId,
+            requested_start: new Date(bookingStart).toISOString(),
+            requested_booking_id: crypto.randomUUID(),
+          })
+        : requireSupabase().rpc('book_appointment', {
+            target_trainer_id: schedulerTrainerId,
+            requested_start: new Date(bookingStart).toISOString(),
+            requested_booking_id: crypto.randomUUID(),
+          })
+      const { error } = await request
+      if (error) throw error
+    },
+    onSuccess: () => {
+      const student = students.data?.find(
+        (item) => item.student_id === effectiveBookingStudentId,
+      )
+      setToast(
+        `Aula agendada${student?.profiles?.full_name ? ` com ${student.profiles.full_name}` : ''}.`,
+      )
+      setPanel(null)
+      setBookingStart('')
+      refreshAgenda()
+    },
+  })
+
+  const rescheduleAppointment = useMutation({
+    mutationFn: async ({
+      appointmentId,
+      startsAt,
+    }: {
+      appointmentId: string
+      startsAt: Date
+    }) => {
+      const { error } = await requireSupabase().rpc('reschedule_appointment', {
+        target_appointment_id: appointmentId,
+        requested_start: startsAt.toISOString(),
+        requested_reschedule_id: crypto.randomUUID(),
+      })
+      if (error) throw error
+    },
+    onSuccess: (_data, variables) => {
+      setToast(`Aula remarcada para ${formatDateTime(variables.startsAt)}.`)
+      setPanel(null)
+      setSelectedAppointmentId(null)
+      refreshAgenda()
     },
   })
 
@@ -89,12 +239,11 @@ export function AppointmentsPage() {
       if (error) throw error
     },
     onSuccess: () => {
-      setCancelTargetId(null)
       setCancellationNote('')
-      void queryClient.invalidateQueries({ queryKey: ['appointments'] })
-      void queryClient.invalidateQueries({ queryKey: ['available-slots'] })
-      void queryClient.invalidateQueries({ queryKey: ['credit-balance'] })
-      void queryClient.invalidateQueries({ queryKey: ['credit-ledger'] })
+      setPanel(null)
+      setSelectedAppointmentId(null)
+      setToast('Aula cancelada e crédito devolvido ao aluno.')
+      refreshAgenda()
     },
   })
 
@@ -142,44 +291,44 @@ export function AppointmentsPage() {
     },
   })
 
-  const orderedAppointments = appointments.data
-    ? sortAppointmentsForAgenda(appointments.data)
-    : undefined
-  const displayedAppointments = selectedDay
-    ? orderedAppointments?.filter((appointment) =>
-        isSameDay(new Date(appointment.starts_at), selectedDay),
-      )
-    : orderedAppointments
-
+  const selectedAppointment = useMemo(
+    () =>
+      appointments.data?.find(
+        (appointment) => appointment.id === selectedAppointmentId,
+      ) ?? null,
+    [appointments.data, selectedAppointmentId],
+  )
   return (
-    <main className="min-h-dvh bg-[#f4f1e9] px-5 py-6 text-[#183529] sm:px-8">
-      <div className="mx-auto w-full max-w-4xl">
-        <Link
-          className="inline-flex min-h-11 items-center gap-2 text-sm font-semibold"
-          to="/app"
-        >
-          <ArrowLeft size={17} /> Voltar ao painel
-        </Link>
-        <header className="mt-7">
-          <p className="text-xs font-bold uppercase tracking-[0.15em] text-[#a47b2e]">
-            Próximas aulas
-          </p>
-          <h1 className="font-display mt-2 text-4xl font-bold tracking-[-0.055em] sm:text-5xl">
-            Sua agenda.
-          </h1>
-          <p className="mt-3 text-[#60746a]">
-            {isTrainer
-              ? 'Conclua as aulas iniciadas e mantenha o histórico do aluno atualizado.'
-              : 'Aulas agendadas e resultados aparecem aqui para você acompanhar.'}
-          </p>
+    <main className="min-h-dvh px-4 pb-28 pt-5 text-white sm:px-7 lg:px-8 lg:pb-8 lg:pt-7">
+      <div className="mx-auto w-full max-w-7xl">
+        <header className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <p className="text-sm text-slate-400">Organize sua rotina de atendimento</p>
+            <h1 className="mt-1 text-2xl font-bold tracking-[-0.04em] sm:text-3xl">
+              Agenda
+            </h1>
+          </div>
+          {isTrainer && (
+            <Button
+              onClick={() => {
+                setBookingStudentId('')
+                setBookingStart(toLocalDateTimeInput(nextHalfHour()))
+                setPanel('create')
+              }}
+            >
+              <Plus size={17} /> Nova aula
+            </Button>
+          )}
         </header>
 
         {appointments.isLoading && (
-          <p className="mt-10 text-sm font-semibold">Carregando agenda…</p>
+          <p className="mt-6 rounded-2xl border border-white/8 bg-white/5 p-6 text-sm font-semibold text-slate-300">
+            Carregando agenda…
+          </p>
         )}
         {appointments.error && (
           <p
-            className="mt-8 rounded-2xl bg-[#f2ded7] p-4 text-sm text-[#8e483a]"
+            className="mt-6 rounded-2xl border border-red-400/20 bg-red-400/10 p-4 text-sm text-red-100"
             role="alert"
           >
             Não foi possível carregar sua agenda.
@@ -187,122 +336,224 @@ export function AppointmentsPage() {
         )}
 
         {!appointments.isLoading && !appointments.error && appointments.data && (
-          <AppointmentCalendar
-            appointments={appointments.data}
-            selected={selectedDay}
-            onSelect={setSelectedDay}
-          />
+          <div className="mt-6">
+            <div className="mb-3 flex flex-wrap gap-x-5 gap-y-2 text-xs text-slate-400">
+              <span className="inline-flex items-center gap-2">
+                <span className="size-3 rounded-sm bg-blue-100 ring-1 ring-blue-600" />
+                Aula agendada
+              </span>
+              {schedulerTrainerId && (
+                <>
+                  <span className="inline-flex items-center gap-2">
+                    <span className="size-3 rounded-sm bg-blue-50 ring-1 ring-blue-100" />
+                    Disponibilidade
+                  </span>
+                  <span className="inline-flex items-center gap-2">
+                    <span className="size-3 rounded-sm bg-red-100 ring-1 ring-red-200" />
+                    Bloqueado
+                  </span>
+                </>
+              )}
+            </div>
+            <InteractiveAgendaCalendar
+              appointments={appointments.data}
+              availableSlots={availableSlots.data ?? []}
+              blockedPeriods={blockedPeriods.data ?? []}
+              canCreate={Boolean(schedulerTrainerId)}
+              restrictCreationToAvailableSlots={!isTrainer}
+              lessonDurationMinutes={lessonDurationMinutes}
+              onRangeChange={(start, end) => setCalendarRange({ start, end })}
+              onCreate={(start) => {
+                setBookingStudentId('')
+                setBookingStart(toLocalDateTimeInput(start))
+                setPanel('create')
+              }}
+              onAppointmentClick={(appointmentId) => {
+                setSelectedAppointmentId(appointmentId)
+                setPanel('appointment')
+              }}
+              onAppointmentMove={(appointmentId, startsAt, revert) => {
+                rescheduleAppointment.mutate(
+                  { appointmentId, startsAt },
+                  {
+                    onError: () => {
+                      revert()
+                      setToast(
+                        'Não foi possível remarcar. O horário original foi mantido.',
+                      )
+                    },
+                  },
+                )
+              }}
+            />
+          </div>
         )}
+      </div>
 
-        <div className="mt-8 space-y-3">
-          <AnimatePresence mode="popLayout" initial={false}>
-            {displayedAppointments?.map((appointment) => {
-              const statusTone = getAppointmentStatusTone(appointment.status)
-              const isFuture = new Date(appointment.starts_at) > new Date()
-              const canComplete =
-                isTrainer &&
-                canCompleteAppointment(appointment.status, appointment.starts_at)
-              const isFinal = ['completed', 'student_no_show'].includes(
-                appointment.status,
-              )
-              const events = appointmentEvents.data?.filter(
-                (event) => event.appointment_id === appointment.id,
-              )
+      <AgendaPanelShell open={Boolean(panel)} onClose={() => setPanel(null)}>
+        {panel && (
+          <>
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <p className="text-xs font-bold uppercase tracking-[0.14em] text-blue-600">
+                  {panel === 'create'
+                    ? 'Novo agendamento'
+                    : panel === 'reschedule'
+                      ? 'Remarcação'
+                      : panel === 'cancel'
+                        ? 'Cancelamento'
+                        : 'Detalhes da aula'}
+                </p>
+                <h2 className="mt-1 text-2xl font-bold tracking-[-0.04em]">
+                  {panel === 'create'
+                    ? 'Criar nova aula'
+                    : panel === 'reschedule'
+                      ? 'Escolher novo horário'
+                      : panel === 'cancel'
+                        ? 'Cancelar aula'
+                        : (selectedAppointment?.profiles?.full_name ?? 'Aula')}
+                </h2>
+              </div>
+              <button
+                aria-label="Fechar"
+                className="grid size-10 shrink-0 place-items-center rounded-xl bg-slate-100 transition hover:bg-slate-200"
+                onClick={() => setPanel(null)}
+                type="button"
+              >
+                <X size={18} />
+              </button>
+            </div>
 
-              return (
-                <motion.article
-                  layout
-                  initial={{ opacity: 0, y: 12, scale: 0.985 }}
-                  animate={{ opacity: 1, y: 0, scale: 1 }}
-                  exit={{ opacity: 0, y: -8, scale: 0.985 }}
-                  transition={{ type: 'spring', stiffness: 340, damping: 30 }}
-                  className={`rounded-[1.75rem] border p-5 ${appointmentCardClasses[statusTone]}`}
-                  key={appointment.id}
-                >
-                  <div className="flex items-center gap-4">
-                    <span
-                      className={`grid size-12 shrink-0 place-items-center rounded-2xl ${appointmentIconClasses[statusTone]}`}
+            {panel === 'create' && (
+              <div className="mt-7 space-y-5">
+                {isTrainer ? (
+                  <label className="block text-sm font-semibold">
+                    Aluno
+                    <select
+                      className="field mt-2"
+                      onChange={(event) => setBookingStudentId(event.target.value)}
+                      value={effectiveBookingStudentId}
                     >
-                      <CalendarCheck size={21} />
-                    </span>
-                    <div className="min-w-0 flex-1">
-                      <p className="font-display text-xl font-bold capitalize">
-                        {formatAppointmentDay(appointment.starts_at)}
-                      </p>
-                      <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-sm text-[#687b71]">
-                        <span className="inline-flex items-center gap-1.5">
-                          <Clock3 size={15} />
-                          {formatAppointmentTime(appointment.starts_at)}–
-                          {formatAppointmentTime(appointment.ends_at)}
-                        </span>
-                        <span className="inline-flex items-center gap-1.5">
-                          <UserRound size={15} />
-                          {appointment.profiles?.full_name ??
-                            (isTrainer ? 'Aluno' : 'Personal')}
-                        </span>
-                      </div>
-                    </div>
-                    <span
-                      className={`rounded-full px-3 py-1 text-xs font-bold ${appointmentBadgeClasses[statusTone]}`}
-                    >
-                      {getAppointmentStatusLabel(appointment.status)}
-                    </span>
+                      {students.data?.map((student) => (
+                        <option key={student.student_id} value={student.student_id}>
+                          {student.profiles?.full_name ?? 'Aluno'}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                ) : (
+                  <div className="rounded-2xl bg-blue-50 p-4 text-sm text-blue-950">
+                    Aula com{' '}
+                    <strong>
+                      {studentRelationship.data?.profiles?.full_name ?? 'seu personal'}
+                    </strong>
                   </div>
+                )}
+                <label className="block text-sm font-semibold">
+                  Data e horário
+                  <input
+                    className="field mt-2"
+                    min={toLocalDateTimeInput(new Date())}
+                    onChange={(event) => setBookingStart(event.target.value)}
+                    type="datetime-local"
+                    value={bookingStart}
+                  />
+                </label>
+                <div className="grid grid-cols-2 gap-3">
+                  <InfoCard label="Duração" value={`${lessonDurationMinutes} min`} />
+                  <InfoCard
+                    label="Créditos"
+                    value={
+                      bookingBalance.isLoading ? '…' : String(bookingBalance.data ?? 0)
+                    }
+                  />
+                </div>
+                {isTrainer && !students.isLoading && !students.data?.length && (
+                  <PanelError text="Vincule um aluno antes de criar uma aula." />
+                )}
+                {!isTrainer && !studentRelationship.isLoading && !schedulerTrainerId && (
+                  <PanelError text="Você ainda não possui um personal vinculado." />
+                )}
+                {booking.error && <PanelError text={getBookingError(booking.error)} />}
+                <Button
+                  className="w-full"
+                  disabled={
+                    booking.isPending ||
+                    !effectiveBookingStudentId ||
+                    (bookingBalance.data ?? 0) <= 0
+                  }
+                  onClick={() => booking.mutate()}
+                >
+                  {booking.isPending ? (
+                    <LoaderCircle className="animate-spin" size={17} />
+                  ) : (
+                    <CalendarPlus size={17} />
+                  )}
+                  Confirmar agendamento
+                </Button>
+              </div>
+            )}
 
-                  {cancelTargetId === appointment.id ? (
-                    <div className="mt-4 rounded-2xl bg-[#f2ded7] p-4 sm:flex sm:flex-wrap sm:items-end sm:justify-between sm:gap-3">
-                      <div>
-                        <p className="font-semibold text-[#7f382d]">
-                          Cancelar esta aula?
-                        </p>
-                        <p className="mt-1 text-xs text-[#8e5b52]">
-                          O horário será liberado e 1 crédito será devolvido.
-                        </p>
-                      </div>
-                      <label className="mt-3 block text-sm font-semibold text-[#7f382d] sm:basis-full">
-                        Motivo ou observação (opcional)
-                        <textarea
-                          className="field mt-2 min-h-20 resize-y bg-white"
-                          maxLength={300}
-                          value={cancellationNote}
-                          onChange={(event) => setCancellationNote(event.target.value)}
-                          placeholder="Ex.: compromisso, indisposição ou viagem."
-                        />
-                      </label>
-                      <div className="mt-3 flex gap-2 sm:mt-0">
-                        <Button
-                          disabled={cancelAppointment.isPending}
-                          onClick={() => cancelAppointment.mutate(appointment.id)}
-                        >
-                          {cancelAppointment.isPending && (
-                            <LoaderCircle className="animate-spin" size={16} />
-                          )}
-                          Confirmar cancelamento
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          disabled={cancelAppointment.isPending}
-                          onClick={() => {
-                            setCancelTargetId(null)
-                            setCancellationNote('')
-                          }}
-                        >
-                          Voltar
-                        </Button>
-                      </div>
-                    </div>
-                  ) : outcomeTargetId === appointment.id ? (
-                    <div className="mt-4 rounded-2xl bg-[#e8eee7] p-4">
-                      <p className="font-semibold">Como esta aula terminou?</p>
-                      <p className="mt-1 text-xs text-[#687b71]">
-                        O crédito já consumido será mantido nas duas opções.
+            {panel === 'appointment' && selectedAppointment && (
+              <div className="mt-7">
+                <div className="rounded-2xl bg-slate-100 p-5">
+                  <p className="text-sm font-semibold capitalize">
+                    {formatAppointmentDay(selectedAppointment.starts_at)}
+                  </p>
+                  <p className="mt-2 flex items-center gap-2 text-sm text-slate-600">
+                    <Clock3 size={16} />
+                    {formatAppointmentTime(selectedAppointment.starts_at)}–
+                    {formatAppointmentTime(selectedAppointment.ends_at)}
+                  </p>
+                  <span className="mt-4 inline-flex rounded-full bg-blue-100 px-3 py-1 text-xs font-bold text-blue-800">
+                    {getAppointmentStatusLabel(selectedAppointment.status)}
+                  </span>
+                </div>
+                {canMoveAppointment(selectedAppointment) ? (
+                  <div className="mt-5 grid gap-3">
+                    <Button
+                      onClick={() => {
+                        setBookingStart(
+                          toLocalDateTimeInput(new Date(selectedAppointment.starts_at)),
+                        )
+                        setPanel('reschedule')
+                      }}
+                    >
+                      <CalendarPlus size={17} /> Remarcar aula
+                    </Button>
+                    <Button variant="outline" onClick={() => setPanel('cancel')}>
+                      <XCircle size={17} /> Cancelar aula
+                    </Button>
+                    <p className="text-xs leading-5 text-slate-500">
+                      No desktop, você também pode arrastar este card diretamente para
+                      outro horário.
+                    </p>
+                  </div>
+                ) : (
+                  <p className="mt-5 rounded-2xl bg-slate-100 p-4 text-sm text-slate-600">
+                    Esta aula não pode mais ser remarcada ou cancelada.
+                  </p>
+                )}
+
+                {isTrainer &&
+                  canCompleteAppointment(
+                    selectedAppointment.status,
+                    selectedAppointment.starts_at,
+                  ) &&
+                  (outcomeTargetId === selectedAppointment.id ? (
+                    <div className="mt-5 rounded-2xl bg-emerald-50 p-4">
+                      <p className="font-semibold text-emerald-950">
+                        Como esta aula terminou?
                       </p>
-                      <div className="mt-3 flex flex-wrap gap-2">
+                      <p className="mt-1 text-xs leading-5 text-emerald-800">
+                        O crédito consumido será mantido nas duas opções.
+                      </p>
+                      <div className="mt-3 grid gap-2 sm:grid-cols-2">
                         <Button
                           disabled={completeAppointment.isPending}
                           onClick={() =>
                             completeAppointment.mutate({
-                              appointmentId: appointment.id,
+                              appointmentId: selectedAppointment.id,
                               outcome: 'completed',
                             })
                           }
@@ -314,220 +565,183 @@ export function AppointmentsPage() {
                           disabled={completeAppointment.isPending}
                           onClick={() =>
                             completeAppointment.mutate({
-                              appointmentId: appointment.id,
+                              appointmentId: selectedAppointment.id,
                               outcome: 'student_no_show',
                             })
                           }
                         >
                           <UserX size={16} /> Falta do aluno
                         </Button>
-                        <Button
-                          variant="ghost"
-                          disabled={completeAppointment.isPending}
-                          onClick={() => setOutcomeTargetId(null)}
-                        >
-                          Voltar
-                        </Button>
                       </div>
-                    </div>
-                  ) : correctionTargetId === appointment.id ? (
-                    <div className="mt-4 rounded-2xl bg-[#f4ead2] p-4">
-                      <label
-                        className="font-semibold"
-                        htmlFor={`reason-${appointment.id}`}
-                      >
-                        Justificativa da correção
-                      </label>
-                      <textarea
-                        id={`reason-${appointment.id}`}
-                        className="field mt-2 min-h-24 resize-y bg-white"
-                        value={correctionReason}
-                        onChange={(event) => setCorrectionReason(event.target.value)}
-                        placeholder="Explique por que o resultado precisa ser corrigido."
-                      />
-                      <div className="mt-3 flex flex-wrap gap-2">
-                        <Button
-                          disabled={
-                            correctionReason.trim().length < 5 || correctOutcome.isPending
-                          }
-                          onClick={() =>
-                            correctOutcome.mutate({
-                              appointmentId: appointment.id,
-                              outcome:
-                                appointment.status === 'completed'
-                                  ? 'student_no_show'
-                                  : 'completed',
-                            })
-                          }
-                        >
-                          {correctOutcome.isPending && (
-                            <LoaderCircle className="animate-spin" size={16} />
-                          )}
-                          Corrigir para{' '}
-                          {appointment.status === 'completed' ? 'falta' : 'realizada'}
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          disabled={correctOutcome.isPending}
-                          onClick={() => {
-                            setCorrectionTargetId(null)
-                            setCorrectionReason('')
-                          }}
-                        >
-                          Voltar
-                        </Button>
-                      </div>
+                      {completeAppointment.error && (
+                        <PanelError text="Não foi possível registrar o resultado." />
+                      )}
                     </div>
                   ) : (
-                    <div className="mt-4 flex flex-wrap gap-2 border-t border-[#173d2c]/8 pt-4">
-                      {appointment.status === 'scheduled' && isFuture && (
-                        <>
-                          <Button variant="outline" asChild>
-                            <Link to={`/app/remarcar/${appointment.id}`}>
-                              <CalendarRange size={16} />
-                              Remarcar
-                            </Link>
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            onClick={() => setCancelTargetId(appointment.id)}
-                          >
-                            <XCircle size={16} />
-                            Cancelar
-                          </Button>
-                        </>
-                      )}
-                      {canComplete && (
-                        <Button onClick={() => setOutcomeTargetId(appointment.id)}>
-                          <CheckCircle2 size={16} />
-                          Registrar resultado
-                        </Button>
-                      )}
-                      {isTrainer && isFinal && (
-                        <Button
-                          variant="outline"
-                          onClick={() => setCorrectionTargetId(appointment.id)}
-                        >
+                    <Button
+                      className="mt-5 w-full"
+                      onClick={() => setOutcomeTargetId(selectedAppointment.id)}
+                    >
+                      <CheckCircle2 size={17} /> Registrar resultado
+                    </Button>
+                  ))}
+
+                {isTrainer &&
+                  ['completed', 'student_no_show'].includes(selectedAppointment.status) &&
+                  (correctionTargetId === selectedAppointment.id ? (
+                    <div className="mt-5 rounded-2xl bg-amber-50 p-4">
+                      <label className="text-sm font-semibold text-amber-950">
+                        Justificativa da correção
+                        <textarea
+                          className="field mt-2 min-h-24 resize-y bg-white"
+                          onChange={(event) => setCorrectionReason(event.target.value)}
+                          placeholder="Explique por que o resultado deve ser corrigido."
+                          value={correctionReason}
+                        />
+                      </label>
+                      <Button
+                        className="mt-3 w-full"
+                        disabled={
+                          correctionReason.trim().length < 5 || correctOutcome.isPending
+                        }
+                        onClick={() =>
+                          correctOutcome.mutate({
+                            appointmentId: selectedAppointment.id,
+                            outcome:
+                              selectedAppointment.status === 'completed'
+                                ? 'student_no_show'
+                                : 'completed',
+                          })
+                        }
+                      >
+                        {correctOutcome.isPending ? (
+                          <LoaderCircle className="animate-spin" size={16} />
+                        ) : (
                           <PencilLine size={16} />
-                          Corrigir resultado
-                        </Button>
+                        )}
+                        Corrigir para{' '}
+                        {selectedAppointment.status === 'completed'
+                          ? 'falta'
+                          : 'realizada'}
+                      </Button>
+                      {correctOutcome.error && (
+                        <PanelError text="Não foi possível corrigir o resultado." />
                       )}
                     </div>
-                  )}
-                  {cancelAppointment.error && cancelTargetId === appointment.id && (
-                    <p className="mt-3 text-sm text-[#8e483a]" role="alert">
-                      Não foi possível cancelar esta aula.
-                    </p>
-                  )}
-                  {completeAppointment.error && outcomeTargetId === appointment.id && (
-                    <p className="mt-3 text-sm text-[#8e483a]" role="alert">
-                      Não foi possível registrar o resultado desta aula.
-                    </p>
-                  )}
-                  {correctOutcome.error && correctionTargetId === appointment.id && (
-                    <p className="mt-3 text-sm text-[#8e483a]" role="alert">
-                      Não foi possível corrigir o resultado. Confira a justificativa.
-                    </p>
-                  )}
-                  {events && events.length > 0 && (
-                    <details className="mt-4 border-t border-[#173d2c]/8 pt-4">
-                      <summary className="flex min-h-11 cursor-pointer items-center gap-2 text-sm font-semibold">
-                        <History size={16} /> Histórico
-                      </summary>
-                      <ol className="mt-2 space-y-2">
-                        {events.map((event) => {
-                          const correctionReason = getCorrectionReason(event.details)
-                          const cancellationReason = getCancellationReason(event.details)
-                          const automaticCompletion = isAutomaticCompletion(event.details)
-                          return (
-                            <li
-                              className="rounded-xl bg-[#eef1ea] p-3 text-xs"
-                              key={event.id}
-                            >
-                              <span className="font-semibold">
-                                {event.event_type === 'completed'
-                                  ? 'Aula realizada'
-                                  : event.event_type === 'student_no_show'
-                                    ? 'Falta do aluno'
-                                    : 'Aula cancelada'}
-                              </span>{' '}
-                              · {formatEventDate(event.created_at)}
-                              {correctionReason && (
-                                <span className="mt-1 block text-[#687b71]">
-                                  Correção: {correctionReason}
-                                </span>
-                              )}
-                              {cancellationReason && (
-                                <span className="mt-1 block text-[#687b71]">
-                                  Motivo: {cancellationReason}
-                                </span>
-                              )}
-                              {automaticCompletion && (
-                                <span className="mt-1 block text-[#687b71]">
-                                  Finalizada automaticamente no término da aula.
-                                </span>
-                              )}
-                            </li>
-                          )
-                        })}
-                      </ol>
-                    </details>
-                  )}
-                </motion.article>
-              )
-            })}
-          </AnimatePresence>
-          {!appointments.isLoading &&
-            !appointments.error &&
-            !displayedAppointments?.length && (
-              <motion.section
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                className="rounded-[2rem] border border-dashed border-[#173d2c]/15 bg-white/50 px-6 py-12 text-center"
-              >
-                <CalendarCheck className="mx-auto text-[#a47b2e]" size={30} />
-                <h2 className="font-display mt-4 text-2xl font-bold">
-                  Nenhuma aula agendada.
-                </h2>
-                <p className="mt-2 text-sm text-[#687b71]">
-                  {selectedDay
-                    ? 'Não há aulas registradas neste dia.'
-                    : 'As próximas aulas aparecerão aqui.'}
-                </p>
-              </motion.section>
+                  ) : (
+                    <Button
+                      className="mt-3 w-full"
+                      variant="outline"
+                      onClick={() => setCorrectionTargetId(selectedAppointment.id)}
+                    >
+                      <PencilLine size={17} /> Corrigir resultado
+                    </Button>
+                  ))}
+              </div>
             )}
-        </div>
-      </div>
+
+            {panel === 'reschedule' && selectedAppointment && (
+              <div className="mt-7 space-y-5">
+                <label className="block text-sm font-semibold">
+                  Novo horário
+                  <input
+                    className="field mt-2"
+                    min={toLocalDateTimeInput(new Date())}
+                    onChange={(event) => setBookingStart(event.target.value)}
+                    type="datetime-local"
+                    value={bookingStart}
+                  />
+                </label>
+                <p className="rounded-2xl bg-blue-50 p-4 text-sm leading-6 text-blue-950">
+                  A remarcação preserva um único consumo de crédito. Se o novo horário
+                  estiver ocupado, a aula original será mantida.
+                </p>
+                {rescheduleAppointment.error && (
+                  <PanelError text={getBookingError(rescheduleAppointment.error)} />
+                )}
+                <Button
+                  className="w-full"
+                  disabled={rescheduleAppointment.isPending || !bookingStart}
+                  onClick={() =>
+                    rescheduleAppointment.mutate({
+                      appointmentId: selectedAppointment.id,
+                      startsAt: new Date(bookingStart),
+                    })
+                  }
+                >
+                  {rescheduleAppointment.isPending && (
+                    <LoaderCircle className="animate-spin" size={17} />
+                  )}
+                  Confirmar remarcação
+                </Button>
+              </div>
+            )}
+
+            {panel === 'cancel' && selectedAppointment && (
+              <div className="mt-7 space-y-5">
+                <label className="block text-sm font-semibold">
+                  Motivo ou observação (opcional)
+                  <textarea
+                    className="field mt-2 min-h-28 resize-y"
+                    maxLength={300}
+                    onChange={(event) => setCancellationNote(event.target.value)}
+                    placeholder="Ex.: compromisso, indisposição ou viagem."
+                    value={cancellationNote}
+                  />
+                </label>
+                <p className="rounded-2xl bg-red-50 p-4 text-sm leading-6 text-red-900">
+                  O horário será liberado e o crédito será devolvido ao aluno.
+                </p>
+                {cancelAppointment.error && (
+                  <PanelError text="Não foi possível cancelar esta aula." />
+                )}
+                <Button
+                  className="w-full"
+                  disabled={cancelAppointment.isPending}
+                  onClick={() => cancelAppointment.mutate(selectedAppointment.id)}
+                >
+                  {cancelAppointment.isPending && (
+                    <LoaderCircle className="animate-spin" size={17} />
+                  )}
+                  Confirmar cancelamento
+                </Button>
+              </div>
+            )}
+          </>
+        )}
+      </AgendaPanelShell>
+
+      <AnimatePresence>
+        {toast && (
+          <motion.div
+            animate={{ opacity: 1, y: 0 }}
+            className="fixed bottom-24 left-4 right-4 z-[60] mx-auto max-w-md rounded-2xl bg-emerald-600 p-4 text-sm font-semibold text-white shadow-2xl lg:bottom-6"
+            exit={{ opacity: 0, y: 12 }}
+            initial={{ opacity: 0, y: 12 }}
+            role="status"
+          >
+            {toast}
+          </motion.div>
+        )}
+      </AnimatePresence>
     </main>
   )
 }
 
-const appointmentCardClasses = {
-  positive: 'border-[#173d2c]/8 bg-white/60',
-  attention: 'border-[#b45f4b]/20 bg-[#fbf1ed]',
-  rescheduled: 'border-[#b7832f]/25 bg-[#fbf5e7]',
-  cancelled: 'border-[#b45f4b]/25 bg-[#f9ece7]',
-}
-
-const appointmentIconClasses = {
-  positive: 'bg-[#173d2c] text-[#efc86f]',
-  attention: 'bg-[#8e483a] text-white',
-  rescheduled: 'bg-[#a67828] text-white',
-  cancelled: 'bg-[#a95040] text-white',
-}
-
-const appointmentBadgeClasses = {
-  positive: 'bg-[#dcebdc] text-[#285b40]',
-  attention: 'bg-[#efd3ca] text-[#853d30]',
-  rescheduled: 'bg-[#f2dfb5] text-[#77551f]',
-  cancelled: 'bg-[#efd3ca] text-[#853d30]',
-}
-
-function isSameDay(left: Date, right: Date) {
+function InfoCard({ label, value }: { label: string; value: string }) {
   return (
-    left.getFullYear() === right.getFullYear() &&
-    left.getMonth() === right.getMonth() &&
-    left.getDate() === right.getDate()
+    <div className="rounded-2xl bg-slate-100 p-4">
+      <p className="text-xs text-slate-500">{label}</p>
+      <p className="mt-1 font-bold">{value}</p>
+    </div>
+  )
+}
+
+function PanelError({ text }: { text: string }) {
+  return (
+    <p className="rounded-2xl bg-red-50 p-4 text-sm text-red-900" role="alert">
+      {text}
+    </p>
   )
 }
 
@@ -545,32 +759,39 @@ function formatAppointmentTime(value: string) {
   )
 }
 
-function formatEventDate(value: string) {
+function toLocalDateTimeInput(value: Date) {
+  const local = new Date(value.getTime() - value.getTimezoneOffset() * 60_000)
+  return local.toISOString().slice(0, 16)
+}
+
+function nextHalfHour() {
+  const value = new Date()
+  value.setSeconds(0, 0)
+  const minutes = value.getMinutes()
+  value.setMinutes(minutes < 30 ? 30 : 60)
+  return value
+}
+
+function initialCalendarRange() {
+  const start = new Date()
+  start.setHours(0, 0, 0, 0)
+  const end = new Date(start)
+  end.setDate(end.getDate() + 7)
+  return { start, end }
+}
+
+function formatIsoDate(value: Date) {
+  const year = value.getFullYear()
+  const month = String(value.getMonth() + 1).padStart(2, '0')
+  const day = String(value.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
+
+function formatDateTime(value: Date) {
   return new Intl.DateTimeFormat('pt-BR', {
-    dateStyle: 'short',
-    timeStyle: 'short',
-  }).format(new Date(value))
-}
-
-function getCorrectionReason(details: Json) {
-  if (!details || Array.isArray(details) || typeof details !== 'object') return null
-  return details.correction === true && typeof details.reason === 'string'
-    ? details.reason
-    : null
-}
-
-function getCancellationReason(details: Json) {
-  if (!details || Array.isArray(details) || typeof details !== 'object') return null
-  return typeof details.reason === 'string' && details.reason.trim()
-    ? details.reason
-    : null
-}
-
-function isAutomaticCompletion(details: Json) {
-  return Boolean(
-    details &&
-    !Array.isArray(details) &&
-    typeof details === 'object' &&
-    details.automatic === true,
-  )
+    day: '2-digit',
+    month: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+  }).format(value)
 }

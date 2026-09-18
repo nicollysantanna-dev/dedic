@@ -22,6 +22,11 @@
     "validate": "npm run format:check && npm run lint && npm run typecheck && npm run test && npm run build"
   },
   "dependencies": {
+    "@fullcalendar/core": "^6.1.21",
+    "@fullcalendar/daygrid": "^6.1.21",
+    "@fullcalendar/interaction": "^6.1.21",
+    "@fullcalendar/react": "^6.1.21",
+    "@fullcalendar/timegrid": "^6.1.21",
     "@hookform/resolvers": "latest",
     "@radix-ui/react-slot": "latest",
     "@supabase/supabase-js": "latest",
@@ -36,6 +41,7 @@
     "react-hook-form": "latest",
     "react-router-dom": "latest",
     "tailwind-merge": "latest",
+    "temporal-polyfill": "^1.0.5",
     "zod": "latest"
   },
   "devDependencies": {

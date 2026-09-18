@@ -1,23 +1,45 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { ArrowLeft, CalendarDays, CalendarPlus, Clock3, LoaderCircle } from 'lucide-react'
-import { useState } from 'react'
+import {
+  ArrowLeft,
+  CalendarCheck,
+  CalendarPlus,
+  CheckCircle2,
+  Clock3,
+  CreditCard,
+  LoaderCircle,
+  UserRound,
+  X,
+} from 'lucide-react'
+import { AnimatePresence, motion } from 'motion/react'
+import { useMemo, useState } from 'react'
 import { Link, Navigate } from 'react-router-dom'
-import { motion } from 'motion/react'
 
-import { PageReveal } from '@/components/ui/motion'
+import { Button } from '@/components/ui/button'
+import { AgendaTimeline } from '@/features/appointments/AgendaTimeline'
+import {
+  addAgendaDays,
+  getAgendaDays,
+  type AgendaView,
+} from '@/features/appointments/agenda-view'
 import { getBookingError } from '@/features/appointments/booking-errors'
 import { toIsoDate } from '@/features/availability/date-utils'
 import { useAuth } from '@/features/auth/auth-context'
 import { requireSupabase } from '@/lib/supabase/client'
 
-type Slot = { slot_start: string; slot_end: string }
-
 export function TrainerBookingPage() {
   const { profile } = useAuth()
   const queryClient = useQueryClient()
   const [studentId, setStudentId] = useState('')
-  const [manualStart, setManualStart] = useState('')
+  const [anchorDate, setAnchorDate] = useState(() => new Date())
+  const [view, setView] = useState<AgendaView>('day')
+  const [selectedStart, setSelectedStart] = useState<string | null>(null)
+  const [successMessage, setSuccessMessage] = useState<string | null>(null)
   const trainerId = profile?.id ?? ''
+  const lessonDurationMinutes = profile?.default_lesson_duration_minutes ?? 60
+  const visibleDays = useMemo(() => getAgendaDays(anchorDate, view), [anchorDate, view])
+  const rangeStart = visibleDays[0]
+  const rangeEnd = addAgendaDays(visibleDays.at(-1) ?? rangeStart, 1)
+
   const relationships = useQuery({
     queryKey: ['trainer-booking-students', trainerId],
     enabled: Boolean(trainerId),
@@ -34,56 +56,83 @@ export function TrainerBookingPage() {
     },
   })
   const selectedStudent = studentId || relationships.data?.[0]?.student_id || ''
-  const today = new Date()
-  const rangeEnd = new Date(today)
-  rangeEnd.setDate(today.getDate() + 13)
+  const selectedStudentName =
+    relationships.data?.find((item) => item.student_id === selectedStudent)?.profiles
+      ?.full_name ?? 'Aluno'
+
+  const balance = useQuery({
+    queryKey: ['credit-balance', selectedStudent],
+    enabled: Boolean(selectedStudent),
+    queryFn: async () => {
+      const { data, error } = await requireSupabase().rpc('get_credit_balance', {
+        target_student_id: selectedStudent,
+      })
+      if (error) throw error
+      return data
+    },
+  })
   const slots = useQuery({
-    queryKey: ['trainer-booking-slots', trainerId, toIsoDate(today)],
+    queryKey: [
+      'trainer-booking-slots',
+      trainerId,
+      toIsoDate(rangeStart),
+      toIsoDate(rangeEnd),
+    ],
     enabled: Boolean(trainerId),
     queryFn: async () => {
       const { data, error } = await requireSupabase().rpc('get_available_slots', {
         target_trainer_id: trainerId,
-        range_start: toIsoDate(today),
+        range_start: toIsoDate(rangeStart),
         range_end: toIsoDate(rangeEnd),
       })
       if (error) throw error
       return data
     },
   })
-  const booking = useMutation({
-    mutationFn: async (slot: Slot) => {
-      if (!selectedStudent) throw new Error('STUDENT_REQUIRED')
-      const { error } = await requireSupabase().rpc('book_appointment_for_student', {
-        target_student_id: selectedStudent,
-        requested_start: slot.slot_start,
-        requested_booking_id: crypto.randomUUID(),
-      })
+  const appointments = useQuery({
+    queryKey: [
+      'trainer-booking-appointments',
+      trainerId,
+      rangeStart.toISOString(),
+      rangeEnd.toISOString(),
+    ],
+    enabled: Boolean(trainerId),
+    queryFn: async () => {
+      const { data, error } = await requireSupabase()
+        .from('appointments')
+        .select(
+          'id, starts_at, ends_at, status, profiles!appointments_student_id_fkey(full_name)',
+        )
+        .eq('trainer_id', trainerId)
+        .gte('starts_at', rangeStart.toISOString())
+        .lt('starts_at', rangeEnd.toISOString())
+        .in('status', ['scheduled', 'completed', 'student_no_show'])
+        .order('starts_at')
       if (error) throw error
-    },
-    onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: ['trainer-booking-slots'] })
-      void queryClient.invalidateQueries({ queryKey: ['appointments'] })
-      void queryClient.invalidateQueries({ queryKey: ['credit-balance'] })
+      return data
     },
   })
-  const manualBooking = useMutation({
+
+  const booking = useMutation({
     mutationFn: async () => {
       if (!selectedStudent) throw new Error('STUDENT_REQUIRED')
-      if (!manualStart || new Date(manualStart) <= new Date()) {
+      if (!selectedStart || new Date(selectedStart) <= new Date()) {
         throw new Error('FUTURE_START_REQUIRED')
       }
       const { error } = await requireSupabase().rpc('book_appointment_for_student', {
         target_student_id: selectedStudent,
-        requested_start: new Date(manualStart).toISOString(),
+        requested_start: selectedStart,
         requested_booking_id: crypto.randomUUID(),
       })
       if (error) throw error
     },
     onSuccess: () => {
-      setManualStart('')
+      setSuccessMessage(`Aula de ${selectedStudentName} agendada com sucesso.`)
+      setSelectedStart(null)
       void queryClient.invalidateQueries({ queryKey: ['trainer-booking-slots'] })
+      void queryClient.invalidateQueries({ queryKey: ['trainer-booking-appointments'] })
       void queryClient.invalidateQueries({ queryKey: ['appointments'] })
-      void queryClient.invalidateQueries({ queryKey: ['agenda-home-appointments'] })
+      void queryClient.invalidateQueries({ queryKey: ['trainer-home-appointments'] })
       void queryClient.invalidateQueries({ queryKey: ['credit-balance'] })
     },
   })
@@ -91,40 +140,54 @@ export function TrainerBookingPage() {
   if (profile?.role !== 'trainer') return <Navigate to="/app" replace />
 
   return (
-    <main className="min-h-dvh bg-[#f4f1e9] px-5 py-6 text-[#183529] sm:px-8">
-      <PageReveal className="mx-auto w-full max-w-4xl">
+    <main className="min-h-dvh px-4 pb-28 pt-5 text-white sm:px-7 lg:px-8 lg:pb-8 lg:pt-7">
+      <div className="mx-auto max-w-7xl">
         <Link
-          className="inline-flex min-h-11 items-center gap-2 text-sm font-semibold"
-          to="/app"
+          className="inline-flex min-h-10 items-center gap-2 text-sm font-semibold text-slate-300 hover:text-white"
+          to="/app/agenda"
         >
-          <ArrowLeft size={17} /> Voltar ao painel
+          <ArrowLeft size={17} /> Voltar para agenda
         </Link>
-        <header className="mt-7">
-          <p className="text-xs font-bold uppercase tracking-[0.15em] text-[#a47b2e]">
-            Agendamento pelo personal
-          </p>
-          <h1 className="font-display mt-2 text-4xl font-bold tracking-[-0.055em] sm:text-5xl">
-            Criar uma aula.
+        <header className="mt-4">
+          <p className="text-sm text-slate-400">Agendamento pelo personal</p>
+          <h1 className="mt-1 text-2xl font-bold tracking-[-0.04em] sm:text-3xl">
+            Criar nova aula
           </h1>
-          <p className="mt-3 text-[#60746a]">
-            Escolha o aluno e toque no horário. A aula será criada imediatamente e
-            consumirá um crédito.
+          <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-400">
+            Escolha o aluno e toque diretamente no calendário. A aula consumirá um crédito
+            após a confirmação.
           </p>
         </header>
-        <label className="mt-8 block max-w-md text-sm font-semibold">
-          Aluno
-          <select
-            className="field mt-2"
-            value={selectedStudent}
-            onChange={(event) => setStudentId(event.target.value)}
-          >
-            {relationships.data?.map((relationship) => (
-              <option key={relationship.student_id} value={relationship.student_id}>
-                {relationship.profiles?.full_name ?? 'Aluno'}
-              </option>
-            ))}
-          </select>
-        </label>
+
+        <section className="mt-6 grid gap-3 rounded-[1.5rem] border border-white/10 bg-white/5 p-4 sm:grid-cols-[1fr_auto] sm:items-end sm:p-5">
+          <label className="text-sm font-semibold">
+            Aluno
+            <select
+              className="field mt-2 border-white/15 bg-white/10 text-white"
+              onChange={(event) => {
+                setStudentId(event.target.value)
+                setSelectedStart(null)
+              }}
+              value={selectedStudent}
+            >
+              {relationships.data?.map((relationship) => (
+                <option
+                  className="text-slate-950"
+                  key={relationship.student_id}
+                  value={relationship.student_id}
+                >
+                  {relationship.profiles?.full_name ?? 'Aluno'}
+                </option>
+              ))}
+            </select>
+          </label>
+          <div className="flex min-h-11 items-center gap-3 rounded-xl bg-white/5 px-4 text-sm">
+            <CreditCard className="text-blue-400" size={18} />
+            <span className="text-slate-400">Créditos:</span>
+            <strong>{balance.isLoading ? '…' : (balance.data ?? 0)}</strong>
+          </div>
+        </section>
+
         {relationships.error && (
           <ErrorMessage text="Não foi possível carregar seus alunos." />
         )}
@@ -133,125 +196,171 @@ export function TrainerBookingPage() {
         )}
 
         {relationships.data?.length ? (
-          <section className="mt-8 rounded-[2rem] bg-[#173d2c] p-6 text-white">
-            <CalendarPlus className="text-[#efc86f]" size={24} />
-            <h2 className="font-display mt-4 text-2xl font-bold">Escolher data e hora</h2>
-            <p className="mt-2 text-sm leading-6 text-[#b9cdc1]">
-              Você pode criar uma aula fora da disponibilidade publicada. Conflitos e
-              créditos continuam sendo validados automaticamente.
-            </p>
-            <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:items-end">
-              <label className="flex-1 text-sm font-semibold">
-                Início da aula
-                <input
-                  className="field mt-2 border-white/15 bg-white/10 text-white scheme-dark"
-                  type="datetime-local"
-                  min={toLocalDateTimeInput(new Date())}
-                  value={manualStart}
-                  onChange={(event) => setManualStart(event.target.value)}
-                />
-              </label>
-              <button
-                className="inline-flex min-h-11 items-center justify-center gap-2 rounded-full bg-[#d6a850] px-5 text-sm font-bold text-[#173326] disabled:opacity-50"
-                type="button"
-                disabled={!manualStart || manualBooking.isPending || !selectedStudent}
-                onClick={() => manualBooking.mutate()}
-              >
-                {manualBooking.isPending ? (
-                  <LoaderCircle className="animate-spin" size={17} />
-                ) : (
-                  <CalendarPlus size={17} />
-                )}
-                Criar aula
-              </button>
+          <>
+            <div className="mt-5 flex flex-wrap items-center gap-x-5 gap-y-2 text-xs text-slate-400">
+              <span className="inline-flex items-center gap-2">
+                <span className="size-3 rounded-sm border border-blue-200 bg-blue-50" />
+                Horário publicado
+              </span>
+              <span className="inline-flex items-center gap-2">
+                <span className="size-3 rounded-sm border border-slate-300 bg-white" />
+                Fora da disponibilidade
+              </span>
+              <span className="inline-flex items-center gap-2">
+                <span className="size-3 rounded-sm border border-blue-600 bg-blue-100" />
+                Selecionado
+              </span>
             </div>
-            {manualBooking.error && (
-              <p className="mt-4 text-sm text-[#f0c3a9]" role="alert">
-                {manualBooking.error.message.includes('FUTURE_START_REQUIRED')
-                  ? 'Escolha uma data e hora futuras.'
-                  : getBookingError(manualBooking.error)}
+
+            {(slots.isLoading || appointments.isLoading) && (
+              <p className="mt-5 rounded-2xl border border-white/8 bg-white/5 p-6 text-sm text-slate-300">
+                Carregando calendário…
               </p>
             )}
-          </section>
+            {(slots.error || appointments.error) && (
+              <ErrorMessage text="Não foi possível carregar a agenda deste período." />
+            )}
+            {!slots.isLoading &&
+              !appointments.isLoading &&
+              !slots.error &&
+              !appointments.error && (
+                <div className="mt-4">
+                  <AgendaTimeline
+                    anchorDate={anchorDate}
+                    appointments={appointments.data ?? []}
+                    availableSlots={slots.data ?? []}
+                    onAnchorDateChange={(date) => {
+                      setAnchorDate(date)
+                      setSelectedStart(null)
+                    }}
+                    onSelectDay={setAnchorDate}
+                    onSelectSlot={(startsAt) => {
+                      setSelectedStart(startsAt)
+                      setSuccessMessage(null)
+                    }}
+                    onViewChange={(nextView) => {
+                      setView(nextView)
+                      setSelectedStart(null)
+                    }}
+                    selectedSlotStart={selectedStart}
+                    slotDurationMinutes={lessonDurationMinutes}
+                    view={view}
+                  />
+                </div>
+              )}
+          </>
         ) : null}
 
-        <h2 className="font-display mt-9 text-2xl font-bold">Horários publicados</h2>
-        {slots.isLoading && (
-          <p className="mt-8 text-sm font-semibold">Carregando horários…</p>
-        )}
-        {slots.error && (
-          <ErrorMessage text="Não foi possível carregar sua disponibilidade." />
-        )}
-        <div className="mt-8 grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
-          {slots.data?.map((slot) => {
-            const pending =
-              booking.isPending && booking.variables?.slot_start === slot.slot_start
-            return (
-              <motion.button
-                key={slot.slot_start}
-                type="button"
-                disabled={booking.isPending || !selectedStudent}
-                onClick={() => booking.mutate(slot)}
-                className="flex min-h-20 items-center gap-3 rounded-2xl border border-[#173d2c]/8 bg-white/60 px-4 text-left transition hover:bg-white disabled:cursor-wait disabled:opacity-60"
-                whileHover={{ y: -3 }}
-                whileTap={{ scale: 0.97 }}
-              >
-                {pending ? (
-                  <LoaderCircle className="animate-spin text-[#a47b2e]" size={18} />
-                ) : (
-                  <Clock3 className="text-[#a47b2e]" size={18} />
-                )}
-                <span>
-                  <strong className="block">{formatDay(slot.slot_start)}</strong>
-                  <span className="text-xs text-[#718178]">
-                    {formatTime(slot.slot_start)}
-                  </span>
+        <AnimatePresence>
+          {selectedStart && (
+            <motion.section
+              animate={{ opacity: 1, y: 0 }}
+              className="sticky bottom-20 z-30 mt-5 flex flex-col gap-4 rounded-[1.25rem] border border-blue-400/30 bg-slate-950/95 p-4 shadow-2xl backdrop-blur sm:bottom-5 sm:flex-row sm:items-center sm:justify-between"
+              exit={{ opacity: 0, y: 12 }}
+              initial={{ opacity: 0, y: 12 }}
+            >
+              <div className="flex items-center gap-3">
+                <span className="grid size-11 place-items-center rounded-xl bg-blue-500/15 text-blue-300">
+                  <CalendarCheck size={20} />
                 </span>
-              </motion.button>
-            )
-          })}
-        </div>
-        {!slots.isLoading &&
-        !slots.error &&
-        !slots.data?.length &&
-        relationships.data?.length ? (
-          <EmptyMessage text="Nenhum horário disponível nos próximos 14 dias." />
-        ) : null}
-        {booking.error && <ErrorMessage text={getBookingError(booking.error)} />}
-      </PageReveal>
+                <div>
+                  <p className="font-semibold">{selectedStudentName}</p>
+                  <p className="mt-0.5 flex items-center gap-1.5 text-sm text-slate-400">
+                    <Clock3 size={14} /> {formatSelection(selectedStart)} ·{' '}
+                    {lessonDurationMinutes} min
+                  </p>
+                </div>
+              </div>
+              <div className="flex gap-2">
+                <Button
+                  className="flex-1 sm:flex-none"
+                  disabled={booking.isPending || (balance.data ?? 0) <= 0}
+                  onClick={() => booking.mutate()}
+                >
+                  {booking.isPending ? (
+                    <LoaderCircle className="animate-spin" size={17} />
+                  ) : (
+                    <CalendarPlus size={17} />
+                  )}
+                  Confirmar aula
+                </Button>
+                <Button variant="ghost" onClick={() => setSelectedStart(null)}>
+                  <X size={17} />
+                  <span className="sr-only">Cancelar seleção</span>
+                </Button>
+              </div>
+              {(balance.data ?? 0) <= 0 && !balance.isLoading && (
+                <p className="text-xs text-amber-200 sm:absolute sm:-top-7 sm:right-0">
+                  Este aluno não possui créditos disponíveis.
+                </p>
+              )}
+            </motion.section>
+          )}
+        </AnimatePresence>
+
+        {booking.error && (
+          <ErrorMessage
+            text={
+              booking.error.message.includes('FUTURE_START_REQUIRED')
+                ? 'Escolha uma data e hora futuras.'
+                : getBookingError(booking.error)
+            }
+          />
+        )}
+
+        <AnimatePresence>
+          {successMessage && (
+            <motion.div
+              animate={{ opacity: 1, y: 0 }}
+              className="fixed bottom-24 left-4 right-4 z-50 mx-auto flex max-w-md items-center gap-3 rounded-2xl bg-emerald-600 p-4 text-sm font-semibold text-white shadow-2xl lg:bottom-6"
+              exit={{ opacity: 0, y: 12 }}
+              initial={{ opacity: 0, y: 12 }}
+              role="status"
+            >
+              <CheckCircle2 size={20} />
+              <span className="flex-1">{successMessage}</span>
+              <button
+                aria-label="Fechar aviso"
+                className="grid size-8 place-items-center rounded-lg hover:bg-white/10"
+                onClick={() => setSuccessMessage(null)}
+                type="button"
+              >
+                <X size={16} />
+              </button>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
     </main>
   )
 }
 
 function ErrorMessage({ text }: { text: string }) {
   return (
-    <p className="mt-6 rounded-2xl bg-[#f2ded7] p-4 text-sm text-[#8e483a]" role="alert">
+    <p
+      className="mt-5 rounded-2xl border border-red-400/20 bg-red-400/10 p-4 text-sm text-red-100"
+      role="alert"
+    >
       {text}
     </p>
   )
 }
+
 function EmptyMessage({ text }: { text: string }) {
   return (
-    <div className="mt-8 rounded-[2rem] border border-dashed border-[#173d2c]/15 bg-white/50 px-6 py-10 text-center">
-      <CalendarDays className="mx-auto text-[#a47b2e]" />
-      <p className="mt-3 text-sm text-[#687b71]">{text}</p>
+    <div className="mt-6 rounded-[1.5rem] border border-dashed border-white/15 bg-white/5 px-6 py-12 text-center">
+      <UserRound className="mx-auto text-blue-400" />
+      <p className="mt-3 text-sm text-slate-400">{text}</p>
     </div>
   )
 }
-function formatDay(value: string) {
-  return new Intl.DateTimeFormat('pt-BR', {
-    weekday: 'short',
-    day: '2-digit',
-    month: '2-digit',
-  }).format(new Date(value))
-}
-function formatTime(value: string) {
-  return new Intl.DateTimeFormat('pt-BR', { hour: '2-digit', minute: '2-digit' }).format(
-    new Date(value),
-  )
-}
 
-function toLocalDateTimeInput(value: Date) {
-  const local = new Date(value.getTime() - value.getTimezoneOffset() * 60_000)
-  return local.toISOString().slice(0, 16)
+function formatSelection(value: string) {
+  return new Intl.DateTimeFormat('pt-BR', {
+    weekday: 'long',
+    day: '2-digit',
+    month: 'long',
+    hour: '2-digit',
+    minute: '2-digit',
+  }).format(new Date(value))
 }

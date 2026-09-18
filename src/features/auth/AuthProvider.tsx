@@ -3,6 +3,10 @@ import { useCallback, useEffect, useMemo, useState, type PropsWithChildren } fro
 
 import type { Profile } from '@/features/auth/types'
 import { AuthContext, type AuthState } from '@/features/auth/auth-context'
+import {
+  captureInvitationToken,
+  invitationStorageKey,
+} from '@/features/auth/invitation-session'
 import { supabase } from '@/lib/supabase/client'
 
 async function loadProfile(userId: string) {
@@ -18,34 +22,28 @@ async function loadProfile(userId: string) {
   return data
 }
 
-const invitationStorageKey = 'dedic.pendingInvitationToken'
-
-function captureInvitationToken() {
-  const token = new URLSearchParams(window.location.search).get('convite')
-  if (
-    token &&
-    /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
-      token,
-    )
-  ) {
-    window.localStorage.setItem(invitationStorageKey, token)
-  }
-}
-
 async function claimPendingInvitation() {
-  if (!supabase) return
-  captureInvitationToken()
+  if (!supabase) return 'idle' as const
   const token = window.localStorage.getItem(invitationStorageKey)
-  const { error } = await supabase.rpc('claim_student_invitation', {
+  const { data, error } = await supabase.rpc('claim_student_invitation', {
     invitation_token: token || undefined,
   })
-  if (!error && token) window.localStorage.removeItem(invitationStorageKey)
+  if (error) return 'error' as const
+  if (!data) {
+    if (token) window.localStorage.removeItem(invitationStorageKey)
+    return token ? ('error' as const) : ('idle' as const)
+  }
+
+  if (token) window.localStorage.removeItem(invitationStorageKey)
+  return 'success' as const
 }
 
 export function AuthProvider({ children }: PropsWithChildren) {
   const [session, setSession] = useState<Session | null>(null)
   const [profile, setProfile] = useState<Profile | null>(null)
   const [isLoading, setIsLoading] = useState(Boolean(supabase))
+  const [invitationClaimStatus, setInvitationClaimStatus] =
+    useState<AuthState['invitationClaimStatus']>('idle')
 
   const refreshProfile = useCallback(async () => {
     if (!session?.user) return
@@ -60,13 +58,24 @@ export function AuthProvider({ children }: PropsWithChildren) {
   useEffect(() => {
     if (!supabase) return
 
+    captureInvitationToken(window.location.search, window.localStorage)
+
     let active = true
+    let pendingClaim: ReturnType<typeof claimPendingInvitation> | null = null
+
+    const claimInvitation = async () => {
+      setInvitationClaimStatus('claiming')
+      pendingClaim ??= claimPendingInvitation()
+      const result = await pendingClaim
+      pendingClaim = null
+      if (active && result !== 'idle') setInvitationClaimStatus(result)
+    }
 
     void supabase.auth.getSession().then(async ({ data }) => {
       if (!active) return
 
       setSession(data.session)
-      if (data.session) await claimPendingInvitation()
+      if (data.session) await claimInvitation()
       setProfile(data.session ? await loadProfile(data.session.user.id) : null)
       setIsLoading(false)
     })
@@ -76,7 +85,8 @@ export function AuthProvider({ children }: PropsWithChildren) {
 
       window.setTimeout(() => {
         void (async () => {
-          if (nextSession) await claimPendingInvitation()
+          if (nextSession) await claimInvitation()
+          else setInvitationClaimStatus('idle')
           setProfile(nextSession ? await loadProfile(nextSession.user.id) : null)
           setIsLoading(false)
         })()
@@ -94,10 +104,11 @@ export function AuthProvider({ children }: PropsWithChildren) {
       session,
       profile,
       isLoading,
+      invitationClaimStatus,
       refreshProfile,
       signOut,
     }),
-    [session, profile, isLoading, refreshProfile, signOut],
+    [session, profile, isLoading, invitationClaimStatus, refreshProfile, signOut],
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

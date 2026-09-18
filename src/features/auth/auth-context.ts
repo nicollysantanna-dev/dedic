@@ -7,6 +7,7 @@ export type AuthState = {
   session: Session | null
   profile: Profile | null
   isLoading: boolean
+  invitationClaimStatus: 'idle' | 'claiming' | 'success' | 'error'
   refreshProfile: () => Promise<void>
   signOut: () => Promise<void>
 }

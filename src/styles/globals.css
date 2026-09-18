@@ -134,6 +134,121 @@ button {
   border-color: #173d2c;
 }
 
+.dedic-scheduler {
+  --fc-border-color: #e8edf3;
+  --fc-page-bg-color: #fff;
+  --fc-neutral-bg-color: #f8fafc;
+  --fc-today-bg-color: rgb(37 99 235 / 5%);
+  --fc-now-indicator-color: #ef4444;
+}
+
+.dedic-scheduler .fc {
+  font-family: var(--font-sans);
+  font-size: 0.8rem;
+}
+
+.dedic-scheduler .fc-scrollgrid {
+  border: 0;
+}
+
+.dedic-scheduler .fc-scrollgrid-section > td {
+  border-left: 0;
+  border-right: 0;
+}
+
+.dedic-scheduler .fc-col-header-cell-cushion {
+  padding: 0.85rem 0.4rem;
+  color: #475569;
+  font-size: 0.72rem;
+  font-weight: 800;
+  text-transform: capitalize;
+}
+
+.dedic-scheduler .fc-timegrid-slot-label-cushion {
+  color: #94a3b8;
+  font-size: 0.66rem;
+  font-weight: 600;
+}
+
+.dedic-scheduler .fc-timegrid-slot {
+  height: 2rem;
+}
+
+.dedic-scheduler .fc-timegrid-slot-lane {
+  cursor: crosshair;
+}
+
+.dedic-scheduler .fc-event {
+  border: 0;
+  border-left: 4px solid transparent;
+  border-radius: 0.55rem;
+  box-shadow: 0 3px 10px rgb(15 23 42 / 10%);
+  cursor: pointer;
+}
+
+.dedic-scheduler .fc-event-main {
+  color: inherit;
+}
+
+.dedic-scheduler .dedic-calendar-event--scheduled {
+  border-left-color: #2563eb;
+  background: #dbeafe;
+  color: #172554;
+}
+
+.dedic-scheduler .dedic-calendar-event--completed {
+  border-left-color: #16a34a;
+  background: #dcfce7;
+  color: #14532d;
+}
+
+.dedic-scheduler .dedic-calendar-event--student_no_show {
+  border-left-color: #d97706;
+  background: #fef3c7;
+  color: #78350f;
+}
+
+.dedic-scheduler .dedic-calendar-event--cancelled_by_student,
+.dedic-scheduler .dedic-calendar-event--cancelled_by_trainer {
+  border-left-color: #dc2626;
+  background: #fee2e2;
+  color: #7f1d1d;
+  opacity: 0.65;
+  text-decoration: line-through;
+}
+
+.dedic-scheduler .dedic-calendar-event--cancelled_for_reschedule {
+  border-left-color: #94a3b8;
+  background: #f1f5f9;
+  color: #475569;
+  opacity: 0.6;
+  text-decoration: line-through;
+}
+
+.dedic-scheduler .dedic-calendar-availability {
+  background: rgb(37 99 235 / 8%);
+}
+
+.dedic-scheduler .dedic-calendar-block {
+  background: repeating-linear-gradient(
+    135deg,
+    rgb(239 68 68 / 8%),
+    rgb(239 68 68 / 8%) 6px,
+    rgb(239 68 68 / 15%) 6px,
+    rgb(239 68 68 / 15%) 12px
+  );
+}
+
+.dedic-scheduler .fc-highlight {
+  background: rgb(37 99 235 / 18%);
+}
+
+@media (max-width: 767px) {
+  .dedic-scheduler .fc-timegrid-slot {
+    height: 2.35rem;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

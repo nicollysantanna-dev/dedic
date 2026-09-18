@@ -2,10 +2,11 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { ArrowLeft, Dumbbell, LoaderCircle } from 'lucide-react'
 import { useState, type ReactNode } from 'react'
 import { useForm, useWatch } from 'react-hook-form'
-import { Link, Navigate, useNavigate } from 'react-router-dom'
+import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom'
 
 import { Button } from '@/components/ui/button'
 import { useAuth } from '@/features/auth/auth-context'
+import { authPathWithInvitation } from '@/features/auth/invitation-session'
 import {
   loginSchema,
   signUpSchema,
@@ -21,6 +22,7 @@ type AuthPageProps = {
 export function AuthPage({ mode }: AuthPageProps) {
   const { session } = useAuth()
   const navigate = useNavigate()
+  const location = useLocation()
   const [serverMessage, setServerMessage] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const isSignUp = mode === 'signup'
@@ -105,7 +107,7 @@ export function AuthPage({ mode }: AuthPageProps) {
       <section className="mx-auto w-full max-w-md">
         {isSignUp && (
           <Link
-            to="/"
+            to={authPathWithInvitation('/', location.search)}
             className="inline-flex min-h-11 items-center gap-2 rounded-full text-sm font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d6a850]"
           >
             <ArrowLeft size={17} aria-hidden="true" />
@@ -237,7 +239,7 @@ export function AuthPage({ mode }: AuthPageProps) {
             {isSignUp ? 'Já possui conta?' : 'Ainda não possui conta?'}{' '}
             <Link
               className="font-bold text-[#173d2c] underline decoration-[#d6a850] decoration-2 underline-offset-4"
-              to={isSignUp ? '/' : '/cadastro'}
+              to={authPathWithInvitation(isSignUp ? '/' : '/cadastro', location.search)}
             >
               {isSignUp ? 'Entrar' : 'Criar conta'}
             </Link>

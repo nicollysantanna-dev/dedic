@@ -309,7 +309,7 @@ export function AgendaHomePage() {
               <ActionLink to="/app/disponibilidade" icon={Ban} label="Bloquear" />
             </>
           ) : (
-            <ActionLink to="/app/calendario" icon={CalendarPlus} label="Agendar" />
+            <ActionLink to="/app/agenda" icon={CalendarPlus} label="Agendar" />
           )}
           <ActionLink to="/app/pacotes" icon={PackageCheck} label="Pacotes" />
           <ActionLink to="/app/pagamentos" icon={ReceiptText} label="Pagamentos" />
@@ -471,7 +471,7 @@ export function AgendaHomePage() {
                 </Button>
               ) : (
                 <Button className="mt-4 w-full bg-[#d6a850] text-[#173326]" asChild>
-                  <Link to="/app/calendario">
+                  <Link to="/app/agenda">
                     <CalendarPlus size={16} /> Escolher horário
                   </Link>
                 </Button>

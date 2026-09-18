@@ -10,9 +10,19 @@ import { isSupabaseConfigured } from '@/lib/env'
 const AuthPage = lazy(() =>
   import('@/features/auth/AuthPage').then((module) => ({ default: module.AuthPage })),
 )
-const DashboardPage = lazy(() =>
-  import('@/features/dashboard/DashboardPage').then((module) => ({
-    default: module.DashboardPage,
+const InviteStudentPage = lazy(() =>
+  import('@/features/students/InviteStudentPage').then((module) => ({
+    default: module.InviteStudentPage,
+  })),
+)
+const StudentsPage = lazy(() =>
+  import('@/features/students/StudentsPage').then((module) => ({
+    default: module.StudentsPage,
+  })),
+)
+const StudentProfilePage = lazy(() =>
+  import('@/features/students/StudentProfilePage').then((module) => ({
+    default: module.StudentProfilePage,
   })),
 )
 const HomePage = lazy(() =>
@@ -30,11 +40,6 @@ const AvailabilityPage = lazy(() =>
     default: module.AvailabilityPage,
   })),
 )
-const StudentCalendarPage = lazy(() =>
-  import('@/features/availability/StudentCalendarPage').then((module) => ({
-    default: module.StudentCalendarPage,
-  })),
-)
 const PackagesPage = lazy(() =>
   import('@/features/packages/PackagesPage').then((module) => ({
     default: module.PackagesPage,
@@ -43,11 +48,6 @@ const PackagesPage = lazy(() =>
 const AppointmentsPage = lazy(() =>
   import('@/features/appointments/AppointmentsPage').then((module) => ({
     default: module.AppointmentsPage,
-  })),
-)
-const TrainerBookingPage = lazy(() =>
-  import('@/features/appointments/TrainerBookingPage').then((module) => ({
-    default: module.TrainerBookingPage,
   })),
 )
 const ReschedulePage = lazy(() =>
@@ -85,7 +85,9 @@ export function App() {
           <Route element={<RequireAuth />}>
             <Route element={<AppShell />}>
               <Route path="/app" element={<HomePage />} />
-              <Route path="/app/alunos" element={<DashboardPage />} />
+              <Route path="/app/alunos" element={<StudentsPage />} />
+              <Route path="/app/alunos/:studentId" element={<StudentProfilePage />} />
+              <Route path="/app/alunos/convidar" element={<InviteStudentPage />} />
               <Route path="/app/financeiro" element={<PaymentsPage />} />
               <Route path="/app/conta" element={<AccountPage />} />
               <Route path="/app/resumo" element={<Navigate to="/app/alunos" replace />} />
@@ -94,10 +96,16 @@ export function App() {
                 element={<Navigate to="/app/financeiro" replace />}
               />
               <Route path="/app/disponibilidade" element={<AvailabilityPage />} />
-              <Route path="/app/calendario" element={<StudentCalendarPage />} />
+              <Route
+                path="/app/calendario"
+                element={<Navigate to="/app/agenda" replace />}
+              />
               <Route path="/app/pacotes" element={<PackagesPage />} />
               <Route path="/app/agenda" element={<AppointmentsPage />} />
-              <Route path="/app/criar-aula" element={<TrainerBookingPage />} />
+              <Route
+                path="/app/criar-aula"
+                element={<Navigate to="/app/agenda" replace />}
+              />
               <Route path="/app/remarcar/:appointmentId" element={<ReschedulePage />} />
             </Route>
           </Route>

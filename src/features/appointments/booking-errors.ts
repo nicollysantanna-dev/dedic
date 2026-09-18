@@ -20,5 +20,8 @@ export function getBookingError(error: Error) {
   if (error.message.includes('PAST_APPOINTMENT_NOT_ALLOWED')) {
     return 'Escolha uma data e hora futuras.'
   }
+  if (error.message.includes('SAME_DAY_APPOINTMENT_LOCKED')) {
+    return 'No dia da aula não é mais possível cancelar ou remarcar.'
+  }
   return 'Não foi possível agendar a aula. Tente novamente.'
 }

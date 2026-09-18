@@ -24,4 +24,10 @@ describe('booking errors', () => {
       'Este período está bloqueado na sua agenda.',
     )
   })
+
+  it('explica o bloqueio de alterações no dia da aula', () => {
+    expect(getBookingError(new Error('SAME_DAY_APPOINTMENT_LOCKED'))).toBe(
+      'No dia da aula não é mais possível cancelar ou remarcar.',
+    )
+  })
 })
