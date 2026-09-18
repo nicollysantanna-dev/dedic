@@ -48,6 +48,7 @@ export function AppointmentsPage() {
   const [bookingStart, setBookingStart] = useState(() =>
     opensCreatePanel ? toLocalDateTimeInput(nextHalfHour()) : '',
   )
+  const [rescheduleDate, setRescheduleDate] = useState('')
   const [toast, setToast] = useState<{ text: string; tone: 'success' | 'error' } | null>(
     null,
   )
@@ -58,7 +59,12 @@ export function AppointmentsPage() {
   const isTrainer = profile?.role === 'trainer'
   const lessonDurationMinutes = profile?.default_lesson_duration_minutes ?? 60
   const appointments = useQuery({
-    queryKey: ['appointments', userId],
+    queryKey: [
+      'appointments',
+      userId,
+      calendarRange.start.toISOString(),
+      calendarRange.end.toISOString(),
+    ],
     enabled: Boolean(userId),
     queryFn: async () => {
       const counterpart = isTrainer
@@ -68,6 +74,8 @@ export function AppointmentsPage() {
         .from('appointments')
         .select(`*, ${counterpart}`)
         .eq(isTrainer ? 'trainer_id' : 'student_id', userId)
+        .lt('starts_at', calendarRange.end.toISOString())
+        .gt('ends_at', calendarRange.start.toISOString())
         .in('status', [
           'scheduled',
           'completed',
@@ -132,6 +140,21 @@ export function AppointmentsPage() {
         target_trainer_id: schedulerTrainerId,
         range_start: formatIsoDate(calendarRange.start),
         range_end: formatIsoDate(calendarRange.end),
+      })
+      if (error) throw error
+      return data
+    },
+  })
+
+  const rescheduleSlots = useQuery({
+    queryKey: ['agenda-scheduler-slots', schedulerTrainerId, rescheduleDate],
+    enabled:
+      Boolean(schedulerTrainerId) && panel === 'reschedule' && Boolean(rescheduleDate),
+    queryFn: async () => {
+      const { data, error } = await requireSupabase().rpc('get_available_slots', {
+        target_trainer_id: schedulerTrainerId,
+        range_start: rescheduleDate,
+        range_end: rescheduleDate,
       })
       if (error) throw error
       return data
@@ -555,9 +578,10 @@ export function AppointmentsPage() {
                   <div className="mt-5 grid gap-3">
                     <Button
                       onClick={() => {
-                        setBookingStart(
-                          toLocalDateTimeInput(new Date(selectedAppointment.starts_at)),
+                        setRescheduleDate(
+                          formatIsoDate(new Date(selectedAppointment.starts_at)),
                         )
+                        setBookingStart('')
                         setPanel('reschedule')
                       }}
                     >
@@ -685,15 +709,60 @@ export function AppointmentsPage() {
             {panel === 'reschedule' && selectedAppointment && (
               <div className="mt-7 space-y-5">
                 <label className="block text-sm font-semibold">
-                  Novo horário
+                  Nova data
                   <input
                     className="field mt-2"
-                    min={toLocalDateTimeInput(new Date())}
-                    onChange={(event) => setBookingStart(event.target.value)}
-                    type="datetime-local"
-                    value={bookingStart}
+                    min={formatIsoDate(new Date())}
+                    onChange={(event) => {
+                      setRescheduleDate(event.target.value)
+                      setBookingStart('')
+                    }}
+                    type="date"
+                    value={rescheduleDate}
                   />
                 </label>
+                <div className="space-y-2">
+                  <p className="text-sm font-semibold">Horários disponíveis</p>
+                  {!rescheduleDate && (
+                    <p className="text-sm text-slate-500">
+                      Escolha uma data para ver os horários livres.
+                    </p>
+                  )}
+                  {rescheduleSlots.isLoading && (
+                    <p className="text-sm text-slate-500">Buscando horários…</p>
+                  )}
+                  {rescheduleSlots.error && (
+                    <PanelError text="Não foi possível carregar os horários." />
+                  )}
+                  {rescheduleSlots.data && rescheduleSlots.data.length === 0 && (
+                    <p className="text-sm text-slate-500">
+                      Nenhum horário livre nesta data.
+                    </p>
+                  )}
+                  {rescheduleSlots.data && rescheduleSlots.data.length > 0 && (
+                    <div className="grid grid-cols-3 gap-2">
+                      {rescheduleSlots.data.map((slot) => {
+                        const value = toLocalDateTimeInput(new Date(slot.slot_start))
+                        const selected = bookingStart === value
+                        return (
+                          <button
+                            aria-pressed={selected}
+                            className={cn(
+                              'min-h-10 rounded-xl border border-slate-200 text-sm font-semibold transition hover:bg-slate-50',
+                              selected &&
+                                'border-[var(--brand)] bg-[var(--brand)] text-white hover:bg-[var(--brand-hover)]',
+                            )}
+                            key={slot.slot_start}
+                            onClick={() => setBookingStart(value)}
+                            type="button"
+                          >
+                            {formatTime(new Date(slot.slot_start))}
+                          </button>
+                        )
+                      })}
+                    </div>
+                  )}
+                </div>
                 <p className="rounded-2xl bg-blue-50 p-4 text-sm leading-6 text-blue-950">
                   A remarcação preserva um único consumo de crédito. Se o novo horário
                   estiver ocupado, a aula original será mantida.
@@ -832,6 +901,12 @@ function formatIsoDate(value: Date) {
   const month = String(value.getMonth() + 1).padStart(2, '0')
   const day = String(value.getDate()).padStart(2, '0')
   return `${year}-${month}-${day}`
+}
+
+function formatTime(value: Date) {
+  return new Intl.DateTimeFormat('pt-BR', { hour: '2-digit', minute: '2-digit' }).format(
+    value,
+  )
 }
 
 function formatDateTime(value: Date) {

@@ -175,6 +175,11 @@ export function InteractiveAgendaCalendar({
           selectDate(info.date)
         }}
         editable={canCreate}
+        eventAllow={(dropInfo) =>
+          // A remarcação no banco exige um horário publicado, para qualquer papel.
+          dropInfo.start > new Date() &&
+          isSelectionWithinAvailableSlots(dropInfo.start, dropInfo.end, availableSlots)
+        }
         eventClick={(info: EventClickArg) => onAppointmentClick(info.event.id)}
         eventContent={renderEventContent}
         eventDrop={(info: EventDropArg) => {
