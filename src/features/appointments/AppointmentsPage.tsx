@@ -12,7 +12,7 @@ import {
   XCircle,
 } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
-import { Link, useSearchParams } from 'react-router-dom'
+import { useSearchParams } from 'react-router-dom'
 import { AnimatePresence, motion } from 'motion/react'
 
 import { Button } from '@/components/ui/button'
@@ -26,10 +26,12 @@ import { canMoveAppointment } from '@/features/appointments/appointment-drag'
 import { getBookingError } from '@/features/appointments/booking-errors'
 import { InteractiveAgendaCalendar } from '@/features/appointments/InteractiveAgendaCalendar'
 import { useAuth } from '@/features/auth/auth-context'
+import { AvailabilityPanel } from '@/features/availability/AvailabilityPanel'
 import { requireSupabase } from '@/lib/supabase/client'
 import { cn } from '@/lib/utils'
 
-type AgendaPanel = 'create' | 'appointment' | 'reschedule' | 'cancel' | null
+type AgendaPanel =
+  'create' | 'appointment' | 'reschedule' | 'cancel' | 'availability' | null
 
 export function AppointmentsPage() {
   const { profile } = useAuth()
@@ -339,13 +341,11 @@ export function AppointmentsPage() {
           {isTrainer && (
             <div className="flex flex-wrap gap-2">
               <Button
-                asChild
                 className="border-white/15 bg-white/5 text-white hover:bg-white/10"
+                onClick={() => setPanel('availability')}
                 variant="outline"
               >
-                <Link to="/app/disponibilidade">
-                  <CalendarClock size={17} /> Disponibilidade e bloqueios
-                </Link>
+                <CalendarClock size={17} /> Horários e bloqueios
               </Button>
               <Button onClick={openCreatePanel}>
                 <Plus size={17} /> Nova aula
@@ -436,7 +436,9 @@ export function AppointmentsPage() {
                       ? 'Remarcação'
                       : panel === 'cancel'
                         ? 'Cancelamento'
-                        : 'Detalhes da aula'}
+                        : panel === 'availability'
+                          ? 'Sua rotina'
+                          : 'Detalhes da aula'}
                 </p>
                 <h2 className="mt-1 text-2xl font-bold tracking-[-0.04em]">
                   {panel === 'create'
@@ -445,7 +447,9 @@ export function AppointmentsPage() {
                       ? 'Escolher novo horário'
                       : panel === 'cancel'
                         ? 'Cancelar aula'
-                        : (selectedAppointment?.profiles?.full_name ?? 'Aula')}
+                        : panel === 'availability'
+                          ? 'Horários e bloqueios'
+                          : (selectedAppointment?.profiles?.full_name ?? 'Aula')}
                 </h2>
               </div>
               <button
@@ -457,6 +461,10 @@ export function AppointmentsPage() {
                 <X size={18} />
               </button>
             </div>
+
+            {panel === 'availability' && isTrainer && (
+              <AvailabilityPanel trainerId={userId} />
+            )}
 
             {panel === 'create' && (
               <div className="mt-7 space-y-5">

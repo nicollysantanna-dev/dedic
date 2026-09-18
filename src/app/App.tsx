@@ -35,11 +35,6 @@ const AccountPage = lazy(() =>
     default: module.AccountPage,
   })),
 )
-const AvailabilityPage = lazy(() =>
-  import('@/features/availability/AvailabilityPage').then((module) => ({
-    default: module.AvailabilityPage,
-  })),
-)
 const PackagesPage = lazy(() =>
   import('@/features/packages/PackagesPage').then((module) => ({
     default: module.PackagesPage,
@@ -95,7 +90,6 @@ export function App() {
                 path="/app/pagamentos"
                 element={<Navigate to="/app/financeiro" replace />}
               />
-              <Route path="/app/disponibilidade" element={<AvailabilityPage />} />
               <Route
                 path="/app/calendario"
                 element={<Navigate to="/app/agenda" replace />}
