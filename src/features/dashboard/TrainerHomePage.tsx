@@ -18,7 +18,16 @@ import { useAuth } from '@/features/auth/auth-context'
 import { buildFinancialSummary } from '@/features/payments/financial-summary'
 import { appointmentKeys } from '@/features/appointments/keys'
 import { paymentKeys } from '@/features/payments/keys'
-import { formatCurrency, formatDateOnly, formatLongDate, formatTime } from '@/lib/format'
+import { daysUntil } from '@/features/progress/progress-summary'
+import { buildStudentOverviews } from '@/features/students/student-overview'
+import {
+  formatCurrency,
+  formatDateOnly,
+  formatDateTime,
+  formatLongDate,
+  formatTime,
+} from '@/lib/format'
+import { cn } from '@/lib/utils'
 import { requireSupabase } from '@/lib/supabase/client'
 
 export function TrainerHomePage() {
@@ -45,16 +54,32 @@ export function TrainerHomePage() {
   })
 
   const students = useQuery({
-    queryKey: ['trainer-home-students', trainerId],
+    queryKey: appointmentKeys.studentOverviews(trainerId),
     enabled: Boolean(trainerId),
     queryFn: async () => {
-      const { count, error } = await requireSupabase()
-        .from('trainer_student_relationships')
-        .select('id', { count: 'exact', head: true })
+      const { data, error } = await requireSupabase()
+        .from('student_activity_summary')
+        .select('*')
         .eq('trainer_id', trainerId)
-        .eq('status', 'active')
       if (error) throw error
-      return count ?? 0
+      return buildStudentOverviews(data)
+    },
+  })
+
+  const upcoming = useQuery({
+    queryKey: appointmentKeys.upcoming(trainerId),
+    enabled: Boolean(trainerId),
+    queryFn: async () => {
+      const { data, error } = await requireSupabase()
+        .from('appointments')
+        .select('id, starts_at, status, profiles!appointments_student_id_fkey(full_name)')
+        .eq('trainer_id', trainerId)
+        .eq('status', 'scheduled')
+        .gte('starts_at', today.end.toISOString())
+        .order('starts_at')
+        .limit(5)
+      if (error) throw error
+      return data
     },
   })
 
@@ -73,6 +98,19 @@ export function TrainerHomePage() {
   })
 
   const todayAppointments = appointments.data ?? []
+  const overviews = students.data ?? []
+  const attentionStudents = overviews.filter((student) => student.needsAttention)
+  const averageAttendance = (() => {
+    const rated = overviews.filter((student) => student.attendance !== null)
+    if (!rated.length) return null
+    return Math.round(
+      rated.reduce((total, student) => total + (student.attendance ?? 0), 0) /
+        rated.length,
+    )
+  })()
+  const renewals = overviews
+    .filter((student) => student.renewalDate && daysUntil(student.renewalDate) <= 14)
+    .sort((left, right) => left.renewalDate!.localeCompare(right.renewalDate!))
   const pendingPayments = (payments.data ?? []).filter((item) => item.status !== 'paid')
   const monthRevenue = buildFinancialSummary(payments.data ?? []).receivedCents
   const hasError = appointments.error || students.error || payments.error
@@ -144,7 +182,16 @@ export function TrainerHomePage() {
                     {formatTime(appointment.ends_at)}
                   </p>
                 </div>
-                <StatusBadge status={appointment.status} />
+                <div className="flex items-center gap-2">
+                  <StatusBadge status={appointment.status} />
+                  <Link
+                    aria-label={`Abrir aula de ${appointment.profiles?.full_name ?? 'aluno'} na agenda`}
+                    className="grid size-8 place-items-center rounded-lg text-slate-400 transition hover:bg-slate-200 hover:text-slate-900"
+                    to={`/app/agenda?aula=${appointment.id}`}
+                  >
+                    <ArrowRight size={15} />
+                  </Link>
+                </div>
               </motion.article>
             ))}
           </div>
@@ -163,14 +210,14 @@ export function TrainerHomePage() {
           <MetricCard
             icon={UsersRound}
             label="Alunos ativos"
-            value={String(students.data ?? 0)}
-            detail="Vínculos ativos"
+            value={String(overviews.length)}
+            detail={`${attentionStudents.length} precisam de atenção`}
           />
           <MetricCard
             icon={TrendingUp}
             label="Frequência"
-            value="—"
-            detail="Disponível na Fase 2"
+            value={averageAttendance === null ? '—' : `${averageAttendance}%`}
+            detail="Média dos alunos ativos"
           />
           <MetricCard
             icon={WalletCards}
@@ -223,15 +270,95 @@ export function TrainerHomePage() {
                 Ver alunos <ArrowRight size={14} />
               </Link>
             </div>
-            <div className="mt-4 rounded-xl border border-dashed border-slate-200 px-5 py-8 text-center">
-              <UsersRound className="mx-auto text-slate-300" size={26} />
-              <p className="mt-3 text-sm font-semibold">
-                Indicadores de evolução entram na Fase 2.
-              </p>
-              <p className="mt-1 text-xs leading-5 text-slate-500">
-                Peso, fotos, metas e frequência aparecerão aqui quando o perfil do aluno
-                estiver disponível.
-              </p>
+            <div className="mt-4 space-y-2">
+              {attentionStudents.slice(0, 5).map((student) => (
+                <Link
+                  className="flex items-center justify-between gap-3 rounded-xl border border-slate-100 p-3 transition hover:bg-slate-50"
+                  key={student.studentId}
+                  to={`/app/alunos/${student.studentId}`}
+                >
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-semibold">{student.name}</p>
+                    <p className="mt-0.5 truncate text-xs text-slate-500">
+                      {student.alerts.map((alert) => alert.label).join(' · ')}
+                    </p>
+                  </div>
+                  <span
+                    className={cn(
+                      'shrink-0 rounded-full px-2 py-0.5 text-[0.65rem] font-bold',
+                      student.alerts.some((alert) => alert.severity === 'high')
+                        ? 'bg-red-100 text-red-700'
+                        : 'bg-amber-100 text-amber-700',
+                    )}
+                  >
+                    {student.alerts.length}
+                  </span>
+                </Link>
+              ))}
+              {students.isLoading && (
+                <p className="py-4 text-center text-sm text-slate-500">Carregando…</p>
+              )}
+              {!students.isLoading && !attentionStudents.length && (
+                <p className="rounded-xl bg-emerald-50 p-4 text-sm font-medium text-emerald-700">
+                  Todos os alunos estão em dia.
+                </p>
+              )}
+            </div>
+          </div>
+        </section>
+
+        <section className="mt-5 grid gap-5 lg:grid-cols-2">
+          <div className="rounded-[1.5rem] bg-white p-5 text-slate-950 sm:p-6">
+            <h2 className="font-bold">Próximas aulas</h2>
+            <div className="mt-4 space-y-2">
+              {(upcoming.data ?? []).map((appointment) => (
+                <Link
+                  className="flex items-center justify-between gap-3 rounded-xl border border-slate-100 p-3 transition hover:bg-slate-50"
+                  key={appointment.id}
+                  to={`/app/agenda?aula=${appointment.id}`}
+                >
+                  <p className="truncate text-sm font-semibold">
+                    {appointment.profiles?.full_name ?? 'Aluno'}
+                  </p>
+                  <span className="shrink-0 text-xs text-slate-500">
+                    {formatDateTime(appointment.starts_at)}
+                  </span>
+                </Link>
+              ))}
+              {!upcoming.isLoading && !upcoming.data?.length && (
+                <p className="py-4 text-center text-sm text-slate-500">
+                  Nenhuma aula marcada após hoje.
+                </p>
+              )}
+            </div>
+          </div>
+
+          <div className="rounded-[1.5rem] bg-white p-5 text-slate-950 sm:p-6">
+            <h2 className="font-bold">Renovações próximas</h2>
+            <div className="mt-4 space-y-2">
+              {renewals.slice(0, 5).map((student) => (
+                <Link
+                  className="flex items-center justify-between gap-3 rounded-xl border border-slate-100 p-3 transition hover:bg-slate-50"
+                  key={student.studentId}
+                  to={`/app/alunos/${student.studentId}`}
+                >
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-semibold">{student.name}</p>
+                    <p className="mt-0.5 text-xs text-slate-500">
+                      {student.balance} crédito{student.balance === 1 ? '' : 's'} restante
+                      {student.balance === 1 ? '' : 's'}
+                    </p>
+                  </div>
+                  <span className="shrink-0 text-xs text-slate-500">
+                    {formatDateOnly(student.renewalDate!)}
+                  </span>
+                </Link>
+              ))}
+              {!students.isLoading && !renewals.length && (
+                <p className="py-4 text-center text-sm text-slate-500">
+                  Nenhuma renovação nos próximos 14 dias.
+                </p>
+              )}
             </div>
           </div>
         </section>

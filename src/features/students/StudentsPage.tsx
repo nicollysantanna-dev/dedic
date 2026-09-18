@@ -18,11 +18,11 @@ import {
   type StudentOverview,
 } from '@/features/students/student-overview'
 import { appointmentKeys } from '@/features/appointments/keys'
-import { initials } from '@/lib/format'
+import { formatPhone, initials } from '@/lib/format'
 import { requireSupabase } from '@/lib/supabase/client'
 import { cn } from '@/lib/utils'
 
-type StudentFilter = 'all' | 'attention' | 'noCredits'
+type StudentFilter = 'all' | 'attention' | 'noCredits' | 'inactive'
 
 export function StudentsPage() {
   const { profile } = useAuth()
@@ -34,50 +34,12 @@ export function StudentsPage() {
     queryKey: appointmentKeys.studentOverviews(trainerId),
     enabled: Boolean(trainerId) && profile?.role === 'trainer',
     queryFn: async () => {
-      const { data: relationships, error: relationshipError } = await requireSupabase()
-        .from('trainer_student_relationships')
-        .select(
-          'id, student_id, profiles!trainer_student_relationships_student_id_fkey(full_name, phone)',
-        )
+      const { data, error } = await requireSupabase()
+        .from('student_activity_summary')
+        .select('*')
         .eq('trainer_id', trainerId)
-        .eq('status', 'active')
-      if (relationshipError) throw relationshipError
-      if (!relationships.length) return []
-
-      const studentIds = relationships.map((item) => item.student_id)
-      const [appointments, packages, payments, credits] = await Promise.all([
-        requireSupabase()
-          .from('appointments')
-          .select('student_id, starts_at, status')
-          .eq('trainer_id', trainerId)
-          .in('student_id', studentIds),
-        requireSupabase()
-          .from('lesson_packages')
-          .select('student_id, status, expires_on, lesson_count')
-          .eq('trainer_id', trainerId)
-          .in('student_id', studentIds),
-        requireSupabase()
-          .from('payments')
-          .select('student_id, status, due_on')
-          .eq('trainer_id', trainerId)
-          .in('student_id', studentIds),
-        requireSupabase()
-          .from('credit_transactions')
-          .select('student_id, amount')
-          .eq('trainer_id', trainerId)
-          .in('student_id', studentIds),
-      ])
-      const error =
-        appointments.error || packages.error || payments.error || credits.error
       if (error) throw error
-
-      return buildStudentOverviews({
-        relationships,
-        appointments: appointments.data,
-        packages: packages.data,
-        payments: payments.data,
-        credits: credits.data,
-      })
+      return buildStudentOverviews(data)
     },
   })
 
@@ -88,7 +50,9 @@ export function StudentsPage() {
       const matchesFilter =
         filter === 'all' ||
         (filter === 'attention' && student.needsAttention) ||
-        (filter === 'noCredits' && student.balance <= 0)
+        (filter === 'noCredits' && student.balance <= 0) ||
+        (filter === 'inactive' &&
+          student.alerts.some((alert) => alert.kind === 'inactive'))
       return matchesSearch && matchesFilter
     })
   }, [filter, search, students.data])
@@ -129,7 +93,7 @@ export function StudentsPage() {
             />
           </label>
           <div
-            className="grid grid-cols-3 rounded-xl border border-white/8 bg-white/4 p-1"
+            className="grid grid-cols-4 rounded-xl border border-white/8 bg-white/4 p-1"
             aria-label="Filtrar alunos"
           >
             {(
@@ -137,6 +101,7 @@ export function StudentsPage() {
                 ['all', 'Todos'],
                 ['attention', 'Atenção'],
                 ['noCredits', 'Sem créditos'],
+                ['inactive', 'Parados'],
               ] as const
             ).map(([value, label]) => (
               <button
@@ -221,8 +186,10 @@ function StudentRow({ student, index }: { student: StudentOverview; index: numbe
           >
             {student.name}
           </Link>
-          <p className="mt-0.5 text-xs text-slate-500">
-            {student.phone ?? 'Vínculo ativo'}
+          <p className="mt-0.5 truncate text-xs text-slate-500">
+            {student.alerts.length
+              ? student.alerts.map((alert) => alert.label).join(' · ')
+              : (formatPhone(student.phone) ?? 'Vínculo ativo')}
           </p>
         </div>
         {student.needsAttention && (

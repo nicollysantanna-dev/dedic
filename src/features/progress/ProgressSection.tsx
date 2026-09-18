@@ -31,6 +31,7 @@ import {
   useUpdateGoalStatus,
   useUploadPhoto,
 } from '@/features/progress/queries'
+import { useActivitySummary } from '@/features/students/queries'
 import { formatDateOnly, toIsoDate } from '@/lib/format'
 import type { Tables } from '@/lib/supabase/database.types'
 import { cn } from '@/lib/utils'
@@ -382,6 +383,8 @@ function GoalsCard({
   trainerId: string | null
 }) {
   const [isCreating, setIsCreating] = useState(false)
+  const activity = useActivitySummary(studentId)
+  const weeklyAverage = activity.data?.weekly_average_4w ?? null
   const updateStatus = useUpdateGoalStatus(studentId)
   const active = goals.filter((goal) => goal.status === 'active')
   const finished = goals.filter((goal) => goal.status !== 'active')
@@ -406,7 +409,7 @@ function GoalsCard({
 
       <ul className="mt-4 space-y-3">
         {active.map((goal) => {
-          const current = goal.kind === 'weight' ? currentWeight : null
+          const current = goal.kind === 'weight' ? currentWeight : weeklyAverage
           const progress = goalProgress(goal, current)
           const days = daysUntil(goal.target_date)
           return (
@@ -444,7 +447,8 @@ function GoalsCard({
                   : days === 0
                     ? 'Prazo termina hoje'
                     : `${days} dias até ${formatDateOnly(goal.target_date)}`}
-                {goal.kind === 'attendance' && ' · acompanhada pelas aulas realizadas'}
+                {goal.kind === 'attendance' &&
+                  ` · média de ${Number(weeklyAverage ?? 0).toLocaleString('pt-BR')} aulas/semana nas últimas 4 semanas`}
               </p>
               {trainerId && (
                 <div className="mt-3 flex gap-2">

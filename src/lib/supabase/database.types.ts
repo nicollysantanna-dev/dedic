@@ -152,6 +152,13 @@ export type Database = {
             foreignKeyName: 'appointment_relationship_parties'
             columns: ['relationship_id', 'trainer_id', 'student_id']
             isOneToOne: false
+            referencedRelation: 'student_activity_summary'
+            referencedColumns: ['relationship_id', 'trainer_id', 'student_id']
+          },
+          {
+            foreignKeyName: 'appointment_relationship_parties'
+            columns: ['relationship_id', 'trainer_id', 'student_id']
+            isOneToOne: false
             referencedRelation: 'trainer_student_relationships'
             referencedColumns: ['id', 'trainer_id', 'student_id']
           },
@@ -403,8 +410,22 @@ export type Database = {
             foreignKeyName: 'lesson_package_relationship_parties'
             columns: ['relationship_id', 'trainer_id', 'student_id']
             isOneToOne: false
+            referencedRelation: 'student_activity_summary'
+            referencedColumns: ['relationship_id', 'trainer_id', 'student_id']
+          },
+          {
+            foreignKeyName: 'lesson_package_relationship_parties'
+            columns: ['relationship_id', 'trainer_id', 'student_id']
+            isOneToOne: false
             referencedRelation: 'trainer_student_relationships'
             referencedColumns: ['id', 'trainer_id', 'student_id']
+          },
+          {
+            foreignKeyName: 'lesson_packages_relationship_id_fkey'
+            columns: ['relationship_id']
+            isOneToOne: false
+            referencedRelation: 'student_activity_summary'
+            referencedColumns: ['relationship_id']
           },
           {
             foreignKeyName: 'lesson_packages_relationship_id_fkey'
@@ -862,7 +883,50 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      student_activity_summary: {
+        Row: {
+          active_goals: number | null
+          attendance_goal_per_week: number | null
+          attendance_rate: number | null
+          balance: number | null
+          completed_30d: number | null
+          completed_total: number | null
+          full_name: string | null
+          last_completed_at: string | null
+          last_progress_on: string | null
+          next_appointment_at: string | null
+          next_due_on: string | null
+          next_renewal_on: string | null
+          no_show_30d: number | null
+          no_show_total: number | null
+          overdue_goals: number | null
+          overdue_payments: number | null
+          pending_payments: number | null
+          phone: string | null
+          relationship_id: string | null
+          started_at: string | null
+          student_id: string | null
+          trainer_id: string | null
+          upcoming_count: number | null
+          weekly_average_4w: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'trainer_student_relationships_student_id_fkey'
+            columns: ['student_id']
+            isOneToOne: false
+            referencedRelation: 'profiles'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'trainer_student_relationships_trainer_id_fkey'
+            columns: ['trainer_id']
+            isOneToOne: false
+            referencedRelation: 'profiles'
+            referencedColumns: ['id']
+          },
+        ]
+      }
     }
     Functions: {
       activate_lesson_package: {

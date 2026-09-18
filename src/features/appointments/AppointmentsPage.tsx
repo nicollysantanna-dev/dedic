@@ -41,12 +41,17 @@ export function AppointmentsPage() {
   const queryClient = useQueryClient()
   const [searchParams, setSearchParams] = useSearchParams()
   const opensCreatePanel = profile?.role === 'trainer' && searchParams.get('novo') === '1'
+  const requestedAppointmentId = searchParams.get('aula')
   const [cancellationNote, setCancellationNote] = useState('')
   const [outcomeTargetId, setOutcomeTargetId] = useState<string | null>(null)
   const [correctionTargetId, setCorrectionTargetId] = useState<string | null>(null)
   const [correctionReason, setCorrectionReason] = useState('')
-  const [panel, setPanel] = useState<AgendaPanel>(opensCreatePanel ? 'create' : null)
-  const [selectedAppointmentId, setSelectedAppointmentId] = useState<string | null>(null)
+  const [panel, setPanel] = useState<AgendaPanel>(
+    opensCreatePanel ? 'create' : requestedAppointmentId ? 'appointment' : null,
+  )
+  const [selectedAppointmentId, setSelectedAppointmentId] = useState<string | null>(
+    requestedAppointmentId,
+  )
   const [bookingStudentId, setBookingStudentId] = useState('')
   const [bookingStart, setBookingStart] = useState(() =>
     opensCreatePanel ? toLocalDateTimeInput(nextHalfHour()) : '',
@@ -61,13 +66,13 @@ export function AppointmentsPage() {
   const userId = profile?.id ?? ''
   const isTrainer = profile?.role === 'trainer'
   const lessonDurationMinutes = profile?.default_lesson_duration_minutes ?? 60
+  const counterpart = isTrainer
+    ? 'profiles!appointments_student_id_fkey(full_name)'
+    : 'profiles!appointments_trainer_id_fkey(full_name)'
   const appointments = useQuery({
     queryKey: appointmentKeys.range(userId, calendarRange.start, calendarRange.end),
     enabled: Boolean(userId),
     queryFn: async () => {
-      const counterpart = isTrainer
-        ? 'profiles!appointments_student_id_fkey(full_name)'
-        : 'profiles!appointments_trainer_id_fkey(full_name)'
       const { data, error } = await requireSupabase()
         .from('appointments')
         .select(`*, ${counterpart}`)
@@ -195,15 +200,16 @@ export function AppointmentsPage() {
   }
 
   useEffect(() => {
-    if (!opensCreatePanel) return
+    if (!opensCreatePanel && !requestedAppointmentId) return
     setSearchParams(
       (params) => {
         params.delete('novo')
+        params.delete('aula')
         return params
       },
       { replace: true },
     )
-  }, [opensCreatePanel, setSearchParams])
+  }, [opensCreatePanel, requestedAppointmentId, setSearchParams])
 
   useEffect(() => {
     if (!toast) return
@@ -331,13 +337,29 @@ export function AppointmentsPage() {
     },
   })
 
-  const selectedAppointment = useMemo(
+  const inRangeAppointment = useMemo(
     () =>
       appointments.data?.find(
         (appointment) => appointment.id === selectedAppointmentId,
       ) ?? null,
     [appointments.data, selectedAppointmentId],
   )
+  // Uma aula aberta por link (?aula=) pode estar fora do período visível.
+  const requestedAppointment = useQuery({
+    queryKey: appointmentKeys.byId(selectedAppointmentId ?? ''),
+    enabled:
+      Boolean(selectedAppointmentId) && !inRangeAppointment && !appointments.isLoading,
+    queryFn: async () => {
+      const { data, error } = await requireSupabase()
+        .from('appointments')
+        .select(`*, ${counterpart}`)
+        .eq('id', selectedAppointmentId!)
+        .maybeSingle()
+      if (error) throw error
+      return data
+    },
+  })
+  const selectedAppointment = inRangeAppointment ?? requestedAppointment.data ?? null
   return (
     <main className="min-h-dvh px-4 pb-28 pt-5 text-white sm:px-7 lg:px-8 lg:pb-8 lg:pt-7">
       <div className="mx-auto w-full max-w-7xl">

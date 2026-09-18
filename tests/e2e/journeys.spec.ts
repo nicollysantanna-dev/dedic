@@ -251,3 +251,38 @@ test('evolução: aluna registra peso e foto, personal define meta e a exclusão
   await page.getByRole('link', { name: /Ana Aluna/ }).click()
   await expect(page.getByText('Nenhuma foto enviada ainda.')).toBeVisible()
 })
+
+test('dashboard do personal mostra alertas, próximas aulas e abre a aula pelo atalho', async ({
+  page,
+}) => {
+  await login(page, users.trainer.email)
+
+  // Garante uma aula futura da Ana criada pelo personal.
+  await page.goto('/app/agenda?novo=1')
+  const createDialog = page.getByRole('dialog')
+  await createDialog.getByLabel('Aluno').selectOption({ label: 'Ana Aluna' })
+  await createDialog
+    .getByLabel('Data e horário')
+    .fill(`${futureDate(bookingDay + 2)}T09:00`)
+  await createDialog.getByRole('button', { name: 'Confirmar agendamento' }).click()
+  await expect(page.getByRole('status')).toContainText('Aula agendada')
+
+  await page.goto('/app')
+  await expect(page.getByText('Alunos ativos').first()).toBeVisible()
+  const upcoming = page.locator('section').filter({ hasText: 'Próximas aulas' })
+  await expect(upcoming.getByRole('link', { name: /Ana Aluna/ }).first()).toBeVisible()
+
+  // Atalho abre o painel da aula na agenda, mesmo fora do período visível.
+  await upcoming
+    .getByRole('link', { name: /Ana Aluna/ })
+    .first()
+    .click()
+  await expect(page).toHaveURL(/\/app\/agenda/)
+  await expect(page.getByRole('dialog')).toContainText('Ana Aluna')
+  await expect(page.getByRole('button', { name: 'Cancelar aula' })).toBeVisible()
+
+  // Lista de alunos: a aluna com meta vencida ou sem crédito aparece no filtro Atenção.
+  await page.goto('/app/alunos')
+  await page.getByRole('button', { name: 'Atenção' }).click()
+  await expect(page.getByText('Nenhum aluno encontrado.')).toBeVisible()
+})

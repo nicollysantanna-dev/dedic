@@ -17,7 +17,7 @@ import { Button } from '@/components/ui/button'
 import { useAuth } from '@/features/auth/auth-context'
 import { creditAdjustmentSchema, packageSchema } from '@/features/packages/schemas'
 import { ProgressSection } from '@/features/progress/ProgressSection'
-import { buildStudentOverviews } from '@/features/students/student-overview'
+import { toStudentOverview } from '@/features/students/student-overview'
 import { appointmentKeys } from '@/features/appointments/keys'
 import { creditKeys } from '@/features/credits/keys'
 import { formatDateTime, formatTime, toIsoDate } from '@/lib/format'
@@ -62,7 +62,13 @@ export function StudentProfilePage() {
       if (relationshipError) throw relationshipError
       if (!relationship) return null
 
-      const [appointments, packages, payments, credits] = await Promise.all([
+      const [summary, appointments, packages] = await Promise.all([
+        requireSupabase()
+          .from('student_activity_summary')
+          .select('*')
+          .eq('trainer_id', trainerId)
+          .eq('student_id', studentId!)
+          .maybeSingle(),
         requireSupabase()
           .from('appointments')
           .select('id, student_id, starts_at, ends_at, status')
@@ -74,33 +80,16 @@ export function StudentProfilePage() {
           .select('*')
           .eq('trainer_id', trainerId)
           .eq('student_id', studentId!),
-        requireSupabase()
-          .from('payments')
-          .select('student_id, status, due_on')
-          .eq('trainer_id', trainerId)
-          .eq('student_id', studentId!),
-        requireSupabase()
-          .from('credit_transactions')
-          .select('*')
-          .eq('trainer_id', trainerId)
-          .eq('student_id', studentId!),
       ])
-      const error =
-        appointments.error || packages.error || payments.error || credits.error
+      const error = summary.error || appointments.error || packages.error
       if (error) throw error
-      const overview = buildStudentOverviews({
-        relationships: [relationship],
-        appointments: appointments.data,
-        packages: packages.data,
-        payments: payments.data,
-        credits: credits.data,
-      })[0]
+      if (!summary.data) return null
+      const overview = toStudentOverview(summary.data)
       return {
         overview,
         relationship,
         appointments: appointments.data,
         packages: packages.data,
-        credits: credits.data,
       }
     },
   })

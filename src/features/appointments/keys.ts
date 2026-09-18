@@ -18,6 +18,9 @@ export const appointmentKeys = {
       end.toISOString(),
     ] as const,
   allBlocks: ['appointments', 'blocks'] as const,
+  activity: (studentId: string) => ['appointments', 'activity', studentId] as const,
+  byId: (appointmentId: string) => ['appointments', 'by-id', appointmentId] as const,
+  upcoming: (userId: string) => ['appointments', 'upcoming', userId] as const,
   trainerToday: (trainerId: string, dayStart: string) =>
     ['appointments', 'trainer-today', trainerId, dayStart] as const,
   studentHistory: (studentId: string) =>
