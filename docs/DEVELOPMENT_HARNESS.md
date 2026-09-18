@@ -143,10 +143,20 @@ Os seguintes scripts serão criados junto com a inicialização do React:
 | `npm run test`          | Executar testes unitários e de componente |
 | `npm run test:coverage` | Gerar cobertura para diagnóstico          |
 | `npm run test:e2e`      | Executar jornadas Playwright              |
+| `npm run test:db`       | Executar testes pgTAP no Supabase local   |
 | `npm run build`         | Validar build de produção                 |
 | `npm run validate`      | Executar o gate local não destrutivo      |
 
-O script `validate` deve executar, nesta ordem, formatação, lint, tipos, testes e build. E2E pode permanecer separado por depender do ambiente local completo.
+O script `validate` executa, nesta ordem, formatação, lint, tipos, testes e build.
+`test:db` e `test:e2e` dependem do Supabase local em execução (`npm run supabase:start`,
+com Docker) e por isso ficam separados; o CI executa os três em jobs próprios.
+
+- `test:db` roda os arquivos `supabase/tests/*.sql` com pg_prove sobre o banco
+  semeado. Cada arquivo abre uma transação, assume usuários via
+  `set_config('request.jwt.claim.sub', …)` e faz rollback ao final.
+- `test:e2e` recria o banco local (`supabase db reset`) no `globalSetup`, builda o
+  app apontando para o Supabase local e executa as jornadas em série. As jornadas
+  autenticadas rodam no projeto desktop; o projeto mobile cobre acesso e smoke de login.
 
 ## 8. Ambientes
 
@@ -172,18 +182,19 @@ Segredos administrativos pertencem exclusivamente a ambientes de servidor e não
 
 ## 10. Dados de teste
 
-O seed local deve criar, no mínimo:
+`supabase/seed.sql` é aplicado somente no banco local e cria:
 
-- um personal;
-- dois alunos vinculados;
-- um aluno sem vínculo;
-- disponibilidade semanal;
-- um bloqueio;
-- pacote ativo, vencido e esgotado;
-- aulas em todos os estados suportados;
-- pagamento pendente, pago e atrasado.
+| Usuário                | Papel    | Senha              | Observação               |
+| ---------------------- | -------- | ------------------ | ------------------------ |
+| `personal@dedic.local` | personal | `dedic-local-2026` | duração padrão 60 min    |
+| `aluna@dedic.local`    | aluna    | `dedic-local-2026` | vínculo e pacote ativos  |
+| `aluno@dedic.local`    | aluno    | `dedic-local-2026` | vínculo e pacote ativos  |
+| `externa@dedic.local`  | aluna    | `dedic-local-2026` | sem vínculo (isolamento) |
 
-Factories devem permitir criar cenários específicos sem depender da ordem global dos testes.
+Além disso: disponibilidade de 06:00 às 22:00 em todos os dias, pacotes ativos de
+10 aulas com a entrada correspondente no extrato e uma cobrança pendente da aluna.
+Cenários específicos (aulas passadas, faltas, bloqueios) são criados dentro de cada
+teste, sem depender da ordem global.
 
 ## 11. Observabilidade de desenvolvimento
 
