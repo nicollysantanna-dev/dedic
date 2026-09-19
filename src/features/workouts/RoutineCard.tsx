@@ -16,14 +16,22 @@ import { cn } from '@/lib/utils'
 export function RoutineCard({
   routine,
   trainerId,
+  viewerId,
   actions,
   className,
 }: {
   routine: RoutineWithExercises
-  trainerId: string
+  trainerId: string | null
+  viewerId: string
   actions?: React.ReactNode
   className?: string
 }) {
+  const origin =
+    routine.created_by === viewerId
+      ? 'Sua ficha'
+      : routine.created_by === routine.student_id
+        ? 'Criada pelo aluno'
+        : 'Do personal'
   const [expanded, setExpanded] = useState(false)
   const names = routine.routine_exercises.map((item) =>
     routineExerciseName(item.exercise, trainerId),
@@ -36,9 +44,12 @@ export function RoutineCard({
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <h3 className="text-base font-bold leading-snug">{routine.name}</h3>
-          {routine.student && (
-            <p className="mt-0.5 text-xs text-slate-500">{routine.student.full_name}</p>
-          )}
+          <p className="mt-0.5 text-xs text-slate-500">
+            <span className="font-semibold text-[var(--brand)]">{origin}</span>
+            {routine.student && routine.created_by !== routine.student_id && (
+              <> · {routine.student.full_name}</>
+            )}
+          </p>
           <p className="mt-1 line-clamp-2 text-xs text-slate-500">{names.join(', ')}</p>
         </div>
         <button

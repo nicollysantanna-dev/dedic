@@ -2,6 +2,8 @@ import { Search, X } from 'lucide-react'
 import { useState } from 'react'
 import { createPortal } from 'react-dom'
 
+import { ExerciseMediaLightbox } from '@/features/workouts/ExerciseMediaLightbox'
+
 import {
   exerciseDisplayName,
   useExerciseDetail,
@@ -115,6 +117,7 @@ export function ExercisePicker({
                 <ExerciseThumb
                   externalId={exercise.external_id}
                   name={exerciseDisplayName(exercise)}
+                  withMedia={false}
                 />
                 <span className="min-w-0 flex-1">
                   <span className="block truncate text-sm font-semibold">
@@ -141,27 +144,53 @@ export function ExercisePicker({
   )
 }
 
-/** Miniatura circular do GIF (ao vivo). Sem imagem, mostra as iniciais. */
+/**
+ * Miniatura circular do GIF (ao vivo). Tocar abre a execução em tela cheia.
+ * Sem imagem, mostra as iniciais.
+ */
 export function ExerciseThumb({
   externalId,
   name,
   size = 44,
+  withMedia = true,
 }: {
   externalId: string | null
   name: string
   size?: number
+  /** Listas longas (seletor) não buscam o GIF, para respeitar o limite da API. */
+  withMedia?: boolean
 }) {
-  const detail = useExerciseDetail(externalId)
+  const detail = useExerciseDetail(withMedia ? externalId : null)
+  const [open, setOpen] = useState(false)
   const style = { width: size, height: size }
-  if (detail.data?.gifUrl) {
+  if (detail.data?.gifUrl && externalId) {
     return (
-      <img
-        alt=""
-        className="shrink-0 rounded-full bg-slate-100 object-cover"
-        loading="lazy"
-        src={detail.data.gifUrl}
-        style={style}
-      />
+      <>
+        <button
+          aria-label={`Ver execução de ${name}`}
+          className="shrink-0 overflow-hidden rounded-full bg-slate-100 ring-offset-2 transition hover:ring-2 hover:ring-[var(--brand)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand)]"
+          onClick={(event) => {
+            event.stopPropagation()
+            setOpen(true)
+          }}
+          style={style}
+          type="button"
+        >
+          <img
+            alt=""
+            className="size-full object-cover"
+            loading="lazy"
+            src={detail.data.gifUrl}
+          />
+        </button>
+        {open && (
+          <ExerciseMediaLightbox
+            externalId={externalId}
+            name={name}
+            onClose={() => setOpen(false)}
+          />
+        )}
+      </>
     )
   }
   return (

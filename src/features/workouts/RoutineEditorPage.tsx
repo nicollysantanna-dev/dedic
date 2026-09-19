@@ -45,10 +45,13 @@ export function RoutineEditorPage() {
   const [searchParams] = useSearchParams()
   const navigate = useNavigate()
   const isNew = routineId === 'nova'
+  const isTrainer = profile?.role === 'trainer'
   const existing = useRoutine(isNew ? null : (routineId ?? null))
   const trainerId = profile?.id ?? ''
   const [draft, setDraft] = useState<RoutineDraft | null>(
-    isNew ? emptyRoutine(searchParams.get('aluno')) : null,
+    isNew
+      ? emptyRoutine(isTrainer ? searchParams.get('aluno') : (profile?.id ?? null))
+      : null,
   )
   const [pickerOpen, setPickerOpen] = useState(false)
   const [formError, setFormError] = useState('')
@@ -56,7 +59,7 @@ export function RoutineEditorPage() {
 
   const students = useQuery({
     queryKey: ['routines', 'students', trainerId],
-    enabled: Boolean(trainerId),
+    enabled: Boolean(trainerId) && isTrainer,
     queryFn: async () => {
       const { data, error } = await requireSupabase()
         .from('trainer_student_relationships')
@@ -71,10 +74,20 @@ export function RoutineEditorPage() {
   })
 
   // Ficha existente: o rascunho nasce dos dados carregados, sem efeito.
-  const loadedDraft = !draft && existing.data ? toDraft(existing.data, trainerId) : null
+  const loadedDraft =
+    !draft && existing.data ? toDraft(existing.data, existing.data.trainer_id) : null
   if (loadedDraft) setDraft(loadedDraft)
 
-  if (profile?.role !== 'trainer') return <Navigate to="/app" replace />
+  if (!profile) return null
+  // Só quem criou a ficha pode editá-la (aluno edita as suas, personal as dele).
+  if (existing.data && existing.data.created_by !== profile.id) {
+    return <Navigate to={isTrainer ? '/app/alunos' : '/app/treinos'} replace />
+  }
+  const backTo = isTrainer
+    ? draft?.studentId
+      ? `/app/alunos/${draft.studentId}`
+      : '/app/alunos'
+    : '/app/treinos'
 
   const update = (patch: Partial<RoutineDraft>) =>
     setDraft((current) => (current ? { ...current, ...patch } : current))
@@ -110,14 +123,7 @@ export function RoutineEditorPage() {
       return
     }
     save.mutate(result.payload, {
-      onSuccess: () => {
-        void navigate(
-          draft.studentId ? `/app/alunos/${draft.studentId}` : '/app/alunos',
-          {
-            replace: true,
-          },
-        )
-      },
+      onSuccess: () => void navigate(backTo, { replace: true }),
       onError: () => setFormError('Não foi possível salvar a ficha. Tente novamente.'),
     })
   }
@@ -130,8 +136,11 @@ export function RoutineEditorPage() {
       <Shell title="Ficha não encontrada">
         <p className="mt-4 text-sm text-slate-400">
           Ela pode ter sido arquivada.{' '}
-          <Link className="text-[var(--brand)] underline" to="/app/alunos">
-            Voltar para alunos
+          <Link
+            className="text-[var(--brand)] underline"
+            to={isTrainer ? '/app/alunos' : '/app/treinos'}
+          >
+            Voltar
           </Link>
         </p>
       </Shell>
@@ -145,7 +154,7 @@ export function RoutineEditorPage() {
         <header className="flex items-center justify-between gap-3">
           <Link
             className="inline-flex min-h-10 items-center gap-2 text-sm font-semibold text-slate-300 hover:text-white"
-            to={draft.studentId ? `/app/alunos/${draft.studentId}` : '/app/alunos'}
+            to={backTo}
           >
             <ArrowLeft size={17} /> Voltar
           </Link>
@@ -167,21 +176,23 @@ export function RoutineEditorPage() {
             />
           </label>
           <div className="mt-4 grid gap-3 sm:grid-cols-2">
-            <label className="block text-xs font-semibold text-slate-500">
-              Aluno
-              <select
-                className="field mt-1"
-                onChange={(event) => update({ studentId: event.target.value || null })}
-                value={draft.studentId ?? ''}
-              >
-                <option value="">Modelo (sem aluno)</option>
-                {students.data?.map((item) => (
-                  <option key={item.student_id} value={item.student_id}>
-                    {item.profiles?.full_name ?? 'Aluno'}
-                  </option>
-                ))}
-              </select>
-            </label>
+            {isTrainer && (
+              <label className="block text-xs font-semibold text-slate-500">
+                Aluno
+                <select
+                  className="field mt-1"
+                  onChange={(event) => update({ studentId: event.target.value || null })}
+                  value={draft.studentId ?? ''}
+                >
+                  <option value="">Modelo (sem aluno)</option>
+                  {students.data?.map((item) => (
+                    <option key={item.student_id} value={item.student_id}>
+                      {item.profiles?.full_name ?? 'Aluno'}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            )}
             <label className="block text-xs font-semibold text-slate-500">
               Observações
               <input
@@ -450,7 +461,7 @@ function Shell({ title, children }: { title: string; children?: React.ReactNode 
   )
 }
 
-function toDraft(routine: RoutineWithExercises, trainerId: string): RoutineDraft {
+function toDraft(routine: RoutineWithExercises, trainerId: string | null): RoutineDraft {
   return {
     id: routine.id,
     name: routine.name,

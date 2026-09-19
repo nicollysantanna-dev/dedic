@@ -1,10 +1,14 @@
-import { Dumbbell, Play, Plus } from 'lucide-react'
+import { Copy, Dumbbell, PencilLine, Play, Plus, Trash2 } from 'lucide-react'
 import { Link, useNavigate } from 'react-router-dom'
 
 import { Button } from '@/components/ui/button'
 import { useAuth } from '@/features/auth/auth-context'
 import { RoutineCard } from '@/features/workouts/RoutineCard'
-import { useStudentRoutines } from '@/features/workouts/routine-queries'
+import {
+  useArchiveRoutine,
+  useDuplicateRoutine,
+  useStudentRoutines,
+} from '@/features/workouts/routine-queries'
 import { useOpenWorkout, useStartWorkout } from '@/features/workouts/workout-queries'
 import { formatDateTime } from '@/lib/format'
 
@@ -16,6 +20,8 @@ export function StudentWorkoutsPage() {
   const routines = useStudentRoutines(studentId)
   const open = useOpenWorkout(studentId)
   const start = useStartWorkout()
+  const archive = useArchiveRoutine()
+  const duplicate = useDuplicateRoutine()
 
   const begin = (input: { routineId?: string; name?: string }) =>
     start.mutate(input, {
@@ -32,16 +38,23 @@ export function StudentWorkoutsPage() {
               Treinos
             </h1>
           </div>
-          {!open.data && (
-            <Button
-              className="border-white/15 bg-white/5 text-white hover:bg-white/10"
-              disabled={start.isPending}
-              onClick={() => begin({ name: 'Treino livre' })}
-              variant="outline"
-            >
-              <Plus size={17} /> Treino livre
+          <div className="flex flex-wrap gap-2">
+            {!open.data && (
+              <Button
+                className="border-white/15 bg-white/5 text-white hover:bg-white/10"
+                disabled={start.isPending}
+                onClick={() => begin({ name: 'Treino livre' })}
+                variant="outline"
+              >
+                <Play size={17} /> Treino livre
+              </Button>
+            )}
+            <Button asChild>
+              <Link to="/app/fichas/nova">
+                <Plus size={17} /> Nova ficha
+              </Link>
             </Button>
-          )}
+          </div>
         </header>
 
         {open.data && (
@@ -100,15 +113,51 @@ export function StudentWorkoutsPage() {
             <RoutineCard
               key={routine.id}
               routine={routine}
+              viewerId={studentId}
               trainerId={routine.trainer_id}
               actions={
-                <Button
-                  className="h-10"
-                  disabled={start.isPending || Boolean(open.data)}
-                  onClick={() => begin({ routineId: routine.id })}
-                >
-                  <Play size={16} /> Iniciar ficha
-                </Button>
+                <>
+                  <Button
+                    className="h-10"
+                    disabled={start.isPending || Boolean(open.data)}
+                    onClick={() => begin({ routineId: routine.id })}
+                  >
+                    <Play size={16} /> Iniciar ficha
+                  </Button>
+                  {routine.created_by === studentId ? (
+                    <>
+                      <Button asChild className="h-10 px-3 text-xs" variant="outline">
+                        <Link to={`/app/fichas/${routine.id}`}>
+                          <PencilLine size={14} /> Editar
+                        </Link>
+                      </Button>
+                      <Button
+                        className="h-10 px-3 text-xs text-red-700 hover:bg-red-50"
+                        disabled={archive.isPending}
+                        onClick={() => {
+                          if (window.confirm(`Arquivar a ficha "${routine.name}"?`)) {
+                            archive.mutate(routine.id)
+                          }
+                        }}
+                        variant="ghost"
+                      >
+                        <Trash2 size={14} /> Arquivar
+                      </Button>
+                    </>
+                  ) : (
+                    <Button
+                      className="h-10 px-3 text-xs"
+                      disabled={duplicate.isPending}
+                      onClick={() =>
+                        duplicate.mutate({ routineId: routine.id, studentId: null })
+                      }
+                      title="Cria uma cópia sua, editável"
+                      variant="outline"
+                    >
+                      <Copy size={14} /> Copiar para editar
+                    </Button>
+                  )}
+                </>
               }
             />
           ))}

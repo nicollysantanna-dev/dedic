@@ -6,6 +6,7 @@ import {
   useExerciseDetail,
   type ExerciseSearchResult,
 } from '@/features/workouts/queries'
+import { ExerciseMediaLightbox } from '@/features/workouts/ExerciseMediaLightbox'
 import { labelFor } from '@/features/workouts/vocabulary'
 import { cn } from '@/lib/utils'
 
@@ -88,6 +89,7 @@ export function ExerciseCard({
 
 function ExerciseDetail({ exercise }: { exercise: ExerciseSearchResult }) {
   const detail = useExerciseDetail(exercise.external_id)
+  const [zoomed, setZoomed] = useState(false)
   const muscles = [
     ...exercise.target_muscles.map((muscle) => labelFor('muscle', muscle)),
     ...exercise.secondary_muscles.map((muscle) => labelFor('muscle', muscle)),
@@ -103,12 +105,19 @@ function ExerciseDetail({ exercise }: { exercise: ExerciseSearchResult }) {
         ) : detail.error || !detail.data ? (
           <Placeholder text="Demonstração indisponível no momento." />
         ) : (
-          <img
-            alt={`Demonstração de ${exerciseDisplayName(exercise)}`}
-            className="aspect-square w-full object-cover"
-            loading="lazy"
-            src={detail.data.gifUrl}
-          />
+          <button
+            aria-label={`Ampliar demonstração de ${exerciseDisplayName(exercise)}`}
+            className="block w-full"
+            onClick={() => setZoomed(true)}
+            type="button"
+          >
+            <img
+              alt={`Demonstração de ${exerciseDisplayName(exercise)}`}
+              className="aspect-square w-full object-cover"
+              loading="lazy"
+              src={detail.data.gifUrl}
+            />
+          </button>
         )}
       </div>
       <div className="min-w-0 text-sm">
@@ -126,10 +135,17 @@ function ExerciseDetail({ exercise }: { exercise: ExerciseSearchResult }) {
         )}
         {detail.data && detail.data.instructions.length > 0 && (
           <p className="mt-3 text-[0.7rem] text-slate-400">
-            Instruções em inglês fornecidas pelo ExerciseDB.
+            Instruções em inglês fornecidas pelo ExerciseDB. Toque na imagem para ampliar.
           </p>
         )}
       </div>
+      {zoomed && exercise.external_id && (
+        <ExerciseMediaLightbox
+          externalId={exercise.external_id}
+          name={exerciseDisplayName(exercise)}
+          onClose={() => setZoomed(false)}
+        />
+      )}
     </div>
   )
 }

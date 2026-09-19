@@ -56,9 +56,11 @@ function sortRoutine(routine: RoutineWithExercises): RoutineWithExercises {
 /** Nome do exercício dentro de uma ficha: apelido do personal dono > PT > EN. */
 export function routineExerciseName(
   exercise: RoutineWithExercises['routine_exercises'][number]['exercise'],
-  trainerId: string,
+  trainerId: string | null,
 ) {
-  const alias = exercise.aliases.find((item) => item.trainer_id === trainerId)?.alias
+  const alias = trainerId
+    ? exercise.aliases.find((item) => item.trainer_id === trainerId)?.alias
+    : undefined
   return alias ?? exercise.name_pt ?? exercise.name_en
 }
 

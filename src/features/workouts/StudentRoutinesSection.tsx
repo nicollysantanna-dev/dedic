@@ -70,6 +70,7 @@ export function StudentRoutinesSection({
           <RoutineCard
             key={routine.id}
             routine={routine}
+            viewerId={trainerId}
             trainerId={trainerId}
             actions={
               <>

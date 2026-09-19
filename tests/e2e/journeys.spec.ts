@@ -480,3 +480,54 @@ test('aluna registra uma sessão pela ficha e a próxima sessão traz a carga an
   await page.goto('/app/notificacoes')
   await expect(page.getByText('Ana finalizou um treino').first()).toBeVisible()
 })
+
+test('aluna monta a própria ficha e amplia o GIF do exercício', async ({ page }) => {
+  await login(page, users.student.email)
+  await page.goto('/app/treinos')
+
+  // A ficha do personal não é editável pela aluna, só copiável.
+  const trainerCard = page.locator('article').filter({ hasText: 'Treino A' }).first()
+  await expect(trainerCard).toContainText('Do personal')
+  await expect(
+    trainerCard.getByRole('button', { name: 'Copiar para editar' }),
+  ).toBeVisible()
+  await expect(trainerCard.getByRole('link', { name: 'Editar' })).toHaveCount(0)
+
+  await page.getByRole('link', { name: 'Nova ficha' }).click()
+  await expect(page).toHaveURL(/\/app\/fichas\/nova/)
+  await expect(page.getByLabel('Aluno')).toHaveCount(0)
+  await page.getByPlaceholder('Nome da ficha').fill('Meu treino de braço')
+  await page.getByRole('button', { name: 'Adicionar exercício' }).click()
+  await page.getByPlaceholder('Buscar exercício').fill('rosca martelo com halteres')
+  await page
+    .getByRole('button', { name: /Rosca martelo com halteres/ })
+    .first()
+    .click()
+  await page.getByRole('button', { name: 'Salvar' }).click()
+  await expect(page).toHaveURL(/\/app\/treinos$/)
+
+  const ownCard = page
+    .locator('article')
+    .filter({ hasText: 'Meu treino de braço' })
+    .first()
+  await expect(ownCard).toContainText('Sua ficha')
+  await expect(ownCard.getByRole('link', { name: 'Editar' })).toBeVisible()
+
+  // Tocar na miniatura abre a execução em tela cheia (quando o ExerciseDB responde).
+  await ownCard.getByRole('button', { name: 'Ver exercícios' }).click()
+  const thumb = ownCard.getByRole('button', { name: /Ver execução de Rosca martelo/ })
+  const mediaAvailable = await thumb
+    .waitFor({ state: 'visible', timeout: 15_000 })
+    .then(() => true)
+    .catch(() => false)
+  if (mediaAvailable) {
+    await thumb.click()
+    const lightbox = page.getByRole('dialog', { name: /Execução de Rosca martelo/ })
+    await expect(lightbox).toBeVisible()
+    await expect(lightbox.getByRole('img')).toBeVisible({ timeout: 15_000 })
+    await page.keyboard.press('Escape')
+    await expect(lightbox).toHaveCount(0)
+  } else {
+    console.warn('ExerciseDB indisponível: lightbox não verificado nesta execução.')
+  }
+})

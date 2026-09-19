@@ -1,7 +1,7 @@
 -- Fichas: salvamento atômico, atribuição com vínculo, leitura pelo aluno, cópia e arquivamento.
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(13);
+select plan(19);
 
 create temporary table ctx as
 select
@@ -98,10 +98,40 @@ select is(
   1::bigint,
   'aluna foi notificada uma única vez (edição sem trocar aluno não repete)'
 );
+-- Aluna cria a própria ficha (dona), não edita a do personal, e o personal vê a dela.
+create temporary table own as
+select public.save_routine(pg_temp.routine_json((select ana_id from ctx))) as routine_id;
+select is(
+  (select created_by from public.routines where id = (select routine_id from own)),
+  (select ana_id from ctx),
+  'aluna cria a própria ficha'
+);
+select is(
+  (select trainer_id from public.routines where id = (select routine_id from own)),
+  (select trainer_id from ctx),
+  'ficha da aluna referencia o personal vinculado'
+);
 select throws_like(
-  $$ select public.save_routine(pg_temp.routine_json((select ana_id from ctx))) $$,
-  '%TRAINER_REQUIRED%',
-  'aluna não cria fichas'
+  $$ select public.save_routine(pg_temp.routine_json((select ana_id from ctx), (select routine_id from saved))) $$,
+  '%ROUTINE_NOT_FOUND%',
+  'aluna não edita a ficha criada pelo personal'
+);
+select lives_ok(
+  $$ select public.duplicate_routine((select routine_id from saved)) $$,
+  'aluna copia a ficha do personal para si'
+);
+select is((select count(*) from public.notifications where kind = 'routine_assigned'), 1::bigint,
+  'ficha criada pela própria aluna não gera notificação');
+select pg_temp.login((select trainer_id from ctx));
+select is(
+  (select count(*) from public.routines where created_by = (select ana_id from ctx)),
+  2::bigint,
+  'personal vê as fichas criadas pela aluna'
+);
+select throws_like(
+  $$ select public.archive_routine((select routine_id from own)) $$,
+  '%ROUTINE_NOT_FOUND%',
+  'personal não arquiva a ficha da aluna'
 );
 select pg_temp.login((select bruno_id from ctx));
 select is((select count(*) from public.routine_sets), 0::bigint, 'outro aluno não vê séries de fichas alheias');

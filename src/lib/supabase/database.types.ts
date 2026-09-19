@@ -923,34 +923,44 @@ export type Database = {
         Row: {
           archived_at: string | null
           created_at: string
+          created_by: string
           id: string
           name: string
           notes: string | null
           student_id: string | null
-          trainer_id: string
+          trainer_id: string | null
           updated_at: string
         }
         Insert: {
           archived_at?: string | null
           created_at?: string
+          created_by: string
           id?: string
           name: string
           notes?: string | null
           student_id?: string | null
-          trainer_id: string
+          trainer_id?: string | null
           updated_at?: string
         }
         Update: {
           archived_at?: string | null
           created_at?: string
+          created_by?: string
           id?: string
           name?: string
           notes?: string | null
           student_id?: string | null
-          trainer_id?: string
+          trainer_id?: string | null
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: 'routines_created_by_fkey'
+            columns: ['created_by']
+            isOneToOne: false
+            referencedRelation: 'profiles'
+            referencedColumns: ['id']
+          },
           {
             foreignKeyName: 'routines_student_id_fkey'
             columns: ['student_id']
