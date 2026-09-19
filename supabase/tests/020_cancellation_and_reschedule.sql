@@ -71,8 +71,10 @@ select throws_like(
 
 -- Trava de mesmo dia: aula hoje não pode ser cancelada (simulada movendo a data).
 select pg_temp.login((select trainer_id from ctx));
+-- Último minuto do dia local: ainda no futuro e ainda "hoje" em São Paulo.
 update public.appointments
-set starts_at = now() + interval '2 hours', ends_at = now() + interval '3 hours'
+set starts_at = (public.local_today()::timestamp + time '23:58') at time zone 'America/Sao_Paulo',
+    ends_at = (public.local_today()::timestamp + time '23:59') at time zone 'America/Sao_Paulo'
 where id = (select bruno_appointment_id from booked_bruno);
 select throws_like(
   $$ select public.cancel_appointment((select bruno_appointment_id from booked_bruno)) $$,

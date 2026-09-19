@@ -41,6 +41,11 @@ const NotificationsPage = lazy(() =>
     default: module.NotificationsPage,
   })),
 )
+const ExercisesPage = lazy(() =>
+  import('@/features/workouts/ExercisesPage').then((module) => ({
+    default: module.ExercisesPage,
+  })),
+)
 const StudentTrainerPage = lazy(() =>
   import('@/features/students/StudentTrainerPage').then((module) => ({
     default: module.StudentTrainerPage,
@@ -117,6 +122,7 @@ export function App() {
                 <Route path="/app/financeiro" element={<PaymentsPage />} />
                 <Route path="/app/conta" element={<AccountPage />} />
                 <Route path="/app/notificacoes" element={<NotificationsPage />} />
+                <Route path="/app/exercicios" element={<ExercisesPage />} />
                 <Route
                   path="/app/resumo"
                   element={<Navigate to="/app/alunos" replace />}

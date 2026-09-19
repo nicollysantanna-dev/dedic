@@ -359,6 +359,95 @@ export type Database = {
           },
         ]
       }
+      exercise_aliases: {
+        Row: {
+          alias: string
+          created_at: string
+          exercise_id: string
+          trainer_id: string
+          updated_at: string
+        }
+        Insert: {
+          alias: string
+          created_at?: string
+          exercise_id: string
+          trainer_id: string
+          updated_at?: string
+        }
+        Update: {
+          alias?: string
+          created_at?: string
+          exercise_id?: string
+          trainer_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'exercise_aliases_exercise_id_fkey'
+            columns: ['exercise_id']
+            isOneToOne: false
+            referencedRelation: 'exercises'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'exercise_aliases_trainer_id_fkey'
+            columns: ['trainer_id']
+            isOneToOne: false
+            referencedRelation: 'profiles'
+            referencedColumns: ['id']
+          },
+        ]
+      }
+      exercises: {
+        Row: {
+          body_parts: string[]
+          created_at: string
+          equipments: string[]
+          external_id: string | null
+          id: string
+          name_en: string
+          name_pt: string | null
+          owner_trainer_id: string | null
+          secondary_muscles: string[]
+          source: Database['public']['Enums']['exercise_source']
+          target_muscles: string[]
+        }
+        Insert: {
+          body_parts?: string[]
+          created_at?: string
+          equipments?: string[]
+          external_id?: string | null
+          id?: string
+          name_en: string
+          name_pt?: string | null
+          owner_trainer_id?: string | null
+          secondary_muscles?: string[]
+          source: Database['public']['Enums']['exercise_source']
+          target_muscles?: string[]
+        }
+        Update: {
+          body_parts?: string[]
+          created_at?: string
+          equipments?: string[]
+          external_id?: string | null
+          id?: string
+          name_en?: string
+          name_pt?: string | null
+          owner_trainer_id?: string | null
+          secondary_muscles?: string[]
+          source?: Database['public']['Enums']['exercise_source']
+          target_muscles?: string[]
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'exercises_owner_trainer_id_fkey'
+            columns: ['owner_trainer_id']
+            isOneToOne: false
+            referencedRelation: 'profiles'
+            referencedColumns: ['id']
+          },
+        ]
+      }
       lesson_packages: {
         Row: {
           activated_at: string | null
@@ -1303,6 +1392,7 @@ export type Database = {
         }
       }
       finalize_elapsed_appointments: { Args: never; Returns: number }
+      format_brl: { Args: { cents: number }; Returns: string }
       format_lesson_moment: { Args: { moment: string }; Returns: string }
       get_available_slots: {
         Args: {
@@ -1323,6 +1413,7 @@ export type Database = {
         Args: { target_student_id: string }
         Returns: boolean
       }
+      local_today: { Args: never; Returns: string }
       mark_notifications_read: {
         Args: { target_ids?: string[] }
         Returns: number
@@ -1426,6 +1517,26 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      search_exercises: {
+        Args: {
+          body_part?: string
+          equipment?: string
+          result_limit?: number
+          search_term?: string
+        }
+        Returns: {
+          alias: string
+          body_parts: string[]
+          equipments: string[]
+          external_id: string
+          id: string
+          name_en: string
+          name_pt: string
+          secondary_muscles: string[]
+          source: Database['public']['Enums']['exercise_source']
+          target_muscles: string[]
+        }[]
+      }
       update_own_profile: {
         Args: {
           requested_full_name: string
@@ -1466,6 +1577,7 @@ export type Database = {
         | 'appointment_consumption'
         | 'cancellation_refund'
         | 'manual_adjustment'
+      exercise_source: 'exercisedb' | 'custom'
       goal_kind: 'weight' | 'attendance'
       goal_status: 'active' | 'achieved' | 'abandoned'
       invitation_status: 'pending' | 'accepted' | 'declined' | 'expired' | 'cancelled'
@@ -1633,6 +1745,7 @@ export const Constants = {
         'cancellation_refund',
         'manual_adjustment',
       ],
+      exercise_source: ['exercisedb', 'custom'],
       goal_kind: ['weight', 'attendance'],
       goal_status: ['active', 'achieved', 'abandoned'],
       invitation_status: ['pending', 'accepted', 'declined', 'expired', 'cancelled'],

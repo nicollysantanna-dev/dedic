@@ -354,3 +354,38 @@ test('aula avulsa aguarda pagamento, baixa ativa os créditos e a aluna é notif
     0,
   )
 })
+
+test('biblioteca de exercícios: busca em português, apelido e exercício próprio', async ({
+  page,
+}) => {
+  await login(page, users.trainer.email)
+  await page.goto('/app/exercicios')
+  await page.getByLabel('Buscar exercício').fill('supino reto')
+  const card = page
+    .locator('article')
+    .filter({ hasText: 'Supino reto com barra' })
+    .first()
+  await expect(card).toBeVisible()
+  await expect(card).toContainText('barbell bench press')
+
+  // Demonstração vem da API ao vivo (GIF ou aviso de indisponibilidade).
+  await card.getByRole('button', { name: 'Ver demonstração' }).click()
+  await expect(
+    card.getByRole('img').or(card.getByText('Demonstração indisponível no momento.')),
+  ).toBeVisible({ timeout: 15_000 })
+
+  await card.getByRole('button', { name: /Apelidar/ }).click()
+  await page.getByLabel('Apelido').fill('Supino reto (Paula)')
+  await page.getByRole('button', { name: 'Salvar apelido' }).click()
+  await expect(
+    page.locator('article').filter({ hasText: 'Supino reto (Paula)' }),
+  ).toBeVisible()
+
+  await page.getByRole('button', { name: 'Criar exercício' }).click()
+  const createDialog = page.getByRole('dialog', { name: 'Criar exercício' })
+  await createDialog.getByLabel('Nome').fill('Agachamento no caixote (Paula)')
+  await createDialog.getByRole('button', { name: 'Criar exercício' }).click()
+  await expect(createDialog).toBeHidden()
+  await page.getByLabel('Buscar exercício').fill('caixote')
+  await expect(page.locator('article').filter({ hasText: 'Seu exercício' })).toBeVisible()
+})

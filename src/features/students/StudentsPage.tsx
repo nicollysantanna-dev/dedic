@@ -3,6 +3,7 @@ import {
   AlertCircle,
   CalendarClock,
   ChevronRight,
+  Dumbbell,
   Plus,
   Search,
   UsersRound,
@@ -69,12 +70,24 @@ export function StudentsPage() {
               Alunos
             </h1>
           </div>
-          <Button asChild>
-            <Link to="/app/alunos/convidar">
-              <Plus size={17} /> <span className="hidden sm:inline">Novo aluno</span>
-              <span className="sm:hidden">Adicionar</span>
-            </Link>
-          </Button>
+          <div className="flex gap-2">
+            <Button
+              asChild
+              className="border-white/15 bg-white/5 text-white hover:bg-white/10"
+              variant="outline"
+            >
+              <Link to="/app/exercicios">
+                <Dumbbell size={17} />{' '}
+                <span className="hidden sm:inline">Exercícios</span>
+              </Link>
+            </Button>
+            <Button asChild>
+              <Link to="/app/alunos/convidar">
+                <Plus size={17} /> <span className="hidden sm:inline">Novo aluno</span>
+                <span className="sm:hidden">Adicionar</span>
+              </Link>
+            </Button>
+          </div>
         </header>
 
         <section className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
