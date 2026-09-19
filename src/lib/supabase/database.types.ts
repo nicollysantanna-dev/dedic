@@ -366,6 +366,7 @@ export type Database = {
           created_at: string
           expires_on: string
           id: string
+          kind: Database['public']['Enums']['package_kind']
           lesson_count: number
           price_cents: number
           relationship_id: string
@@ -381,6 +382,7 @@ export type Database = {
           created_at?: string
           expires_on: string
           id?: string
+          kind?: Database['public']['Enums']['package_kind']
           lesson_count: number
           price_cents: number
           relationship_id: string
@@ -396,6 +398,7 @@ export type Database = {
           created_at?: string
           expires_on?: string
           id?: string
+          kind?: Database['public']['Enums']['package_kind']
           lesson_count?: number
           price_cents?: number
           relationship_id?: string
@@ -444,6 +447,47 @@ export type Database = {
           {
             foreignKeyName: 'lesson_packages_trainer_id_fkey'
             columns: ['trainer_id']
+            isOneToOne: false
+            referencedRelation: 'profiles'
+            referencedColumns: ['id']
+          },
+        ]
+      }
+      notifications: {
+        Row: {
+          body: string | null
+          created_at: string
+          id: string
+          kind: Database['public']['Enums']['notification_kind']
+          link: string | null
+          read_at: string | null
+          title: string
+          user_id: string
+        }
+        Insert: {
+          body?: string | null
+          created_at?: string
+          id?: string
+          kind: Database['public']['Enums']['notification_kind']
+          link?: string | null
+          read_at?: string | null
+          title: string
+          user_id: string
+        }
+        Update: {
+          body?: string | null
+          created_at?: string
+          id?: string
+          kind?: Database['public']['Enums']['notification_kind']
+          link?: string | null
+          read_at?: string | null
+          title?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'notifications_user_id_fkey'
+            columns: ['user_id']
             isOneToOne: false
             referencedRelation: 'profiles'
             referencedColumns: ['id']
@@ -937,6 +981,7 @@ export type Database = {
           created_at: string
           expires_on: string
           id: string
+          kind: Database['public']['Enums']['package_kind']
           lesson_count: number
           price_cents: number
           relationship_id: string
@@ -1069,6 +1114,7 @@ export type Database = {
           created_at: string
           expires_on: string
           id: string
+          kind: Database['public']['Enums']['package_kind']
           lesson_count: number
           price_cents: number
           relationship_id: string
@@ -1183,6 +1229,41 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      create_lesson_package: {
+        Args: {
+          activate_now?: boolean
+          charge_due_on?: string
+          create_charge?: boolean
+          requested_expires_on: string
+          requested_kind: Database['public']['Enums']['package_kind']
+          requested_lesson_count: number
+          requested_price_cents: number
+          requested_starts_on: string
+          target_student_id: string
+        }
+        Returns: {
+          activated_at: string | null
+          cancelled_at: string | null
+          created_at: string
+          expires_on: string
+          id: string
+          kind: Database['public']['Enums']['package_kind']
+          lesson_count: number
+          price_cents: number
+          relationship_id: string
+          starts_on: string
+          status: Database['public']['Enums']['package_status']
+          student_id: string
+          trainer_id: string
+          updated_at: string
+        }
+        SetofOptions: {
+          from: '*'
+          to: 'lesson_packages'
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       delete_progress_photo: {
         Args: { target_photo_id: string }
         Returns: {
@@ -1201,6 +1282,7 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      display_name: { Args: { target_user_id: string }; Returns: string }
       end_relationship: {
         Args: { target_relationship_id: string }
         Returns: {
@@ -1221,6 +1303,7 @@ export type Database = {
         }
       }
       finalize_elapsed_appointments: { Args: never; Returns: number }
+      format_lesson_moment: { Args: { moment: string }; Returns: string }
       get_available_slots: {
         Args: {
           range_end: string
@@ -1239,6 +1322,21 @@ export type Database = {
       is_active_trainer_of: {
         Args: { target_student_id: string }
         Returns: boolean
+      }
+      mark_notifications_read: {
+        Args: { target_ids?: string[] }
+        Returns: number
+      }
+      mark_overdue_payments: { Args: never; Returns: number }
+      notify_user: {
+        Args: {
+          notification_body?: string
+          notification_kind: Database['public']['Enums']['notification_kind']
+          notification_link?: string
+          notification_title: string
+          target_user_id: string
+        }
+        Returns: undefined
       }
       reschedule_appointment: {
         Args: {
@@ -1371,6 +1469,17 @@ export type Database = {
       goal_kind: 'weight' | 'attendance'
       goal_status: 'active' | 'achieved' | 'abandoned'
       invitation_status: 'pending' | 'accepted' | 'declined' | 'expired' | 'cancelled'
+      notification_kind:
+        | 'appointment_created'
+        | 'appointment_cancelled'
+        | 'appointment_rescheduled'
+        | 'credits_changed'
+        | 'payment_due'
+        | 'payment_overdue'
+        | 'payment_received'
+        | 'goal_created'
+        | 'progress_recorded'
+      package_kind: 'package' | 'single'
       package_status: 'draft' | 'active' | 'exhausted' | 'expired' | 'cancelled'
       payment_status: 'pending' | 'paid' | 'overdue' | 'cancelled'
       photo_position: 'front' | 'side' | 'back'
@@ -1527,6 +1636,18 @@ export const Constants = {
       goal_kind: ['weight', 'attendance'],
       goal_status: ['active', 'achieved', 'abandoned'],
       invitation_status: ['pending', 'accepted', 'declined', 'expired', 'cancelled'],
+      notification_kind: [
+        'appointment_created',
+        'appointment_cancelled',
+        'appointment_rescheduled',
+        'credits_changed',
+        'payment_due',
+        'payment_overdue',
+        'payment_received',
+        'goal_created',
+        'progress_recorded',
+      ],
+      package_kind: ['package', 'single'],
       package_status: ['draft', 'active', 'exhausted', 'expired', 'cancelled'],
       payment_status: ['pending', 'paid', 'overdue', 'cancelled'],
       photo_position: ['front', 'side', 'back'],

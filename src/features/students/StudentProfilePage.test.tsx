@@ -18,7 +18,6 @@ describe('CreditManagerDialog', () => {
           name="Ana Clara"
           relationshipId="0c090c14-a6b3-4e4f-bb24-0fa73fa3a567"
           studentId="1c090c14-a6b3-4e4f-bb24-0fa73fa3a567"
-          trainerId="2c090c14-a6b3-4e4f-bb24-0fa73fa3a567"
           onClose={onClose}
           onSaved={vi.fn()}
         />

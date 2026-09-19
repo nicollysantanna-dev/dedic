@@ -12,6 +12,7 @@ import { motion } from 'motion/react'
 import { NavLink, Outlet } from 'react-router-dom'
 
 import { useAuth } from '@/features/auth/auth-context'
+import { NotificationsBell } from '@/features/notifications/NotificationsBell'
 import { initials } from '@/lib/format'
 import { cn } from '@/lib/utils'
 
@@ -38,12 +39,15 @@ export function AppShell() {
   return (
     <div className="min-h-dvh bg-[var(--app-bg)] text-[var(--app-text)]">
       <aside className="fixed inset-y-0 left-0 z-30 hidden w-56 flex-col border-r border-white/7 bg-[var(--sidebar-bg)] px-4 py-7 lg:flex">
-        <NavLink
-          className="px-2 text-2xl font-extrabold tracking-[-0.05em] text-white"
-          to="/app"
-        >
-          dedic.
-        </NavLink>
+        <div className="flex items-center justify-between px-2">
+          <NavLink
+            className="text-2xl font-extrabold tracking-[-0.05em] text-white"
+            to="/app"
+          >
+            dedic.
+          </NavLink>
+          <NotificationsBell />
+        </div>
 
         <nav className="mt-10 space-y-2" aria-label="Navegação principal">
           {navigation.map((item) => (
@@ -77,6 +81,15 @@ export function AppShell() {
       </aside>
 
       <div className="min-h-dvh lg:pl-56">
+        <div className="flex items-center justify-between px-4 pt-3 lg:hidden">
+          <NavLink
+            className="text-xl font-extrabold tracking-[-0.05em] text-white"
+            to="/app"
+          >
+            dedic.
+          </NavLink>
+          <NotificationsBell />
+        </div>
         <Outlet />
       </div>
 

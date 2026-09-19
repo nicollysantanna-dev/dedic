@@ -5,6 +5,7 @@ import {
   CircleDollarSign,
   Dumbbell,
   LoaderCircle,
+  MessageCircle,
   PackagePlus,
   Plus,
   Target,
@@ -17,7 +18,11 @@ import { Button } from '@/components/ui/button'
 import { useAuth } from '@/features/auth/auth-context'
 import { creditAdjustmentSchema, packageSchema } from '@/features/packages/schemas'
 import { ProgressSection } from '@/features/progress/ProgressSection'
-import { toStudentOverview } from '@/features/students/student-overview'
+import { whatsappLink, whatsappTemplates } from '@/features/notifications/whatsapp'
+import {
+  toStudentOverview,
+  type StudentOverview,
+} from '@/features/students/student-overview'
 import { appointmentKeys } from '@/features/appointments/keys'
 import { creditKeys } from '@/features/credits/keys'
 import { formatDateTime, formatTime, toIsoDate } from '@/lib/format'
@@ -145,6 +150,8 @@ export function StudentProfilePage() {
                 {notice}
               </p>
             )}
+
+            <WhatsappShortcuts overview={student.data.overview} />
 
             <section className="mt-6 grid grid-cols-2 gap-3 lg:grid-cols-4">
               <SummaryCard
@@ -277,7 +284,6 @@ export function StudentProfilePage() {
                 name={student.data.overview.name}
                 relationshipId={student.data.relationship.id}
                 studentId={student.data.relationship.student_id}
-                trainerId={trainerId}
                 onClose={() => setIsCreditManagerOpen(false)}
                 onSaved={async (message) => {
                   setNotice(message)
@@ -297,14 +303,58 @@ export function StudentProfilePage() {
   )
 }
 
-type CreditManagerMode = 'package' | 'adjustment'
+/** Mensagens prontas para o WhatsApp do aluno (envio manual, RF-26). */
+function WhatsappShortcuts({ overview }: { overview: StudentOverview }) {
+  const messages = [
+    overview.nextAppointment
+      ? {
+          label: 'Lembrar da aula',
+          text: whatsappTemplates.lessonReminder(overview.name, overview.nextAppointment),
+        }
+      : null,
+    {
+      label: 'Renovação',
+      text: whatsappTemplates.renewal(overview.name, overview.balance),
+    },
+    overview.alerts.some((alert) => alert.kind === 'inactive')
+      ? { label: 'Sentimos sua falta', text: whatsappTemplates.inactivity(overview.name) }
+      : null,
+  ].filter((item): item is { label: string; text: string } => item !== null)
+
+  return (
+    <div className="mt-5 flex flex-wrap items-center gap-2">
+      <span className="inline-flex items-center gap-1 text-xs font-semibold text-slate-400">
+        <MessageCircle size={14} /> WhatsApp:
+      </span>
+      {messages.map((message) => {
+        const href = whatsappLink(overview.phone, message.text)
+        return href ? (
+          <a
+            className="inline-flex min-h-9 items-center rounded-lg border border-white/15 bg-white/5 px-3 text-xs font-semibold text-white transition hover:bg-white/10"
+            href={href}
+            key={message.label}
+            rel="noreferrer"
+            target="_blank"
+          >
+            {message.label}
+          </a>
+        ) : (
+          <span className="text-xs text-slate-500" key={message.label}>
+            Cadastre o celular do aluno para enviar mensagens.
+          </span>
+        )
+      })}
+    </div>
+  )
+}
+
+type CreditManagerMode = 'package' | 'single' | 'adjustment'
 
 export function CreditManagerDialog({
   balance,
   name,
   relationshipId,
   studentId,
-  trainerId,
   onClose,
   onSaved,
 }: {
@@ -312,7 +362,6 @@ export function CreditManagerDialog({
   name: string
   relationshipId: string
   studentId: string
-  trainerId: string
   onClose: () => void
   onSaved: (message: string) => void | Promise<void>
 }) {
@@ -321,48 +370,49 @@ export function CreditManagerDialog({
   const [priceReais, setPriceReais] = useState(500)
   const [startsOn, setStartsOn] = useState(toIsoDate(new Date()))
   const [expiresOn, setExpiresOn] = useState(toIsoDate(addDays(new Date(), 30)))
+  const [activateNow, setActivateNow] = useState(true)
+  const [createCharge, setCreateCharge] = useState(true)
   const [adjustmentAmount, setAdjustmentAmount] = useState(1)
   const [adjustmentReason, setAdjustmentReason] = useState('')
   const [formError, setFormError] = useState('')
+  const isSingle = mode === 'single'
+  const effectiveLessonCount = isSingle ? 1 : lessonCount
 
   const createPackage = useMutation({
     mutationFn: async () => {
       const parsed = packageSchema.safeParse({
         relationshipId,
-        lessonCount,
+        lessonCount: effectiveLessonCount,
         priceReais,
         startsOn,
         expiresOn,
       })
       if (!parsed.success) throw new Error(parsed.error.issues[0]?.message)
 
-      const { data, error } = await requireSupabase()
-        .from('lesson_packages')
-        .insert({
-          trainer_id: trainerId,
-          student_id: studentId,
-          relationship_id: relationshipId,
-          lesson_count: parsed.data.lessonCount,
-          price_cents: Math.round(parsed.data.priceReais * 100),
-          starts_on: parsed.data.startsOn,
-          expires_on: parsed.data.expiresOn,
-        })
-        .select('id')
-        .single()
+      // Criação, ativação e cobrança acontecem em uma única transação no banco.
+      const { error } = await requireSupabase().rpc('create_lesson_package', {
+        target_student_id: studentId,
+        requested_kind: isSingle ? 'single' : 'package',
+        requested_lesson_count: parsed.data.lessonCount,
+        requested_price_cents: Math.round(parsed.data.priceReais * 100),
+        requested_starts_on: parsed.data.startsOn,
+        requested_expires_on: parsed.data.expiresOn,
+        activate_now: activateNow,
+        create_charge: createCharge,
+      })
       if (error) throw error
-
-      const { error: activationError } = await requireSupabase().rpc(
-        'activate_lesson_package',
-        { target_package_id: data.id },
-      )
-      if (activationError) throw activationError
     },
-    onSuccess: () => void onSaved(`${lessonCount} aulas adicionadas para ${name}.`),
+    onSuccess: () =>
+      void onSaved(
+        isSingle
+          ? `Aula avulsa registrada para ${name}${activateNow ? '' : ' (aguardando pagamento)'}.`
+          : `${lessonCount} aulas adicionadas para ${name}${activateNow ? '' : ' (aguardando pagamento)'}.`,
+      ),
     onError: (error) =>
       setFormError(
-        error instanceof Error && error.message
+        error instanceof Error && error.message && !error.message.includes('_')
           ? error.message
-          : 'Não foi possível adicionar as aulas.',
+          : 'Não foi possível registrar. Verifique os dados e tente novamente.',
       ),
   })
 
@@ -396,8 +446,8 @@ export function CreditManagerDialog({
   const submit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     setFormError('')
-    if (mode === 'package') createPackage.mutate()
-    else adjustCredits.mutate()
+    if (mode === 'adjustment') adjustCredits.mutate()
+    else createPackage.mutate()
   }
 
   return (
@@ -440,9 +490,12 @@ export function CreditManagerDialog({
           </button>
         </header>
 
-        <div className="mt-5 grid grid-cols-2 rounded-xl bg-slate-100 p-1">
+        <div className="mt-5 grid grid-cols-3 rounded-xl bg-slate-100 p-1">
           <ModeButton active={mode === 'package'} onClick={() => setMode('package')}>
             Novo pacote
+          </ModeButton>
+          <ModeButton active={mode === 'single'} onClick={() => setMode('single')}>
+            Aula avulsa
           </ModeButton>
           <ModeButton
             active={mode === 'adjustment'}
@@ -453,20 +506,23 @@ export function CreditManagerDialog({
         </div>
 
         <form className="mt-5 space-y-4" onSubmit={submit}>
-          {mode === 'package' ? (
+          {mode !== 'adjustment' ? (
             <>
               <p className="rounded-xl bg-blue-50 p-3 text-sm leading-6 text-blue-900">
-                Use para uma compra ou renovação. Ao salvar, o pacote será ativado e os
-                créditos entrarão no extrato.
+                {isSingle
+                  ? 'Uma aula comprada fora de pacote: vale um crédito.'
+                  : 'Use para uma compra ou renovação. Os créditos entram no extrato ao ativar.'}
               </p>
               <div className="grid gap-4 sm:grid-cols-2">
-                <DialogNumberField
-                  label="Quantidade de aulas"
-                  min={1}
-                  max={100}
-                  value={lessonCount}
-                  onChange={setLessonCount}
-                />
+                {!isSingle && (
+                  <DialogNumberField
+                    label="Quantidade de aulas"
+                    min={1}
+                    max={100}
+                    value={lessonCount}
+                    onChange={setLessonCount}
+                  />
+                )}
                 <DialogNumberField
                   label="Valor (R$)"
                   min={0}
@@ -477,11 +533,37 @@ export function CreditManagerDialog({
                 />
                 <DialogDateField label="Início" value={startsOn} onChange={setStartsOn} />
                 <DialogDateField
-                  label="Renovação prevista"
+                  label={isSingle ? 'Validade' : 'Renovação prevista'}
                   value={expiresOn}
                   onChange={setExpiresOn}
                 />
               </div>
+              <div className="grid gap-2 sm:grid-cols-2">
+                <label className="flex items-center gap-2 rounded-xl bg-slate-50 p-3 text-sm">
+                  <input
+                    checked={activateNow}
+                    className="size-4 accent-[var(--brand)]"
+                    onChange={(event) => setActivateNow(event.target.checked)}
+                    type="checkbox"
+                  />
+                  Liberar créditos agora
+                </label>
+                <label className="flex items-center gap-2 rounded-xl bg-slate-50 p-3 text-sm">
+                  <input
+                    checked={createCharge}
+                    className="size-4 accent-[var(--brand)]"
+                    onChange={(event) => setCreateCharge(event.target.checked)}
+                    type="checkbox"
+                  />
+                  Gerar cobrança no financeiro
+                </label>
+              </div>
+              {!activateNow && (
+                <p className="text-xs text-slate-500">
+                  Os créditos ficam aguardando: você ativa pelo Financeiro ao confirmar o
+                  pagamento.
+                </p>
+              )}
             </>
           ) : (
             <>
@@ -521,7 +603,13 @@ export function CreditManagerDialog({
             ) : (
               <PackagePlus size={17} />
             )}
-            {mode === 'package' ? 'Adicionar e ativar pacote' : 'Registrar ajuste'}
+            {mode === 'adjustment'
+              ? 'Registrar ajuste'
+              : isSingle
+                ? 'Registrar aula avulsa'
+                : activateNow
+                  ? 'Adicionar e ativar pacote'
+                  : 'Adicionar pacote'}
           </Button>
         </form>
       </section>

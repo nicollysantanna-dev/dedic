@@ -36,6 +36,11 @@ const StudentProgressPage = lazy(() =>
     default: module.StudentProgressPage,
   })),
 )
+const NotificationsPage = lazy(() =>
+  import('@/features/notifications/NotificationsPage').then((module) => ({
+    default: module.NotificationsPage,
+  })),
+)
 const StudentTrainerPage = lazy(() =>
   import('@/features/students/StudentTrainerPage').then((module) => ({
     default: module.StudentTrainerPage,
@@ -111,6 +116,7 @@ export function App() {
                 <Route path="/app/alunos/convidar" element={<InviteStudentPage />} />
                 <Route path="/app/financeiro" element={<PaymentsPage />} />
                 <Route path="/app/conta" element={<AccountPage />} />
+                <Route path="/app/notificacoes" element={<NotificationsPage />} />
                 <Route
                   path="/app/resumo"
                   element={<Navigate to="/app/alunos" replace />}

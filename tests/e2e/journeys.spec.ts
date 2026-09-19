@@ -286,3 +286,71 @@ test('dashboard do personal mostra alertas, próximas aulas e abre a aula pelo a
   await page.getByRole('button', { name: 'Atenção' }).click()
   await expect(page.getByText('Nenhum aluno encontrado.')).toBeVisible()
 })
+
+test('aula avulsa aguarda pagamento, baixa ativa os créditos e a aluna é notificada', async ({
+  page,
+}) => {
+  await login(page, users.trainer.email)
+  await page.goto('/app/alunos')
+  await page.getByRole('link', { name: /Ana Aluna/ }).click()
+  const creditsBefore = Number(
+    (
+      await page
+        .locator('div')
+        .filter({ hasText: /^Créditos\d+$/ })
+        .first()
+        .locator('p')
+        .nth(1)
+        .innerText()
+    ).trim(),
+  )
+
+  await page.getByRole('button', { name: 'Adicionar aulas' }).click()
+  const dialog = page.getByRole('dialog', { name: 'Adicionar aulas' })
+  await dialog.getByRole('button', { name: 'Aula avulsa' }).click()
+  await dialog.getByLabel('Valor (R$)').fill('150')
+  await dialog.getByLabel('Liberar créditos agora').uncheck()
+  await dialog.getByRole('button', { name: 'Registrar aula avulsa' }).click()
+  await expect(
+    page.getByText(/Aula avulsa registrada.*aguardando pagamento/),
+  ).toBeVisible()
+
+  // Cobrança gerada automaticamente; ao pagar, o financeiro oferece ativar os créditos.
+  await page.goto('/app/financeiro')
+  const row = page.locator('article').filter({ hasText: 'avulsa' }).first()
+  await expect(row).toContainText('R$ 150,00')
+  await expect(row).toContainText('Pendente')
+  await row.getByRole('button', { name: 'Editar' }).click()
+  await page.getByLabel('Situação').selectOption('paid')
+  await page.getByLabel('Data do pagamento').fill(futureDate(0))
+  await page.getByRole('button', { name: 'Salvar pagamento' }).click()
+  await row.getByRole('button', { name: 'Ativar créditos' }).click()
+  await expect(row.getByRole('button', { name: 'Ativar créditos' })).toHaveCount(0)
+
+  await page.goto(`/app/alunos`)
+  await page.getByRole('link', { name: /Ana Aluna/ }).click()
+  await expect(
+    page
+      .locator('div')
+      .filter({ hasText: new RegExp(`^Créditos${creditsBefore + 1}$`) })
+      .first(),
+  ).toBeVisible()
+  await logout(page)
+
+  // Aluna recebe notificações de cobrança, pagamento e créditos.
+  await login(page, users.student.email)
+  await page
+    .getByRole('link', { name: /Notificações/ })
+    .first()
+    .click()
+  await expect(page).toHaveURL(/\/app\/notificacoes$/)
+  await expect(page.getByText(/Cobrança de R\$\s?150,00/).first()).toBeVisible()
+  await expect(
+    page.getByText(/Pagamento de R\$\s?150,00 confirmado/).first(),
+  ).toBeVisible()
+  await expect(page.getByText('1 crédito adicionado').first()).toBeVisible()
+  await page.getByRole('button', { name: 'Marcar todas como lidas' }).click()
+  await expect(page.getByRole('button', { name: 'Marcar todas como lidas' })).toHaveCount(
+    0,
+  )
+})

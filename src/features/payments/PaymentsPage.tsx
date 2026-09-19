@@ -5,6 +5,8 @@ import {
   CircleAlert,
   CircleCheck,
   LoaderCircle,
+  MessageCircle,
+  PackageCheck,
   PencilLine,
   Plus,
   ReceiptText,
@@ -22,6 +24,8 @@ import { useAuth } from '@/features/auth/auth-context'
 import { buildFinancialSummary } from '@/features/payments/financial-summary'
 import { paymentSchema, type PaymentValues } from '@/features/payments/schemas'
 import { appointmentKeys } from '@/features/appointments/keys'
+import { creditKeys } from '@/features/credits/keys'
+import { whatsappLink, whatsappTemplates } from '@/features/notifications/whatsapp'
 import { paymentKeys } from '@/features/payments/keys'
 import { formatCurrency } from '@/lib/format'
 import { requireSupabase } from '@/lib/supabase/client'
@@ -36,7 +40,12 @@ const emptyPayment: PaymentValues = {
   paidOn: '',
 }
 
-type DisplayPayment = Tables<'payments'> & { studentName?: string }
+type DisplayPayment = Tables<'payments'> & {
+  studentName?: string
+  studentPhone?: string | null
+  packageStatus?: Tables<'lesson_packages'>['status']
+  packageKind?: Tables<'lesson_packages'>['kind']
+}
 
 export function PaymentsPage() {
   const { profile } = useAuth()
@@ -63,7 +72,7 @@ function TrainerPayments({ trainerId }: { trainerId: string }) {
     queryFn: async () => {
       const { data, error } = await requireSupabase()
         .from('lesson_packages')
-        .select('*, profiles!lesson_packages_student_id_fkey(full_name)')
+        .select('*, profiles!lesson_packages_student_id_fkey(full_name, phone)')
         .eq('trainer_id', trainerId)
         .order('created_at', { ascending: false })
       if (error) throw error
@@ -71,12 +80,30 @@ function TrainerPayments({ trainerId }: { trainerId: string }) {
     },
   })
   const payments = usePayments('trainer_id', trainerId)
-  const displayPayments: DisplayPayment[] = (payments.data ?? []).map((payment) => ({
-    ...payment,
-    studentName:
-      packages.data?.find((item) => item.id === payment.package_id)?.profiles
-        ?.full_name ?? 'Aluno',
-  }))
+  const displayPayments: DisplayPayment[] = (payments.data ?? []).map((payment) => {
+    const pkg = packages.data?.find((item) => item.id === payment.package_id)
+    return {
+      ...payment,
+      studentName: pkg?.profiles?.full_name ?? 'Aluno',
+      studentPhone: pkg?.profiles?.phone ?? null,
+      packageStatus: pkg?.status,
+      packageKind: pkg?.kind,
+    }
+  })
+
+  const activatePackage = useMutation({
+    mutationFn: async (packageId: string) => {
+      const { error } = await requireSupabase().rpc('activate_lesson_package', {
+        target_package_id: packageId,
+      })
+      if (error) throw error
+    },
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['payment-packages', trainerId] })
+      void queryClient.invalidateQueries({ queryKey: appointmentKeys.all })
+      void queryClient.invalidateQueries({ queryKey: creditKeys.all })
+    },
+  })
   const summary = buildFinancialSummary(displayPayments)
 
   const resetForm = () => {
@@ -251,7 +278,12 @@ function TrainerPayments({ trainerId }: { trainerId: string }) {
         <>
           <FinancialMetrics summary={summary} />
           <RevenueChart data={summary.monthlyRevenue} />
-          <PaymentsTable payments={displayPayments} onEdit={editPayment} />
+          <PaymentsTable
+            payments={displayPayments}
+            onEdit={editPayment}
+            onActivate={(packageId) => activatePackage.mutate(packageId)}
+            activating={activatePackage.isPending}
+          />
         </>
       )}
     </FinanceShell>
@@ -415,9 +447,13 @@ function RevenueChart({
 function PaymentsTable({
   payments,
   onEdit,
+  onActivate,
+  activating = false,
 }: {
   payments: DisplayPayment[]
   onEdit?: (payment: Tables<'payments'>) => void
+  onActivate?: (packageId: string) => void
+  activating?: boolean
 }) {
   return (
     <section className="mt-5 overflow-hidden rounded-[1.5rem] bg-white text-slate-950">
@@ -439,17 +475,56 @@ function PaymentsTable({
             key={payment.id}
           >
             <span className="text-slate-500">{formatDate(payment.due_on)}</span>
-            <span className="font-semibold">{payment.studentName ?? 'Seu pacote'}</span>
+            <span className="font-semibold">
+              {payment.studentName ?? 'Seu pacote'}
+              {payment.packageKind === 'single' && (
+                <span className="ml-2 rounded-full bg-slate-100 px-2 py-0.5 text-[0.65rem] font-semibold text-slate-600">
+                  avulsa
+                </span>
+              )}
+            </span>
             <strong>{formatCurrency(payment.amount_cents)}</strong>
             <StatusBadge status={payment.status} />
             {onEdit ? (
-              <button
-                className="relative z-10 inline-flex min-h-9 items-center gap-1.5 justify-self-start rounded-lg px-2 text-xs font-semibold text-blue-700 hover:bg-blue-50"
-                onClick={() => onEdit(payment)}
-                type="button"
-              >
-                <PencilLine size={14} /> Editar
-              </button>
+              <div className="flex flex-wrap items-center gap-1 justify-self-start">
+                <button
+                  className="inline-flex min-h-9 items-center gap-1.5 rounded-lg px-2 text-xs font-semibold text-blue-700 hover:bg-blue-50"
+                  onClick={() => onEdit(payment)}
+                  type="button"
+                >
+                  <PencilLine size={14} /> Editar
+                </button>
+                {payment.status === 'paid' &&
+                  payment.packageStatus === 'draft' &&
+                  onActivate && (
+                    <button
+                      className="inline-flex min-h-9 items-center gap-1.5 rounded-lg bg-emerald-50 px-2 text-xs font-semibold text-emerald-700 hover:bg-emerald-100 disabled:opacity-50"
+                      disabled={activating}
+                      onClick={() => onActivate(payment.package_id)}
+                      type="button"
+                    >
+                      <PackageCheck size={14} /> Ativar créditos
+                    </button>
+                  )}
+                {(payment.status === 'pending' || payment.status === 'overdue') && (
+                  <WhatsappAction
+                    href={whatsappLink(
+                      payment.studentPhone,
+                      payment.status === 'overdue'
+                        ? whatsappTemplates.paymentOverdue(
+                            payment.studentName ?? 'Aluno',
+                            payment.amount_cents,
+                            payment.due_on,
+                          )
+                        : whatsappTemplates.paymentDue(
+                            payment.studentName ?? 'Aluno',
+                            payment.amount_cents,
+                            payment.due_on,
+                          ),
+                    )}
+                  />
+                )}
+              </div>
             ) : (
               <span />
             )}
@@ -463,6 +538,26 @@ function PaymentsTable({
         )}
       </div>
     </section>
+  )
+}
+
+function WhatsappAction({ href }: { href: string | null }) {
+  if (!href) {
+    return (
+      <span className="text-xs text-slate-400" title="Aluno sem celular cadastrado">
+        Sem celular
+      </span>
+    )
+  }
+  return (
+    <a
+      className="inline-flex min-h-9 items-center gap-1.5 rounded-lg px-2 text-xs font-semibold text-emerald-700 hover:bg-emerald-50"
+      href={href}
+      rel="noreferrer"
+      target="_blank"
+    >
+      <MessageCircle size={14} /> Cobrar
+    </a>
   )
 }
 
