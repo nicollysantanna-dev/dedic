@@ -485,13 +485,17 @@ test('aluna monta a própria ficha e amplia o GIF do exercício', async ({ page 
   await login(page, users.student.email)
   await page.goto('/app/treinos')
 
-  // A ficha do personal não é editável pela aluna, só copiável.
+  // A ficha do personal também é editável pela aluna (fichas são compartilhadas).
   const trainerCard = page.locator('article').filter({ hasText: 'Treino A' }).first()
   await expect(trainerCard).toContainText('Do personal')
+  await trainerCard.getByRole('link', { name: 'Editar' }).click()
+  await expect(page).toHaveURL(/\/app\/fichas\//)
+  await page.getByPlaceholder('Nome da ficha').fill('Treino A (ajustado)')
+  await page.getByRole('button', { name: 'Salvar' }).click()
+  await expect(page).toHaveURL(/\/app\/treinos$/)
   await expect(
-    trainerCard.getByRole('button', { name: 'Copiar para editar' }),
+    page.locator('article').filter({ hasText: 'Treino A (ajustado)' }).first(),
   ).toBeVisible()
-  await expect(trainerCard.getByRole('link', { name: 'Editar' })).toHaveCount(0)
 
   await page.getByRole('link', { name: 'Nova ficha' }).click()
   await expect(page).toHaveURL(/\/app\/fichas\/nova/)

@@ -1,7 +1,7 @@
 -- Fichas: salvamento atômico, atribuição com vínculo, leitura pelo aluno, cópia e arquivamento.
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(19);
+select plan(22);
 
 create temporary table ctx as
 select
@@ -111,10 +111,14 @@ select is(
   (select trainer_id from ctx),
   'ficha da aluna referencia o personal vinculado'
 );
-select throws_like(
+select lives_ok(
   $$ select public.save_routine(pg_temp.routine_json((select ana_id from ctx), (select routine_id from saved))) $$,
-  '%ROUTINE_NOT_FOUND%',
-  'aluna não edita a ficha criada pelo personal'
+  'aluna edita a ficha criada pelo personal para ela'
+);
+select is(
+  (select created_by from public.routines where id = (select routine_id from saved)),
+  (select trainer_id from ctx),
+  'edição pela aluna preserva a autoria original'
 );
 select lives_ok(
   $$ select public.duplicate_routine((select routine_id from saved)) $$,
@@ -128,10 +132,19 @@ select is(
   2::bigint,
   'personal vê as fichas criadas pela aluna'
 );
-select throws_like(
+select lives_ok(
+  $$ select public.save_routine(pg_temp.routine_json((select ana_id from ctx), (select routine_id from own))) $$,
+  'personal edita a ficha criada pela aluna'
+);
+select lives_ok(
   $$ select public.archive_routine((select routine_id from own)) $$,
+  'personal arquiva a ficha criada pela aluna'
+);
+select pg_temp.login((select bruno_id from ctx));
+select throws_like(
+  $$ select public.save_routine(pg_temp.routine_json((select bruno_id from ctx), (select routine_id from saved))) $$,
   '%ROUTINE_NOT_FOUND%',
-  'personal não arquiva a ficha da aluna'
+  'aluno de fora não edita a ficha'
 );
 select pg_temp.login((select bruno_id from ctx));
 select is((select count(*) from public.routine_sets), 0::bigint, 'outro aluno não vê séries de fichas alheias');

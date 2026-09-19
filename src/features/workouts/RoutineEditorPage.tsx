@@ -79,8 +79,12 @@ export function RoutineEditorPage() {
   if (loadedDraft) setDraft(loadedDraft)
 
   if (!profile) return null
-  // Só quem criou a ficha pode editá-la (aluno edita as suas, personal as dele).
-  if (existing.data && existing.data.created_by !== profile.id) {
+  // Personal e aluno da ficha editam; quem não participa é redirecionado.
+  if (
+    existing.data &&
+    existing.data.trainer_id !== profile.id &&
+    existing.data.student_id !== profile.id
+  ) {
     return <Navigate to={isTrainer ? '/app/alunos' : '/app/treinos'} replace />
   }
   const backTo = isTrainer

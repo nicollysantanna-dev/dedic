@@ -124,39 +124,33 @@ export function StudentWorkoutsPage() {
                   >
                     <Play size={16} /> Iniciar ficha
                   </Button>
-                  {routine.created_by === studentId ? (
-                    <>
-                      <Button asChild className="h-10 px-3 text-xs" variant="outline">
-                        <Link to={`/app/fichas/${routine.id}`}>
-                          <PencilLine size={14} /> Editar
-                        </Link>
-                      </Button>
-                      <Button
-                        className="h-10 px-3 text-xs text-red-700 hover:bg-red-50"
-                        disabled={archive.isPending}
-                        onClick={() => {
-                          if (window.confirm(`Arquivar a ficha "${routine.name}"?`)) {
-                            archive.mutate(routine.id)
-                          }
-                        }}
-                        variant="ghost"
-                      >
-                        <Trash2 size={14} /> Arquivar
-                      </Button>
-                    </>
-                  ) : (
-                    <Button
-                      className="h-10 px-3 text-xs"
-                      disabled={duplicate.isPending}
-                      onClick={() =>
-                        duplicate.mutate({ routineId: routine.id, studentId: null })
+                  <Button asChild className="h-10 px-3 text-xs" variant="outline">
+                    <Link to={`/app/fichas/${routine.id}`}>
+                      <PencilLine size={14} /> Editar
+                    </Link>
+                  </Button>
+                  <Button
+                    className="h-10 px-3 text-xs"
+                    disabled={duplicate.isPending}
+                    onClick={() =>
+                      duplicate.mutate({ routineId: routine.id, studentId: null })
+                    }
+                    variant="outline"
+                  >
+                    <Copy size={14} /> Duplicar
+                  </Button>
+                  <Button
+                    className="h-10 px-3 text-xs text-red-700 hover:bg-red-50"
+                    disabled={archive.isPending}
+                    onClick={() => {
+                      if (window.confirm(`Arquivar a ficha "${routine.name}"?`)) {
+                        archive.mutate(routine.id)
                       }
-                      title="Cria uma cópia sua, editável"
-                      variant="outline"
-                    >
-                      <Copy size={14} /> Copiar para editar
-                    </Button>
-                  )}
+                    }}
+                    variant="ghost"
+                  >
+                    <Trash2 size={14} /> Arquivar
+                  </Button>
                 </>
               }
             />
