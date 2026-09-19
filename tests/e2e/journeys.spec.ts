@@ -389,3 +389,47 @@ test('biblioteca de exercícios: busca em português, apelido e exercício próp
   await page.getByLabel('Buscar exercício').fill('caixote')
   await expect(page.locator('article').filter({ hasText: 'Seu exercício' })).toBeVisible()
 })
+
+test('personal monta uma ficha estilo Hevy e a aluna a vê em Treinos', async ({
+  page,
+}) => {
+  await login(page, users.trainer.email)
+  await page.goto('/app/alunos')
+  await page.getByRole('link', { name: /Ana Aluna/ }).click()
+  await page.getByRole('link', { name: 'Nova ficha' }).click()
+  await expect(page).toHaveURL(/\/app\/fichas\/nova/)
+
+  await page.getByPlaceholder('Nome da ficha').fill('Treino A')
+  await page.getByRole('button', { name: 'Adicionar exercício' }).click()
+  await page.getByPlaceholder('Buscar exercício').fill('supino inclinado com barra')
+  await page
+    .getByRole('button', { name: /Supino inclinado com barra/ })
+    .first()
+    .click()
+  await page.getByLabel('Carga da série 1 de Supino inclinado com barra').fill('40')
+  await page.getByLabel('Repetições da série 1 de Supino inclinado com barra').fill('12')
+  await page.getByLabel('Descanso de Supino inclinado com barra').selectOption('120')
+  await page.getByRole('button', { name: 'Adicionar exercício' }).click()
+  await page.getByPlaceholder('Buscar exercício').fill('agachamento livre')
+  await page
+    .getByRole('button', { name: /Agachamento livre/ })
+    .first()
+    .click()
+  await page.getByRole('button', { name: 'Salvar' }).click()
+
+  await expect(page).toHaveURL(/\/app\/alunos\//)
+  const card = page.locator('article').filter({ hasText: 'Treino A' }).first()
+  await expect(card).toContainText('Supino inclinado com barra')
+  await card.getByRole('button', { name: 'Ver exercícios' }).click()
+  await expect(card).toContainText('40 kg × 12')
+  await expect(card).toContainText('2 min')
+  await logout(page)
+
+  await login(page, users.student.email)
+  await page.getByRole('link', { name: 'Treinos' }).first().click()
+  await expect(page).toHaveURL(/\/app\/treinos$/)
+  const studentCard = page.locator('article').filter({ hasText: 'Treino A' }).first()
+  await expect(studentCard).toContainText('Supino inclinado com barra')
+  await page.goto('/app/notificacoes')
+  await expect(page.getByText('Nova ficha: Treino A').first()).toBeVisible()
+})

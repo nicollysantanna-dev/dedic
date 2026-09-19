@@ -845,6 +845,128 @@ export type Database = {
           },
         ]
       }
+      routine_exercises: {
+        Row: {
+          exercise_id: string
+          id: string
+          notes: string | null
+          position: number
+          rest_seconds: number | null
+          routine_id: string
+        }
+        Insert: {
+          exercise_id: string
+          id?: string
+          notes?: string | null
+          position: number
+          rest_seconds?: number | null
+          routine_id: string
+        }
+        Update: {
+          exercise_id?: string
+          id?: string
+          notes?: string | null
+          position?: number
+          rest_seconds?: number | null
+          routine_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'routine_exercises_exercise_id_fkey'
+            columns: ['exercise_id']
+            isOneToOne: false
+            referencedRelation: 'exercises'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'routine_exercises_routine_id_fkey'
+            columns: ['routine_id']
+            isOneToOne: false
+            referencedRelation: 'routines'
+            referencedColumns: ['id']
+          },
+        ]
+      }
+      routine_sets: {
+        Row: {
+          id: string
+          position: number
+          routine_exercise_id: string
+          target_reps: number | null
+          target_weight_kg: number | null
+        }
+        Insert: {
+          id?: string
+          position: number
+          routine_exercise_id: string
+          target_reps?: number | null
+          target_weight_kg?: number | null
+        }
+        Update: {
+          id?: string
+          position?: number
+          routine_exercise_id?: string
+          target_reps?: number | null
+          target_weight_kg?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'routine_sets_routine_exercise_id_fkey'
+            columns: ['routine_exercise_id']
+            isOneToOne: false
+            referencedRelation: 'routine_exercises'
+            referencedColumns: ['id']
+          },
+        ]
+      }
+      routines: {
+        Row: {
+          archived_at: string | null
+          created_at: string
+          id: string
+          name: string
+          notes: string | null
+          student_id: string | null
+          trainer_id: string
+          updated_at: string
+        }
+        Insert: {
+          archived_at?: string | null
+          created_at?: string
+          id?: string
+          name: string
+          notes?: string | null
+          student_id?: string | null
+          trainer_id: string
+          updated_at?: string
+        }
+        Update: {
+          archived_at?: string | null
+          created_at?: string
+          id?: string
+          name?: string
+          notes?: string | null
+          student_id?: string | null
+          trainer_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'routines_student_id_fkey'
+            columns: ['student_id']
+            isOneToOne: false
+            referencedRelation: 'profiles'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'routines_trainer_id_fkey'
+            columns: ['trainer_id']
+            isOneToOne: false
+            referencedRelation: 'profiles'
+            referencedColumns: ['id']
+          },
+        ]
+      }
       student_goals: {
         Row: {
           created_at: string
@@ -1112,6 +1234,10 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      archive_routine: {
+        Args: { target_routine_id: string }
+        Returns: undefined
+      }
       book_appointment: {
         Args: {
           requested_booking_id: string
@@ -1372,6 +1498,10 @@ export type Database = {
         }
       }
       display_name: { Args: { target_user_id: string }; Returns: string }
+      duplicate_routine: {
+        Args: { target_routine_id: string; target_student_id?: string }
+        Returns: string
+      }
       end_relationship: {
         Args: { target_relationship_id: string }
         Returns: {
@@ -1487,6 +1617,7 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      save_routine: { Args: { routine: Json }; Returns: string }
       schedule_appointment: {
         Args: {
           requested_booking_id: string
@@ -1591,6 +1722,7 @@ export type Database = {
         | 'payment_received'
         | 'goal_created'
         | 'progress_recorded'
+        | 'routine_assigned'
       package_kind: 'package' | 'single'
       package_status: 'draft' | 'active' | 'exhausted' | 'expired' | 'cancelled'
       payment_status: 'pending' | 'paid' | 'overdue' | 'cancelled'
@@ -1759,6 +1891,7 @@ export const Constants = {
         'payment_received',
         'goal_created',
         'progress_recorded',
+        'routine_assigned',
       ],
       package_kind: ['package', 'single'],
       package_status: ['draft', 'active', 'exhausted', 'expired', 'cancelled'],

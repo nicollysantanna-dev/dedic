@@ -1,6 +1,7 @@
 import {
   CalendarDays,
   CircleDollarSign,
+  Dumbbell,
   House,
   LogOut,
   TrendingUp,
@@ -27,7 +28,7 @@ const trainerNavigation = [
 const studentNavigation = [
   { to: '/app', label: 'Início', icon: House, end: true },
   { to: '/app/agenda', label: 'Agenda', icon: CalendarDays },
-  { to: '/app/creditos', label: 'Créditos', icon: CircleDollarSign },
+  { to: '/app/treinos', label: 'Treinos', icon: Dumbbell },
   { to: '/app/evolucao', label: 'Evolução', icon: TrendingUp },
   { to: '/app/conta', label: 'Conta', icon: UserRound },
 ]

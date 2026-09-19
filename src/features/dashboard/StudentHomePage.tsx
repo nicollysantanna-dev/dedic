@@ -8,6 +8,7 @@ import {
   CircleDollarSign,
   Clock3,
   CreditCard,
+  Dumbbell,
   TrendingUp,
   Target,
   UserRound,
@@ -303,6 +304,7 @@ export function StudentHomePage() {
                 <h2 className="font-bold">Atalhos</h2>
                 <div className="mt-4 space-y-2">
                   <Shortcut to="/app/agenda" icon={CalendarDays} label="Minhas aulas" />
+                  <Shortcut to="/app/treinos" icon={Dumbbell} label="Meus treinos" />
                   <Shortcut
                     to="/app/creditos"
                     icon={CreditCard}

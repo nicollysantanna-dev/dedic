@@ -18,6 +18,7 @@ import { Button } from '@/components/ui/button'
 import { useAuth } from '@/features/auth/auth-context'
 import { creditAdjustmentSchema, packageSchema } from '@/features/packages/schemas'
 import { ProgressSection } from '@/features/progress/ProgressSection'
+import { StudentRoutinesSection } from '@/features/workouts/StudentRoutinesSection'
 import { whatsappLink, whatsappTemplates } from '@/features/notifications/whatsapp'
 import {
   toStudentOverview,
@@ -268,6 +269,11 @@ export function StudentProfilePage() {
                 </div>
               </div>
             </section>
+
+            <StudentRoutinesSection
+              trainerId={trainerId}
+              studentId={student.data.relationship.student_id}
+            />
 
             <section className="mt-5">
               <h2 className="mb-3 text-lg font-bold">Evolução física</h2>
