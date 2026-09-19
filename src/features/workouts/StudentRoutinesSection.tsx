@@ -1,5 +1,5 @@
-import { Copy, Dumbbell, PencilLine, Plus, Trash2 } from 'lucide-react'
-import { Link } from 'react-router-dom'
+import { Copy, Dumbbell, PencilLine, Play, Plus, Trash2 } from 'lucide-react'
+import { Link, useNavigate } from 'react-router-dom'
 
 import { Button } from '@/components/ui/button'
 import { RoutineCard } from '@/features/workouts/RoutineCard'
@@ -8,6 +8,7 @@ import {
   useDuplicateRoutine,
   useTrainerRoutines,
 } from '@/features/workouts/routine-queries'
+import { useOpenWorkout, useStartWorkout } from '@/features/workouts/workout-queries'
 
 /** Fichas de um aluno, vistas pelo personal no perfil (criar, editar, duplicar, arquivar). */
 export function StudentRoutinesSection({
@@ -20,6 +21,9 @@ export function StudentRoutinesSection({
   const routines = useTrainerRoutines(trainerId, studentId)
   const archive = useArchiveRoutine()
   const duplicate = useDuplicateRoutine()
+  const open = useOpenWorkout(studentId)
+  const start = useStartWorkout()
+  const navigate = useNavigate()
 
   return (
     <section className="mt-5">
@@ -31,6 +35,17 @@ export function StudentRoutinesSection({
           </Link>
         </Button>
       </div>
+      {open.data && (
+        <Link
+          className="mb-3 flex items-center justify-between gap-3 rounded-[1.25rem] bg-[var(--brand)] p-4 text-white transition hover:bg-[var(--brand-hover)]"
+          to={`/app/treinos/sessao/${open.data.id}`}
+        >
+          <span className="text-sm font-semibold">
+            Treino em andamento: {open.data.name}
+          </span>
+          <Play size={18} />
+        </Link>
+      )}
       {routines.isLoading && (
         <p className="rounded-2xl border border-white/8 bg-white/5 p-6 text-center text-sm text-slate-300">
           Carregando fichas…
@@ -58,6 +73,21 @@ export function StudentRoutinesSection({
             trainerId={trainerId}
             actions={
               <>
+                <Button
+                  className="h-9 px-3 text-xs"
+                  disabled={start.isPending || Boolean(open.data)}
+                  onClick={() =>
+                    start.mutate(
+                      { routineId: routine.id, studentId },
+                      {
+                        onSuccess: (workoutId) =>
+                          void navigate(`/app/treinos/sessao/${workoutId}`),
+                      },
+                    )
+                  }
+                >
+                  <Play size={14} /> Iniciar
+                </Button>
                 <Button asChild className="h-9 px-3 text-xs" variant="outline">
                   <Link to={`/app/fichas/${routine.id}`}>
                     <PencilLine size={14} /> Editar

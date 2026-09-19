@@ -4,6 +4,7 @@ import {
   CalendarPlus,
   CheckCircle2,
   Clock3,
+  Dumbbell,
   LoaderCircle,
   PencilLine,
   Plus,
@@ -12,7 +13,7 @@ import {
   XCircle,
 } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
-import { useSearchParams } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { AnimatePresence, motion } from 'motion/react'
 
 import { Button } from '@/components/ui/button'
@@ -30,7 +31,9 @@ import { AvailabilityPanel } from '@/features/availability/AvailabilityPanel'
 import { appointmentKeys } from '@/features/appointments/keys'
 import { creditKeys } from '@/features/credits/keys'
 import { formatDateTime, formatTime, toIsoDate } from '@/lib/format'
+import { useOpenWorkout, useStartWorkout } from '@/features/workouts/workout-queries'
 import { requireSupabase } from '@/lib/supabase/client'
+import type { Tables } from '@/lib/supabase/database.types'
 import { cn } from '@/lib/utils'
 
 type AgendaPanel =
@@ -583,6 +586,10 @@ export function AppointmentsPage() {
                     {getAppointmentStatusLabel(selectedAppointment.status)}
                   </span>
                 </div>
+                {(selectedAppointment.status === 'scheduled' ||
+                  selectedAppointment.status === 'completed') && (
+                  <AppointmentWorkoutAction appointment={selectedAppointment} />
+                )}
                 {canMoveAppointment(selectedAppointment) ? (
                   <div className="mt-5 grid gap-3">
                     <Button
@@ -858,6 +865,48 @@ function InfoCard({ label, value }: { label: string; value: string }) {
     <div className="rounded-2xl bg-slate-100 p-4">
       <p className="text-xs text-slate-500">{label}</p>
       <p className="mt-1 font-bold">{value}</p>
+    </div>
+  )
+}
+
+/** Registrar o treino da aula: abre a sessão existente ou inicia uma nova ligada à aula. */
+function AppointmentWorkoutAction({
+  appointment,
+}: {
+  appointment: Pick<Tables<'appointments'>, 'id' | 'student_id'>
+}) {
+  const navigate = useNavigate()
+  const open = useOpenWorkout(appointment.student_id)
+  const start = useStartWorkout()
+  const linked = open.data?.appointment_id === appointment.id
+
+  return (
+    <div className="mt-4">
+      <Button
+        className="w-full border-blue-200 bg-blue-50 text-blue-900 hover:bg-blue-100"
+        disabled={start.isPending || open.isLoading}
+        onClick={() => {
+          if (open.data) {
+            void navigate(`/app/treinos/sessao/${open.data.id}`)
+            return
+          }
+          start.mutate(
+            { appointmentId: appointment.id },
+            {
+              onSuccess: (workoutId) => void navigate(`/app/treinos/sessao/${workoutId}`),
+            },
+          )
+        }}
+        variant="outline"
+      >
+        <Dumbbell size={17} />
+        {linked
+          ? 'Continuar treino da aula'
+          : open.data
+            ? 'Abrir treino em andamento'
+            : 'Registrar treino'}
+      </Button>
+      {start.error && <PanelError text="Não foi possível iniciar o treino." />}
     </div>
   )
 }

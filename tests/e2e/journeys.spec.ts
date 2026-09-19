@@ -433,3 +433,50 @@ test('personal monta uma ficha estilo Hevy e a aluna a vê em Treinos', async ({
   await page.goto('/app/notificacoes')
   await expect(page.getByText('Nova ficha: Treino A').first()).toBeVisible()
 })
+
+test('aluna registra uma sessão pela ficha e a próxima sessão traz a carga anterior', async ({
+  page,
+}) => {
+  await login(page, users.student.email)
+  await page.goto('/app/treinos')
+  const card = page.locator('article').filter({ hasText: 'Treino A' }).first()
+  await card.getByRole('button', { name: 'Iniciar ficha' }).click()
+  await expect(page).toHaveURL(/\/app\/treinos\/sessao\//)
+  await expect(page.getByRole('heading', { name: 'Treino A' })).toBeVisible()
+
+  // Série 1 do supino veio da ficha (40 × 12); ajusta a carga e conclui.
+  const weight = page.getByLabel('Carga da série 1 de Supino inclinado com barra')
+  await expect(weight).toHaveValue('40')
+  await weight.fill('42,5')
+  await page.getByLabel('Concluir série 1 de Supino inclinado com barra').click()
+  await expect(page.getByRole('timer')).toContainText('Descanso')
+  await page.getByRole('button', { name: 'Pular descanso' }).click()
+
+  // Série extra e finalização com resumo.
+  await page.getByRole('button', { name: '+ Adicionar série' }).first().click()
+  await page.getByLabel('Concluir série 4 de Supino inclinado com barra').click()
+  await page.getByRole('button', { name: 'Finalizar' }).click()
+  const dialog = page.getByRole('dialog', { name: 'Finalizar treino' })
+  await expect(dialog).toContainText('2')
+  await dialog.getByRole('button', { name: 'Finalizar treino' }).click()
+  await expect(page.getByRole('heading', { name: 'Treino finalizado!' })).toBeVisible()
+  await page.getByRole('link', { name: 'Concluir' }).click()
+  await expect(page).toHaveURL(/\/app\/treinos$/)
+
+  // Nova sessão: coluna "anterior" traz 42,5 × 12 da sessão passada.
+  await card.getByRole('button', { name: 'Iniciar ficha' }).click()
+  await expect(page).toHaveURL(/\/app\/treinos\/sessao\//)
+  await expect(
+    page.getByLabel('Carga da série 1 de Supino inclinado com barra'),
+  ).toHaveValue('42.5')
+  await expect(page.getByText('42.5 × 12').first()).toBeVisible()
+  page.once('dialog', (dialog) => void dialog.accept())
+  await page.getByRole('button', { name: 'Descartar treino' }).click()
+  await expect(page).toHaveURL(/\/app\/treinos$/)
+  await logout(page)
+
+  // Personal recebe a notificação e pode iniciar a sessão pela aula.
+  await login(page, users.trainer.email)
+  await page.goto('/app/notificacoes')
+  await expect(page.getByText('Ana finalizou um treino').first()).toBeVisible()
+})

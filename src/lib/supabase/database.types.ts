@@ -1136,6 +1136,176 @@ export type Database = {
           },
         ]
       }
+      workout_exercises: {
+        Row: {
+          exercise_id: string
+          id: string
+          notes: string | null
+          position: number
+          rest_seconds: number | null
+          workout_id: string
+        }
+        Insert: {
+          exercise_id: string
+          id?: string
+          notes?: string | null
+          position: number
+          rest_seconds?: number | null
+          workout_id: string
+        }
+        Update: {
+          exercise_id?: string
+          id?: string
+          notes?: string | null
+          position?: number
+          rest_seconds?: number | null
+          workout_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'workout_exercises_exercise_id_fkey'
+            columns: ['exercise_id']
+            isOneToOne: false
+            referencedRelation: 'exercises'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'workout_exercises_workout_id_fkey'
+            columns: ['workout_id']
+            isOneToOne: false
+            referencedRelation: 'workouts'
+            referencedColumns: ['id']
+          },
+        ]
+      }
+      workout_sets: {
+        Row: {
+          completed_at: string | null
+          id: string
+          position: number
+          previous_reps: number | null
+          previous_weight_kg: number | null
+          reps: number | null
+          set_type: Database['public']['Enums']['workout_set_type']
+          weight_kg: number | null
+          workout_exercise_id: string
+        }
+        Insert: {
+          completed_at?: string | null
+          id?: string
+          position: number
+          previous_reps?: number | null
+          previous_weight_kg?: number | null
+          reps?: number | null
+          set_type?: Database['public']['Enums']['workout_set_type']
+          weight_kg?: number | null
+          workout_exercise_id: string
+        }
+        Update: {
+          completed_at?: string | null
+          id?: string
+          position?: number
+          previous_reps?: number | null
+          previous_weight_kg?: number | null
+          reps?: number | null
+          set_type?: Database['public']['Enums']['workout_set_type']
+          weight_kg?: number | null
+          workout_exercise_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'workout_sets_workout_exercise_id_fkey'
+            columns: ['workout_exercise_id']
+            isOneToOne: false
+            referencedRelation: 'workout_exercises'
+            referencedColumns: ['id']
+          },
+        ]
+      }
+      workouts: {
+        Row: {
+          appointment_id: string | null
+          created_at: string
+          discarded_at: string | null
+          duration_seconds: number | null
+          finished_at: string | null
+          id: string
+          name: string
+          notes: string | null
+          recorded_by: string
+          routine_id: string | null
+          started_at: string
+          student_id: string
+          trainer_id: string | null
+        }
+        Insert: {
+          appointment_id?: string | null
+          created_at?: string
+          discarded_at?: string | null
+          duration_seconds?: number | null
+          finished_at?: string | null
+          id?: string
+          name: string
+          notes?: string | null
+          recorded_by: string
+          routine_id?: string | null
+          started_at?: string
+          student_id: string
+          trainer_id?: string | null
+        }
+        Update: {
+          appointment_id?: string | null
+          created_at?: string
+          discarded_at?: string | null
+          duration_seconds?: number | null
+          finished_at?: string | null
+          id?: string
+          name?: string
+          notes?: string | null
+          recorded_by?: string
+          routine_id?: string | null
+          started_at?: string
+          student_id?: string
+          trainer_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'workouts_appointment_id_fkey'
+            columns: ['appointment_id']
+            isOneToOne: false
+            referencedRelation: 'appointments'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'workouts_recorded_by_fkey'
+            columns: ['recorded_by']
+            isOneToOne: false
+            referencedRelation: 'profiles'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'workouts_routine_id_fkey'
+            columns: ['routine_id']
+            isOneToOne: false
+            referencedRelation: 'routines'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'workouts_student_id_fkey'
+            columns: ['student_id']
+            isOneToOne: false
+            referencedRelation: 'profiles'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'workouts_trainer_id_fkey'
+            columns: ['trainer_id']
+            isOneToOne: false
+            referencedRelation: 'profiles'
+            referencedColumns: ['id']
+          },
+        ]
+      }
     }
     Views: {
       student_activity_summary: {
@@ -1208,6 +1378,10 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      add_workout_exercise: {
+        Args: { target_exercise_id: string; target_workout_id: string }
+        Returns: string
       }
       adjust_student_credits: {
         Args: {
@@ -1295,6 +1469,14 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      can_access_workout: {
+        Args: { target_workout_id: string }
+        Returns: boolean
+      }
+      can_edit_workout: {
+        Args: { target_workout_id: string }
+        Returns: boolean
       }
       cancel_appointment: {
         Args: { cancellation_note?: string; target_appointment_id: string }
@@ -1497,6 +1679,10 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      discard_workout: {
+        Args: { target_workout_id: string }
+        Returns: undefined
+      }
       display_name: { Args: { target_user_id: string }; Returns: string }
       duplicate_routine: {
         Args: { target_routine_id: string; target_student_id?: string }
@@ -1522,6 +1708,30 @@ export type Database = {
         }
       }
       finalize_elapsed_appointments: { Args: never; Returns: number }
+      finish_workout: {
+        Args: { target_workout_id: string; workout_notes?: string }
+        Returns: {
+          appointment_id: string | null
+          created_at: string
+          discarded_at: string | null
+          duration_seconds: number | null
+          finished_at: string | null
+          id: string
+          name: string
+          notes: string | null
+          recorded_by: string
+          routine_id: string | null
+          started_at: string
+          student_id: string
+          trainer_id: string | null
+        }
+        SetofOptions: {
+          from: '*'
+          to: 'workouts'
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       format_brl: { Args: { cents: number }; Returns: string }
       format_lesson_moment: { Args: { moment: string }; Returns: string }
       get_available_slots: {
@@ -1558,6 +1768,17 @@ export type Database = {
           target_user_id: string
         }
         Returns: undefined
+      }
+      previous_set: {
+        Args: {
+          target_exercise_id: string
+          target_position: number
+          target_student_id: string
+        }
+        Returns: {
+          reps: number
+          weight_kg: number
+        }[]
       }
       reschedule_appointment: {
         Args: {
@@ -1668,6 +1889,15 @@ export type Database = {
           target_muscles: string[]
         }[]
       }
+      start_workout: {
+        Args: {
+          target_appointment_id?: string
+          target_routine_id?: string
+          target_student_id?: string
+          workout_name?: string
+        }
+        Returns: string
+      }
       update_own_profile: {
         Args: {
           requested_full_name: string
@@ -1723,11 +1953,13 @@ export type Database = {
         | 'goal_created'
         | 'progress_recorded'
         | 'routine_assigned'
+        | 'workout_finished'
       package_kind: 'package' | 'single'
       package_status: 'draft' | 'active' | 'exhausted' | 'expired' | 'cancelled'
       payment_status: 'pending' | 'paid' | 'overdue' | 'cancelled'
       photo_position: 'front' | 'side' | 'back'
       relationship_status: 'pending' | 'active' | 'ended'
+      workout_set_type: 'normal' | 'warmup' | 'failure'
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1892,12 +2124,14 @@ export const Constants = {
         'goal_created',
         'progress_recorded',
         'routine_assigned',
+        'workout_finished',
       ],
       package_kind: ['package', 'single'],
       package_status: ['draft', 'active', 'exhausted', 'expired', 'cancelled'],
       payment_status: ['pending', 'paid', 'overdue', 'cancelled'],
       photo_position: ['front', 'side', 'back'],
       relationship_status: ['pending', 'active', 'ended'],
+      workout_set_type: ['normal', 'warmup', 'failure'],
     },
   },
 } as const
