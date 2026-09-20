@@ -25,10 +25,20 @@ async function clickSlot(page: Page, time: string) {
 
 async function openAgendaOnBookingDay(page: Page) {
   await page.goto('/app/agenda')
-  await page.getByRole('button', { name: 'Dia', exact: true }).click()
+  // Espera o calendário montar antes de trocar a visão (o clique antes disso é ignorado).
+  await expect(page.locator('.fc-timegrid-slot-lane').first()).toBeVisible()
+  const dayButton = page.getByRole('button', { name: 'Dia', exact: true })
+  await expect(async () => {
+    await dayButton.click()
+    await expect(dayButton).toHaveAttribute('aria-pressed', 'true', { timeout: 1500 })
+  }).toPass()
+  // Avança um dia por vez, esperando a coluna do dia-alvo aparecer.
+  const target = futureDate(bookingDay)
   for (let index = 0; index < bookingDay; index += 1) {
     await page.getByRole('button', { name: 'Próximo período' }).click()
+    await page.waitForTimeout(150)
   }
+  await expect(page.locator(`.fc-timegrid-col[data-date="${target}"]`)).toBeVisible()
   await expect(page.locator('.fc-timegrid-slot-lane[data-time="10:00:00"]')).toBeVisible()
 }
 
