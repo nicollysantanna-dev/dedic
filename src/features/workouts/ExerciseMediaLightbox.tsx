@@ -8,10 +8,13 @@ import { useExerciseDetail } from '@/features/workouts/queries'
 export function ExerciseMediaLightbox({
   externalId,
   name,
+  photoUrl = null,
   onClose,
 }: {
-  externalId: string
+  externalId: string | null
   name: string
+  /** Foto do aparelho da academia, mostrada ao lado da demonstração. */
+  photoUrl?: string | null
   onClose: () => void
 }) {
   const detail = useExerciseDetail(externalId)
@@ -44,14 +47,26 @@ export function ExerciseMediaLightbox({
       </header>
       <button
         aria-label="Fechar demonstração"
-        className="flex flex-1 items-center justify-center p-4"
+        className="flex flex-1 flex-col items-center justify-center gap-3 overflow-y-auto p-4"
         onClick={onClose}
         type="button"
       >
-        {detail.isLoading && (
+        {photoUrl && (
+          <figure className="w-full max-w-lg">
+            <img
+              alt={`Aparelho: ${name}`}
+              className="max-h-[45dvh] w-full rounded-2xl bg-white object-contain"
+              src={photoUrl}
+            />
+            <figcaption className="mt-1 text-xs text-slate-300">
+              Aparelho da sua academia
+            </figcaption>
+          </figure>
+        )}
+        {externalId && detail.isLoading && (
           <span className="size-48 animate-pulse rounded-2xl bg-white/10" />
         )}
-        {detail.error && (
+        {externalId && detail.error && (
           <span className="text-sm text-slate-300">
             Demonstração indisponível no momento.
           </span>
@@ -59,7 +74,11 @@ export function ExerciseMediaLightbox({
         {detail.data && (
           <img
             alt={`Demonstração de ${name}`}
-            className="max-h-full w-full max-w-lg rounded-2xl bg-white object-contain"
+            className={
+              photoUrl
+                ? 'max-h-[40dvh] w-full max-w-lg rounded-2xl bg-white object-contain'
+                : 'max-h-full w-full max-w-lg rounded-2xl bg-white object-contain'
+            }
             src={detail.data.gifUrl}
           />
         )}

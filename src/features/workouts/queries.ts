@@ -11,11 +11,21 @@ type RawSearchResult =
 /** O tipo gerado perde a nulabilidade das colunas da função; aqui ela é explícita. */
 export type ExerciseSearchResult = Omit<
   RawSearchResult,
-  'alias' | 'name_pt' | 'external_id'
+  'alias' | 'name_pt' | 'external_id' | 'photo_path'
 > & {
   alias: string | null
   name_pt: string | null
   external_id: string | null
+  photo_path: string | null
+}
+
+export const exercisePhotosBucket = 'exercise-photos'
+
+/** URL pública (CDN) da foto do aparelho cadastrada pelo personal. */
+export function exercisePhotoUrl(path: string | null | undefined) {
+  if (!path) return null
+  return requireSupabase().storage.from(exercisePhotosBucket).getPublicUrl(path).data
+    .publicUrl
 }
 
 /** Nome exibido: apelido do personal > tradução > nome original. */
@@ -60,23 +70,90 @@ export function useExerciseDetail(externalId: string | null) {
   })
 }
 
+export function useSaveExercisePhoto(trainerId: string) {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async (input: {
+      exerciseId: string
+      file: Blob
+      previousPath: string | null
+    }) => {
+      const path = `${trainerId}/${input.exerciseId}-${Date.now()}.jpg`
+      const storage = requireSupabase().storage.from(exercisePhotosBucket)
+      const upload = await storage.upload(path, input.file, {
+        contentType: 'image/jpeg',
+        upsert: false,
+      })
+      if (upload.error) throw upload.error
+      const { error } = await requireSupabase().from('exercise_aliases').upsert({
+        trainer_id: trainerId,
+        exercise_id: input.exerciseId,
+        photo_path: path,
+      })
+      if (error) {
+        await storage.remove([path])
+        throw error
+      }
+      if (input.previousPath) await storage.remove([input.previousPath])
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: workoutKeys.all }),
+  })
+}
+
+export function useRemoveExercisePhoto(trainerId: string) {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async (input: {
+      exerciseId: string
+      path: string
+      alias: string | null
+    }) => {
+      await requireSupabase().storage.from(exercisePhotosBucket).remove([input.path])
+      const table = requireSupabase().from('exercise_aliases')
+      const { error } = input.alias
+        ? await table
+            .update({ photo_path: null })
+            .eq('trainer_id', trainerId)
+            .eq('exercise_id', input.exerciseId)
+        : await table
+            .delete()
+            .eq('trainer_id', trainerId)
+            .eq('exercise_id', input.exerciseId)
+      if (error) throw error
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: workoutKeys.all }),
+  })
+}
+
 export function useSaveExerciseAlias(trainerId: string) {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: async (input: { exerciseId: string; alias: string }) => {
+    mutationFn: async (input: {
+      exerciseId: string
+      alias: string
+      hasPhoto: boolean
+    }) => {
       const alias = input.alias.trim()
+      const table = requireSupabase().from('exercise_aliases')
       if (!alias) {
-        const { error } = await requireSupabase()
-          .from('exercise_aliases')
-          .delete()
-          .eq('trainer_id', trainerId)
-          .eq('exercise_id', input.exerciseId)
+        // Sem apelido: mantém a linha se houver foto, senão remove.
+        const { error } = input.hasPhoto
+          ? await table
+              .update({ alias: null })
+              .eq('trainer_id', trainerId)
+              .eq('exercise_id', input.exerciseId)
+          : await table
+              .delete()
+              .eq('trainer_id', trainerId)
+              .eq('exercise_id', input.exerciseId)
         if (error) throw error
         return
       }
-      const { error } = await requireSupabase()
-        .from('exercise_aliases')
-        .upsert({ trainer_id: trainerId, exercise_id: input.exerciseId, alias })
+      const { error } = await table.upsert({
+        trainer_id: trainerId,
+        exercise_id: input.exerciseId,
+        alias,
+      })
       if (error) throw error
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: workoutKeys.all }),

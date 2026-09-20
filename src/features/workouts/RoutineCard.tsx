@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { ExerciseThumb } from '@/features/workouts/ExercisePicker'
 import { formatRest } from '@/features/workouts/routine-model'
 import {
+  exercisePhotoPath,
   routineExerciseName,
   type RoutineWithExercises,
 } from '@/features/workouts/routine-queries'
@@ -70,6 +71,7 @@ export function RoutineCard({
               <ExerciseThumb
                 externalId={item.exercise.external_id}
                 name={routineExerciseName(item.exercise, trainerId)}
+                photoPath={exercisePhotoPath(item.exercise, trainerId)}
                 size={36}
               />
               <div className="min-w-0 flex-1">

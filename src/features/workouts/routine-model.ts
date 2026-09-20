@@ -8,6 +8,7 @@ export type RoutineExerciseDraft = {
   id: string
   exerciseId: string
   externalId: string | null
+  photoPath: string | null
   name: string
   notes: string
   restSeconds: number | null
@@ -43,12 +44,14 @@ export function newSet(previous?: RoutineSetDraft): RoutineSetDraft {
 export function newRoutineExercise(input: {
   exerciseId: string
   externalId: string | null
+  photoPath?: string | null
   name: string
 }): RoutineExerciseDraft {
   return {
     id: crypto.randomUUID(),
     exerciseId: input.exerciseId,
     externalId: input.externalId,
+    photoPath: input.photoPath ?? null,
     name: input.name,
     notes: '',
     restSeconds: 90,

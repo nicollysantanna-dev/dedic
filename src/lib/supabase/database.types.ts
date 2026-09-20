@@ -361,23 +361,26 @@ export type Database = {
       }
       exercise_aliases: {
         Row: {
-          alias: string
+          alias: string | null
           created_at: string
           exercise_id: string
+          photo_path: string | null
           trainer_id: string
           updated_at: string
         }
         Insert: {
-          alias: string
+          alias?: string | null
           created_at?: string
           exercise_id: string
+          photo_path?: string | null
           trainer_id: string
           updated_at?: string
         }
         Update: {
-          alias?: string
+          alias?: string | null
           created_at?: string
           exercise_id?: string
+          photo_path?: string | null
           trainer_id?: string
           updated_at?: string
         }
@@ -1894,6 +1897,7 @@ export type Database = {
           id: string
           name_en: string
           name_pt: string
+          photo_path: string
           secondary_muscles: string[]
           source: Database['public']['Enums']['exercise_source']
           target_muscles: string[]

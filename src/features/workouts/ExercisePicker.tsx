@@ -6,6 +6,7 @@ import { ExerciseMediaLightbox } from '@/features/workouts/ExerciseMediaLightbox
 
 import {
   exerciseDisplayName,
+  exercisePhotoUrl,
   useExerciseDetail,
   useExerciseSearch,
   type ExerciseSearchResult,
@@ -117,6 +118,7 @@ export function ExercisePicker({
                 <ExerciseThumb
                   externalId={exercise.external_id}
                   name={exerciseDisplayName(exercise)}
+                  photoPath={exercise.photo_path}
                   withMedia={false}
                 />
                 <span className="min-w-0 flex-1">
@@ -151,19 +153,24 @@ export function ExercisePicker({
 export function ExerciseThumb({
   externalId,
   name,
+  photoPath = null,
   size = 44,
   withMedia = true,
 }: {
   externalId: string | null
   name: string
+  /** Foto do aparelho (nosso CDN): tem prioridade e não consome a API. */
+  photoPath?: string | null
   size?: number
   /** Listas longas (seletor) não buscam o GIF, para respeitar o limite da API. */
   withMedia?: boolean
 }) {
-  const detail = useExerciseDetail(withMedia ? externalId : null)
+  const photoUrl = exercisePhotoUrl(photoPath)
+  const detail = useExerciseDetail(withMedia && !photoUrl ? externalId : null)
   const [open, setOpen] = useState(false)
   const style = { width: size, height: size }
-  if (detail.data?.gifUrl && externalId) {
+  const imageUrl = photoUrl ?? detail.data?.gifUrl ?? null
+  if (imageUrl && (externalId || photoUrl)) {
     return (
       <>
         <button
@@ -176,17 +183,13 @@ export function ExerciseThumb({
           style={style}
           type="button"
         >
-          <img
-            alt=""
-            className="size-full object-cover"
-            loading="lazy"
-            src={detail.data.gifUrl}
-          />
+          <img alt="" className="size-full object-cover" loading="lazy" src={imageUrl} />
         </button>
         {open && (
           <ExerciseMediaLightbox
             externalId={externalId}
             name={name}
+            photoUrl={photoUrl}
             onClose={() => setOpen(false)}
           />
         )}

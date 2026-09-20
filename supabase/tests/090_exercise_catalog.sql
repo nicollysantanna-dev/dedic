@@ -1,7 +1,7 @@
 -- Catálogo de exercícios: busca sem acento, apelidos e exercícios personalizados.
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(12);
+select plan(16);
 
 create temporary table ctx as
 select
@@ -59,7 +59,32 @@ select throws_ok(
   'personal não insere no catálogo global'
 );
 
+-- Foto do aparelho: só o personal envia na própria pasta; aluna vinculada vê na busca.
+select lives_ok(
+  $$ insert into storage.objects (bucket_id, name, owner_id)
+     values ('exercise-photos', (select trainer_id from ctx)::text || '/supino.jpg', (select trainer_id from ctx)::text) $$,
+  'personal envia foto do aparelho na própria pasta'
+);
+update public.exercise_aliases set photo_path = (select trainer_id from ctx)::text || '/supino.jpg'
+where trainer_id = (select trainer_id from ctx);
+select is(
+  (select photo_path from public.search_exercises('meu') limit 1),
+  (select trainer_id from ctx)::text || '/supino.jpg',
+  'busca do personal devolve a foto'
+);
+
 select pg_temp.login((select ana_id from ctx));
+select is(
+  (select photo_path from public.search_exercises('meu') limit 1),
+  (select trainer_id from ctx)::text || '/supino.jpg',
+  'aluna vinculada vê apelido e foto do personal na busca'
+);
+select throws_ok(
+  $$ insert into storage.objects (bucket_id, name, owner_id)
+     values ('exercise-photos', (select ana_id from ctx)::text || '/x.jpg', (select ana_id from ctx)::text) $$,
+  '42501', null,
+  'aluna não envia fotos de aparelho'
+);
 select is(
   (select count(*) from public.exercises where source = 'custom'),
   1::bigint,

@@ -25,6 +25,7 @@ import {
   type RoutineExerciseDraft,
 } from '@/features/workouts/routine-model'
 import {
+  exercisePhotoPath,
   routineExerciseName,
   useRoutine,
   useSaveRoutine,
@@ -255,6 +256,7 @@ export function RoutineEditorPage() {
                   newRoutineExercise({
                     exerciseId: picked.id,
                     externalId: picked.external_id,
+                    photoPath: picked.photo_path,
                     name: exerciseDisplayName(picked),
                   }),
                 ],
@@ -293,7 +295,11 @@ function ExerciseBlock({
   return (
     <section className="rounded-[1.5rem] bg-white p-4 text-slate-950 sm:p-5">
       <div className="flex items-center gap-3">
-        <ExerciseThumb externalId={exercise.externalId} name={exercise.name} />
+        <ExerciseThumb
+          externalId={exercise.externalId}
+          name={exercise.name}
+          photoPath={exercise.photoPath}
+        />
         <h3 className="min-w-0 flex-1 truncate font-semibold text-[var(--brand)]">
           {exercise.name}
         </h3>
@@ -475,6 +481,7 @@ function toDraft(routine: RoutineWithExercises, trainerId: string | null): Routi
       id: item.id,
       exerciseId: item.exercise.id,
       externalId: item.exercise.external_id,
+      photoPath: exercisePhotoPath(item.exercise, trainerId),
       name: routineExerciseName(item.exercise, trainerId),
       notes: item.notes ?? '',
       restSeconds: item.rest_seconds,

@@ -16,7 +16,7 @@ const workoutSelect = `
   workout_exercises(
     id, position, notes, rest_seconds,
     exercise:exercises(id, external_id, name_en, name_pt, source,
-      aliases:exercise_aliases(alias, trainer_id)),
+      aliases:exercise_aliases(alias, trainer_id, photo_path)),
     workout_sets(id, position, set_type, weight_kg, reps, previous_weight_kg, previous_reps, completed_at)
   )
 `
@@ -40,7 +40,7 @@ export type WorkoutExercise = Pick<
     Tables<'exercises'>,
     'id' | 'external_id' | 'name_en' | 'name_pt' | 'source'
   > & {
-    aliases: Pick<Tables<'exercise_aliases'>, 'alias' | 'trainer_id'>[]
+    aliases: Pick<Tables<'exercise_aliases'>, 'alias' | 'trainer_id' | 'photo_path'>[]
   }
   workout_sets: WorkoutSet[]
 }

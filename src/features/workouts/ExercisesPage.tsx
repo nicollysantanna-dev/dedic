@@ -115,7 +115,11 @@ export function ExercisesPage() {
             <ul className="mt-3 space-y-2">
               {results.data.map((exercise) => (
                 <li key={exercise.id}>
-                  <ExerciseCard exercise={exercise} onAlias={setAliasTarget} />
+                  <ExerciseCard
+                    exercise={exercise}
+                    onAlias={setAliasTarget}
+                    trainerId={trainerId}
+                  />
                 </li>
               ))}
               {results.data.length === 0 && (
@@ -163,7 +167,10 @@ function AliasDialog({
 
   const submit = (event: FormEvent) => {
     event.preventDefault()
-    save.mutate({ exerciseId: exercise.id, alias }, { onSuccess: onClose })
+    save.mutate(
+      { exerciseId: exercise.id, alias, hasPhoto: Boolean(exercise.photo_path) },
+      { onSuccess: onClose },
+    )
   }
 
   return (

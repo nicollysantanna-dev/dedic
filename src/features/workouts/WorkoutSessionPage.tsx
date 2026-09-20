@@ -8,6 +8,7 @@ import { useAuth } from '@/features/auth/auth-context'
 import { ExercisePicker, ExerciseThumb } from '@/features/workouts/ExercisePicker'
 import { RestTimer } from '@/features/workouts/RestTimer'
 import { restOptions } from '@/features/workouts/routine-model'
+import { exercisePhotoPath } from '@/features/workouts/routine-queries'
 import { formatDuration, formatKg, totalVolume } from '@/features/workouts/workout-math'
 import {
   useAddSet,
@@ -236,7 +237,11 @@ function ExerciseSessionBlock({
   return (
     <section className="rounded-[1.5rem] bg-white p-4 text-slate-950 sm:p-5">
       <div className="flex items-center gap-3">
-        <ExerciseThumb externalId={exercise.exercise.external_id} name={name} />
+        <ExerciseThumb
+          externalId={exercise.exercise.external_id}
+          name={name}
+          photoPath={exercisePhotoPath(exercise.exercise, trainerId)}
+        />
         <h2 className="min-w-0 flex-1 truncate font-semibold text-[var(--brand)]">
           {name}
         </h2>

@@ -10,7 +10,7 @@ const routineSelect = `
   routine_exercises(
     id, position, notes, rest_seconds,
     exercise:exercises(id, external_id, name_en, name_pt, source, body_parts, equipments, target_muscles,
-      aliases:exercise_aliases(alias, trainer_id)),
+      aliases:exercise_aliases(alias, trainer_id, photo_path)),
     routine_sets(id, position, target_weight_kg, target_reps)
   )
 `
@@ -31,7 +31,9 @@ export type RoutineWithExercises = Tables<'routines'> & {
       | 'body_parts'
       | 'equipments'
       | 'target_muscles'
-    > & { aliases: Pick<Tables<'exercise_aliases'>, 'alias' | 'trainer_id'>[] }
+    > & {
+      aliases: Pick<Tables<'exercise_aliases'>, 'alias' | 'trainer_id' | 'photo_path'>[]
+    }
     routine_sets: Pick<
       Tables<'routine_sets'>,
       'id' | 'position' | 'target_weight_kg' | 'target_reps'
@@ -62,6 +64,17 @@ export function routineExerciseName(
     ? exercise.aliases.find((item) => item.trainer_id === trainerId)?.alias
     : undefined
   return alias ?? exercise.name_pt ?? exercise.name_en
+}
+
+/** Foto do aparelho cadastrada pelo personal da ficha/sessão. */
+export function exercisePhotoPath(
+  exercise: { aliases: Pick<Tables<'exercise_aliases'>, 'trainer_id' | 'photo_path'>[] },
+  trainerId: string | null,
+) {
+  if (!trainerId) return null
+  return (
+    exercise.aliases.find((item) => item.trainer_id === trainerId)?.photo_path ?? null
+  )
 }
 
 export function useTrainerRoutines(trainerId: string, studentId?: string) {

@@ -535,3 +535,48 @@ test('aluna monta a própria ficha e amplia o GIF do exercício', async ({ page 
     console.warn('ExerciseDB indisponível: lightbox não verificado nesta execução.')
   }
 })
+
+test('personal cadastra a foto do aparelho e a aluna a vê nas listas e na sessão', async ({
+  page,
+}) => {
+  await login(page, users.trainer.email)
+  await page.goto('/app/exercicios')
+  await page.getByLabel('Buscar exercício').fill('supino inclinado com barra')
+  const card = page
+    .locator('article')
+    .filter({ hasText: 'Supino inclinado com barra' })
+    .first()
+  await card.getByRole('button', { name: 'Ver demonstração' }).click()
+  await page.getByTestId('equipment-photo-input').setInputFiles({
+    name: 'aparelho.png',
+    mimeType: 'image/png',
+    buffer: await page.screenshot({ clip: { x: 0, y: 0, width: 80, height: 60 } }),
+  })
+  await expect(
+    card.getByRole('img', { name: /Aparelho: Supino inclinado/ }),
+  ).toBeVisible()
+  await expect(card.getByRole('button', { name: 'Trocar foto' })).toBeVisible()
+  await logout(page)
+
+  // Aluna: a foto aparece no seletor de exercícios (sem chamar a API) e na ficha.
+  await login(page, users.student.email)
+  await page.goto('/app/treinos')
+  const routineCard = page.locator('article').filter({ hasText: 'Treino A' }).first()
+  await routineCard.getByRole('button', { name: 'Ver exercícios' }).click()
+  const thumb = routineCard.getByRole('button', {
+    name: 'Ver execução de Supino inclinado com barra',
+  })
+  await expect(thumb).toBeVisible()
+  await thumb.click()
+  const lightbox = page.getByRole('dialog', { name: /Execução de Supino inclinado/ })
+  await expect(
+    lightbox.getByRole('img', { name: /Aparelho: Supino inclinado/ }),
+  ).toBeVisible()
+  await page.keyboard.press('Escape')
+
+  await page.getByRole('link', { name: 'Nova ficha' }).click()
+  await page.getByRole('button', { name: 'Adicionar exercício' }).click()
+  await page.getByPlaceholder('Buscar exercício').fill('supino inclinado com barra')
+  const row = page.getByRole('button', { name: /Supino inclinado com barra/ }).first()
+  await expect(row.getByRole('button', { name: /Ver execução/ })).toBeVisible()
+})
