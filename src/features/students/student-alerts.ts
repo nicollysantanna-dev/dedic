@@ -10,6 +10,7 @@ export type AlertKind =
   | 'renewal_soon'
   | 'progress_stale'
   | 'goal_overdue'
+  | 'workout_stale'
 
 export type StudentAlert = { kind: AlertKind; label: string; severity: 'high' | 'medium' }
 
@@ -93,6 +94,19 @@ export function buildStudentAlerts(
       label: 'Meta com prazo vencido',
       severity: 'medium',
     })
+  }
+  // Só para quem já registrou treino: quem nunca usou não recebe cobrança.
+  if (summary.last_workout_at) {
+    const daysSinceWorkout = Math.floor(
+      (now.getTime() - new Date(summary.last_workout_at).getTime()) / dayMs,
+    )
+    if (daysSinceWorkout >= 14) {
+      alerts.push({
+        kind: 'workout_stale',
+        label: `${daysSinceWorkout} dias sem treino registrado`,
+        severity: 'medium',
+      })
+    }
   }
 
   return alerts

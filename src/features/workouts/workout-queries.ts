@@ -9,6 +9,9 @@ export const workoutSessionKeys = {
   detail: (workoutId: string) => ['workout-sessions', 'detail', workoutId] as const,
   open: (studentId: string) => ['workout-sessions', 'open', studentId] as const,
   history: (studentId: string) => ['workout-sessions', 'history', studentId] as const,
+  records: (studentId: string) => ['workout-sessions', 'records', studentId] as const,
+  loadHistory: (studentId: string, exerciseId: string) =>
+    ['workout-sessions', 'load', studentId, exerciseId] as const,
 }
 
 const workoutSelect = `
@@ -17,7 +20,7 @@ const workoutSelect = `
     id, position, notes, rest_seconds,
     exercise:exercises(id, external_id, name_en, name_pt, source, photo_path, image_paths, instructions,
       aliases:exercise_aliases(alias, trainer_id, photo_path)),
-    workout_sets(id, position, set_type, weight_kg, reps, previous_weight_kg, previous_reps, completed_at)
+    workout_sets(id, position, set_type, weight_kg, reps, previous_weight_kg, previous_reps, completed_at, record_kinds)
   )
 `
 
@@ -31,6 +34,7 @@ export type WorkoutSet = Pick<
   | 'previous_weight_kg'
   | 'previous_reps'
   | 'completed_at'
+  | 'record_kinds'
 >
 export type WorkoutExercise = Pick<
   Tables<'workout_exercises'>,
@@ -106,6 +110,89 @@ export function useOpenWorkout(studentId: string) {
         .is('finished_at', null)
         .is('discarded_at', null)
         .maybeSingle()
+      if (error) throw error
+      return data
+    },
+  })
+}
+
+const exerciseSummarySelect =
+  'id, external_id, name_en, name_pt, source, photo_path, image_paths, instructions, aliases:exercise_aliases(alias, trainer_id, photo_path)'
+
+export type WorkoutHistoryItem = Pick<
+  Tables<'workouts'>,
+  | 'id'
+  | 'name'
+  | 'started_at'
+  | 'finished_at'
+  | 'duration_seconds'
+  | 'record_count'
+  | 'trainer_id'
+  | 'routine_id'
+  | 'appointment_id'
+> & {
+  workout_exercises: {
+    exercise: WorkoutExercise['exercise']
+    workout_sets: Pick<WorkoutSet, 'weight_kg' | 'reps'>[]
+  }[]
+}
+
+/** Treinos finalizados do aluno, do mais recente ao mais antigo. */
+export function useWorkoutHistory(studentId: string, limit = 50) {
+  return useQuery({
+    queryKey: workoutSessionKeys.history(studentId),
+    enabled: Boolean(studentId),
+    queryFn: async (): Promise<WorkoutHistoryItem[]> => {
+      const { data, error } = await requireSupabase()
+        .from('workouts')
+        .select(
+          `id, name, started_at, finished_at, duration_seconds, record_count, trainer_id, routine_id, appointment_id,
+           workout_exercises(exercise:exercises(${exerciseSummarySelect}), workout_sets(weight_kg, reps))`,
+        )
+        .eq('student_id', studentId)
+        .not('finished_at', 'is', null)
+        .is('discarded_at', null)
+        .order('finished_at', { ascending: false })
+        .limit(limit)
+      if (error) throw error
+      return data
+    },
+  })
+}
+
+export type ExerciseRecord = Tables<'exercise_records'> & {
+  exercise: WorkoutExercise['exercise'] | null
+}
+
+/** Recordes atuais por exercício (carga, 1RM estimado, volume). */
+export function useExerciseRecords(studentId: string) {
+  return useQuery({
+    queryKey: workoutSessionKeys.records(studentId),
+    enabled: Boolean(studentId),
+    queryFn: async (): Promise<ExerciseRecord[]> => {
+      const { data, error } = await requireSupabase()
+        .from('exercise_records')
+        .select(`*, exercise:exercises(${exerciseSummarySelect})`)
+        .eq('student_id', studentId)
+        .order('last_performed_at', { ascending: false })
+      if (error) throw error
+      return data
+    },
+  })
+}
+
+/** Carga máxima, 1RM e volume por treino de um exercício (gráfico de progresso). */
+export function useExerciseLoadHistory(studentId: string, exerciseId: string | null) {
+  return useQuery({
+    queryKey: workoutSessionKeys.loadHistory(studentId, exerciseId ?? ''),
+    enabled: Boolean(studentId && exerciseId),
+    queryFn: async () => {
+      const { data, error } = await requireSupabase()
+        .from('exercise_workout_stats')
+        .select('workout_id, finished_at, max_weight_kg, best_one_rm, volume, sets_count')
+        .eq('student_id', studentId)
+        .eq('exercise_id', exerciseId!)
+        .order('finished_at', { ascending: true })
       if (error) throw error
       return data
     },

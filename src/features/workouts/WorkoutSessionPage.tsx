@@ -6,6 +6,7 @@ import {
   Repeat,
   Timer,
   Trash2,
+  Trophy,
 } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
@@ -17,11 +18,21 @@ import { exerciseMediaFrom } from '@/features/workouts/exercise-media'
 import { ExercisePicker, ExerciseThumb } from '@/features/workouts/ExercisePicker'
 import { RestTimer } from '@/features/workouts/RestTimer'
 import { restOptions } from '@/features/workouts/routine-model'
-import { formatDuration, formatKg, totalVolume } from '@/features/workouts/workout-math'
+import {
+  estimateOneRepMax,
+  formatDuration,
+  formatKg,
+  recordKindLabels,
+  recordKindsFor,
+  totalVolume,
+  type ExerciseBest,
+  type RecordKind,
+} from '@/features/workouts/workout-math'
 import {
   useAddSet,
   useAddWorkoutExercise,
   useDiscardWorkout,
+  useExerciseRecords,
   useFinishWorkout,
   useRemoveSet,
   useRemoveWorkoutExercise,
@@ -58,7 +69,9 @@ export function WorkoutSessionPage() {
     sets: number
     volume: number
     seconds: number
+    records: number
   } | null>(null)
+  const records = useExerciseRecords(session.data?.student_id ?? '')
   const addExercise = useAddWorkoutExercise(workoutId ?? '')
   const replaceExercise = useReplaceWorkoutExercise(workoutId ?? '')
   const discard = useDiscardWorkout()
@@ -84,6 +97,17 @@ export function WorkoutSessionPage() {
   }
   const workout = session.data
   const finished = workout.finished_at !== null || workout.discarded_at !== null
+  // Melhor marca por exercício (treinos finalizados) para o troféu ao vivo.
+  const bestByExercise = new Map<string, ExerciseBest>(
+    (records.data ?? []).map((record) => [
+      record.exercise_id ?? '',
+      {
+        weightKg: Number(record.best_weight_kg ?? 0),
+        oneRm: Number(record.best_one_rm ?? 0),
+        volume: Number(record.best_volume ?? 0),
+      },
+    ]),
+  )
 
   if (summary) {
     return (
@@ -93,6 +117,14 @@ export function WorkoutSessionPage() {
           <Stat label="Séries" value={String(summary.sets)} />
           <Stat label="Volume" value={formatKg(summary.volume)} />
         </div>
+        {summary.records > 0 && (
+          <p className="mt-4 flex items-center gap-2 rounded-2xl bg-amber-400/15 p-4 text-sm font-semibold text-amber-100">
+            <Trophy className="text-amber-300" size={18} />
+            {summary.records === 1
+              ? '1 recorde pessoal batido!'
+              : `${summary.records} recordes pessoais batidos!`}
+          </p>
+        )}
         <Button asChild className="mt-6">
           <Link to={backTo}>Concluir</Link>
         </Button>
@@ -131,6 +163,7 @@ export function WorkoutSessionPage() {
             <ExerciseSessionBlock
               key={item.id}
               exercise={item}
+              best={bestByExercise.get(item.exercise.id) ?? null}
               trainerId={workout.trainer_id}
               workoutId={workout.id}
               readOnly={finished}
@@ -236,6 +269,7 @@ function ElapsedClock({ since }: { since: string }) {
 
 function ExerciseSessionBlock({
   exercise,
+  best,
   trainerId,
   workoutId,
   readOnly,
@@ -243,6 +277,8 @@ function ExerciseSessionBlock({
   onSetCompleted,
 }: {
   exercise: WorkoutExercise
+  /** Melhor marca anterior do aluno neste exercício, ou null se nunca fez. */
+  best: ExerciseBest | null
   trainerId: string | null
   workoutId: string
   readOnly: boolean
@@ -256,6 +292,32 @@ function ExerciseSessionBlock({
   const removeSet = useRemoveSet(workoutId)
   const updateExercise = useUpdateWorkoutExercise(workoutId)
   const removeExercise = useRemoveWorkoutExercise(workoutId)
+  // Sessão aberta: troféu calculado ao vivo, série a série; encerrada: o que foi gravado.
+  const recordsBySet = new Map<string, RecordKind[]>()
+  if (readOnly) {
+    for (const set of exercise.workout_sets) {
+      recordsBySet.set(set.id, set.record_kinds as RecordKind[])
+    }
+  } else {
+    let running = best
+    for (const set of exercise.workout_sets) {
+      if (set.completed_at === null) continue
+      const kinds = recordKindsFor(
+        { weightKg: set.weight_kg, reps: set.reps, setType: set.set_type },
+        running,
+      )
+      recordsBySet.set(set.id, kinds)
+      if (kinds.length > 0) {
+        const weight = set.weight_kg ?? 0
+        const reps = set.reps ?? 0
+        running = {
+          weightKg: Math.max(running?.weightKg ?? 0, weight),
+          oneRm: Math.max(running?.oneRm ?? 0, estimateOneRepMax(weight, reps)),
+          volume: Math.max(running?.volume ?? 0, weight * reps),
+        }
+      }
+    }
+  }
 
   return (
     <section className="rounded-[1.5rem] bg-white p-4 text-slate-950 sm:p-5">
@@ -357,6 +419,7 @@ function ExerciseSessionBlock({
               set={set}
               index={index}
               name={name}
+              records={recordsBySet.get(set.id) ?? []}
               readOnly={readOnly}
               onChange={(patch) => updateSet.mutate({ setId: set.id, patch })}
               onComplete={(completed) => {
@@ -397,6 +460,7 @@ function SetRow({
   set,
   index,
   name,
+  records,
   readOnly,
   onChange,
   onComplete,
@@ -405,6 +469,7 @@ function SetRow({
   set: WorkoutSet
   index: number
   name: string
+  records: RecordKind[]
   readOnly: boolean
   onChange: (patch: { weight_kg?: number | null; reps?: number | null }) => void
   onComplete: (completed: boolean) => void
@@ -427,7 +492,21 @@ function SetRow({
 
   return (
     <tr className={cn('border-t border-slate-50', done && 'bg-emerald-50/70')}>
-      <td className="py-1.5 font-semibold text-slate-500">{index + 1}</td>
+      <td className="py-1.5 font-semibold text-slate-500">
+        <span className="inline-flex items-center gap-1">
+          {index + 1}
+          {records.length > 0 && (
+            <Trophy
+              aria-label={`Recorde na série ${index + 1} de ${name}: ${records
+                .map((kind) => recordKindLabels[kind].toLowerCase())
+                .join(', ')}`}
+              className="text-amber-500"
+              role="img"
+              size={14}
+            />
+          )}
+        </span>
+      </td>
       <td className="py-1.5 text-xs text-slate-400">{previous}</td>
       <td className="py-1.5 pr-2">
         <input
@@ -524,7 +603,12 @@ function FinishDialog({
 }: {
   workout: WorkoutSession
   onClose: () => void
-  onFinished: (summary: { sets: number; volume: number; seconds: number }) => void
+  onFinished: (summary: {
+    sets: number
+    volume: number
+    seconds: number
+    records: number
+  }) => void
 }) {
   const [notes, setNotes] = useState('')
   const finish = useFinishWorkout()
@@ -593,6 +677,7 @@ function FinishDialog({
                   sets: completed.length,
                   volume,
                   seconds: result.duration_seconds ?? 0,
+                  records: result.record_count,
                 }),
             },
           )

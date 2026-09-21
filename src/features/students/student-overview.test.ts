@@ -27,6 +27,8 @@ const summary = (overrides: Partial<ActivitySummary>): ActivitySummary => ({
   last_progress_on: '2026-09-15',
   active_goals: 0,
   overdue_goals: 0,
+  workouts_30d: 0,
+  last_workout_at: null,
   attendance_goal_per_week: null,
   ...overrides,
 })

@@ -32,3 +32,32 @@ export function formatClock(seconds: number) {
 export function formatKg(value: number) {
   return `${value.toLocaleString('pt-BR', { maximumFractionDigits: 1 })} kg`
 }
+
+export type RecordKind = 'weight' | 'one_rm' | 'volume'
+
+export type ExerciseBest = { weightKg: number; oneRm: number; volume: number }
+
+export const recordKindLabels: Record<RecordKind, string> = {
+  weight: 'Maior carga',
+  one_rm: 'Melhor 1RM estimado',
+  volume: 'Maior volume em uma série',
+}
+
+/**
+ * Recordes que uma série bate frente ao melhor conhecido (mesma regra do
+ * `finish_workout`: aquecimento não conta, carga e repetições positivas).
+ */
+export function recordKindsFor(
+  set: CompletedSet & { setType?: string },
+  best: ExerciseBest | null,
+): RecordKind[] {
+  const weight = set.weightKg ?? 0
+  const reps = set.reps ?? 0
+  if (set.setType === 'warmup' || weight <= 0 || reps <= 0) return []
+  const current = best ?? { weightKg: 0, oneRm: 0, volume: 0 }
+  const kinds: RecordKind[] = []
+  if (weight > current.weightKg) kinds.push('weight')
+  if (estimateOneRepMax(weight, reps) > current.oneRm) kinds.push('one_rm')
+  if (weight * reps > current.volume) kinds.push('volume')
+  return kinds
+}

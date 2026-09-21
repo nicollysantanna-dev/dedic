@@ -24,14 +24,18 @@ export function useProgressEntries(studentId: string) {
   })
 }
 
+export type GoalWithExercise = Tables<'student_goals'> & {
+  exercise: Pick<Tables<'exercises'>, 'id' | 'name_en' | 'name_pt'> | null
+}
+
 export function useGoals(studentId: string) {
   return useQuery({
     queryKey: progressKeys.goals(studentId),
     enabled: Boolean(studentId),
-    queryFn: async () => {
+    queryFn: async (): Promise<GoalWithExercise[]> => {
       const { data, error } = await requireSupabase()
         .from('student_goals')
-        .select('*')
+        .select('*, exercise:exercises(id, name_en, name_pt)')
         .eq('student_id', studentId)
         .order('created_at', { ascending: false })
       if (error) throw error
@@ -105,19 +109,23 @@ export function useCreateGoal(studentId: string) {
     mutationFn: async (input: {
       trainerId: string
       kind: Tables<'student_goals'>['kind']
+      exerciseId?: string | null
       initialValue: number
       targetValue: number
       targetDate: string
     }) => {
-      const { error } = await requireSupabase().from('student_goals').insert({
-        trainer_id: input.trainerId,
-        student_id: studentId,
-        kind: input.kind,
-        initial_value: input.initialValue,
-        target_value: input.targetValue,
-        target_date: input.targetDate,
-        created_by: input.trainerId,
-      })
+      const { error } = await requireSupabase()
+        .from('student_goals')
+        .insert({
+          trainer_id: input.trainerId,
+          student_id: studentId,
+          kind: input.kind,
+          exercise_id: input.exerciseId ?? null,
+          initial_value: input.initialValue,
+          target_value: input.targetValue,
+          target_date: input.targetDate,
+          created_by: input.trainerId,
+        })
       if (error) throw error
     },
     onSuccess: () =>

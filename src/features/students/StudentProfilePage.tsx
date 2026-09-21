@@ -19,6 +19,7 @@ import { useAuth } from '@/features/auth/auth-context'
 import { creditAdjustmentSchema, packageSchema } from '@/features/packages/schemas'
 import { ProgressSection } from '@/features/progress/ProgressSection'
 import { StudentRoutinesSection } from '@/features/workouts/StudentRoutinesSection'
+import { StudentWorkoutsSummary } from '@/features/workouts/StudentWorkoutsSummary'
 import { whatsappLink, whatsappTemplates } from '@/features/notifications/whatsapp'
 import {
   toStudentOverview,
@@ -93,6 +94,7 @@ export function StudentProfilePage() {
       const overview = toStudentOverview(summary.data)
       return {
         overview,
+        summary: summary.data,
         relationship,
         appointments: appointments.data,
         packages: packages.data,
@@ -273,6 +275,12 @@ export function StudentProfilePage() {
             <StudentRoutinesSection
               trainerId={trainerId}
               studentId={student.data.relationship.student_id}
+            />
+
+            <StudentWorkoutsSummary
+              studentId={student.data.relationship.student_id}
+              summary={student.data.summary}
+              trainerId={trainerId}
             />
 
             <section className="mt-5">

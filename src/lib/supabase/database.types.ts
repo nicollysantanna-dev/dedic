@@ -996,6 +996,7 @@ export type Database = {
         Row: {
           created_at: string
           created_by: string
+          exercise_id: string | null
           id: string
           initial_value: number
           kind: Database['public']['Enums']['goal_kind']
@@ -1009,6 +1010,7 @@ export type Database = {
         Insert: {
           created_at?: string
           created_by: string
+          exercise_id?: string | null
           id?: string
           initial_value: number
           kind: Database['public']['Enums']['goal_kind']
@@ -1022,6 +1024,7 @@ export type Database = {
         Update: {
           created_at?: string
           created_by?: string
+          exercise_id?: string | null
           id?: string
           initial_value?: number
           kind?: Database['public']['Enums']['goal_kind']
@@ -1038,6 +1041,13 @@ export type Database = {
             columns: ['created_by']
             isOneToOne: false
             referencedRelation: 'profiles'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'student_goals_exercise_id_fkey'
+            columns: ['exercise_id']
+            isOneToOne: false
+            referencedRelation: 'exercises'
             referencedColumns: ['id']
           },
           {
@@ -1198,6 +1208,13 @@ export type Database = {
             foreignKeyName: 'workout_exercises_workout_id_fkey'
             columns: ['workout_id']
             isOneToOne: false
+            referencedRelation: 'exercise_workout_stats'
+            referencedColumns: ['workout_id']
+          },
+          {
+            foreignKeyName: 'workout_exercises_workout_id_fkey'
+            columns: ['workout_id']
+            isOneToOne: false
             referencedRelation: 'workouts'
             referencedColumns: ['id']
           },
@@ -1210,6 +1227,7 @@ export type Database = {
           position: number
           previous_reps: number | null
           previous_weight_kg: number | null
+          record_kinds: string[]
           reps: number | null
           set_type: Database['public']['Enums']['workout_set_type']
           weight_kg: number | null
@@ -1221,6 +1239,7 @@ export type Database = {
           position: number
           previous_reps?: number | null
           previous_weight_kg?: number | null
+          record_kinds?: string[]
           reps?: number | null
           set_type?: Database['public']['Enums']['workout_set_type']
           weight_kg?: number | null
@@ -1232,6 +1251,7 @@ export type Database = {
           position?: number
           previous_reps?: number | null
           previous_weight_kg?: number | null
+          record_kinds?: string[]
           reps?: number | null
           set_type?: Database['public']['Enums']['workout_set_type']
           weight_kg?: number | null
@@ -1257,6 +1277,7 @@ export type Database = {
           id: string
           name: string
           notes: string | null
+          record_count: number
           recorded_by: string
           routine_id: string | null
           started_at: string
@@ -1272,6 +1293,7 @@ export type Database = {
           id?: string
           name: string
           notes?: string | null
+          record_count?: number
           recorded_by: string
           routine_id?: string | null
           started_at?: string
@@ -1287,6 +1309,7 @@ export type Database = {
           id?: string
           name?: string
           notes?: string | null
+          record_count?: number
           recorded_by?: string
           routine_id?: string | null
           started_at?: string
@@ -1333,6 +1356,61 @@ export type Database = {
       }
     }
     Views: {
+      exercise_records: {
+        Row: {
+          best_one_rm: number | null
+          best_volume: number | null
+          best_weight_kg: number | null
+          exercise_id: string | null
+          last_performed_at: string | null
+          sessions_count: number | null
+          student_id: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'workout_exercises_exercise_id_fkey'
+            columns: ['exercise_id']
+            isOneToOne: false
+            referencedRelation: 'exercises'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'workouts_student_id_fkey'
+            columns: ['student_id']
+            isOneToOne: false
+            referencedRelation: 'profiles'
+            referencedColumns: ['id']
+          },
+        ]
+      }
+      exercise_workout_stats: {
+        Row: {
+          best_one_rm: number | null
+          exercise_id: string | null
+          finished_at: string | null
+          max_weight_kg: number | null
+          sets_count: number | null
+          student_id: string | null
+          volume: number | null
+          workout_id: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'workout_exercises_exercise_id_fkey'
+            columns: ['exercise_id']
+            isOneToOne: false
+            referencedRelation: 'exercises'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'workouts_student_id_fkey'
+            columns: ['student_id']
+            isOneToOne: false
+            referencedRelation: 'profiles'
+            referencedColumns: ['id']
+          },
+        ]
+      }
       student_activity_summary: {
         Row: {
           active_goals: number | null
@@ -1344,6 +1422,7 @@ export type Database = {
           full_name: string | null
           last_completed_at: string | null
           last_progress_on: string | null
+          last_workout_at: string | null
           next_appointment_at: string | null
           next_due_on: string | null
           next_renewal_on: string | null
@@ -1359,6 +1438,7 @@ export type Database = {
           trainer_id: string | null
           upcoming_count: number | null
           weekly_average_4w: number | null
+          workouts_30d: number | null
         }
         Relationships: [
           {
@@ -1732,6 +1812,10 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      estimate_one_rm: {
+        Args: { reps: number; weight_kg: number }
+        Returns: number
+      }
       finalize_elapsed_appointments: { Args: never; Returns: number }
       finish_workout: {
         Args: { target_workout_id: string; workout_notes?: string }
@@ -1744,6 +1828,7 @@ export type Database = {
           id: string
           name: string
           notes: string | null
+          record_count: number
           recorded_by: string
           routine_id: string | null
           started_at: string
@@ -1971,7 +2056,7 @@ export type Database = {
         | 'cancellation_refund'
         | 'manual_adjustment'
       exercise_source: 'exercisedb' | 'custom' | 'free_exercise_db'
-      goal_kind: 'weight' | 'attendance'
+      goal_kind: 'weight' | 'attendance' | 'exercise_load'
       goal_status: 'active' | 'achieved' | 'abandoned'
       invitation_status: 'pending' | 'accepted' | 'declined' | 'expired' | 'cancelled'
       notification_kind:
@@ -2142,7 +2227,7 @@ export const Constants = {
         'manual_adjustment',
       ],
       exercise_source: ['exercisedb', 'custom', 'free_exercise_db'],
-      goal_kind: ['weight', 'attendance'],
+      goal_kind: ['weight', 'attendance', 'exercise_load'],
       goal_status: ['active', 'achieved', 'abandoned'],
       invitation_status: ['pending', 'accepted', 'declined', 'expired', 'cancelled'],
       notification_kind: [

@@ -305,7 +305,8 @@ Deve exibir:
 - A agenda do dia deve ser o primeiro conteúdo do dashboard.
 - Cada aula deve apresentar horário, aluno, local ou formato, estado e ações rápidas.
 - O dashboard deve destacar tarefas, poucos créditos, inadimplência, renovação,
-  inatividade, progresso desatualizado, metas próximas do prazo, faltas e falhas de sincronização.
+  inatividade, progresso desatualizado, metas próximas do prazo, faltas e alunos que
+  pararam de registrar treinos (14 dias, só para quem já registrava).
 - Indicadores secundários devem incluir alunos ativos, frequência e resumo financeiro.
 
 ### RF-22 — Metas e peso
@@ -332,6 +333,8 @@ Deve exibir:
 - A sessão de treino deve seguir o padrão série · anterior · kg · reps · concluída, com descanso automático, adicionar/substituir/remover exercício e finalização com resumo.
 - Iniciar uma ficha deve pré-preencher cada série com a última carga e repetições registradas para o exercício.
 - Fichas e treinos nunca são apagados: fichas são arquivadas e treinos descartados.
+- Recordes por exercício (maior carga, 1RM estimado por Epley, maior volume em uma série) são derivados das séries concluídas de treinos finalizados; a série que bate recorde recebe um troféu, gravado ao finalizar.
+- O aluno vê histórico de sessões (duração, volume, recordes) e recordes por exercício com a curva de carga; o personal vê o mesmo no perfil do aluno, com treinos em 30 dias e aderência à meta de frequência.
 
 ### RF-25 — Recorrência e tipos de compromisso
 

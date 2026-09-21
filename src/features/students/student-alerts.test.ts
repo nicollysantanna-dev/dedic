@@ -31,6 +31,8 @@ const base: ActivitySummary = {
   last_progress_on: '2026-09-10',
   active_goals: 1,
   overdue_goals: 0,
+  workouts_30d: 0,
+  last_workout_at: null,
   attendance_goal_per_week: 2,
 }
 
@@ -89,6 +91,24 @@ describe('buildStudentAlerts', () => {
 })
 
 describe('attendanceGoalProgress', () => {
+  it('avisa quando o aluno que registrava treinos parou há 14 dias, mas não para quem nunca registrou', () => {
+    expect(
+      buildStudentAlerts({ ...base, last_workout_at: '2026-09-01T10:00:00Z' }, now).map(
+        (alert) => alert.kind,
+      ),
+    ).toContain('workout_stale')
+    expect(
+      buildStudentAlerts({ ...base, last_workout_at: '2026-09-10T10:00:00Z' }, now).map(
+        (alert) => alert.kind,
+      ),
+    ).not.toContain('workout_stale')
+    expect(
+      buildStudentAlerts({ ...base, last_workout_at: null }, now).map(
+        (alert) => alert.kind,
+      ),
+    ).not.toContain('workout_stale')
+  })
+
   it('compara a média semanal com a meta', () => {
     expect(attendanceGoalProgress(base)).toBe(50)
     expect(attendanceGoalProgress({ ...base, weekly_average_4w: 3 })).toBe(100)

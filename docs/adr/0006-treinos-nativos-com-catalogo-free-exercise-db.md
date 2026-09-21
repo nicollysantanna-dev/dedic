@@ -36,6 +36,10 @@ requisições. O custo do projeto precisa ser zero.
   vínculo ativo com ele, nas duas direções.
 - **Substituir exercício** nos três pontinhos do card, na ficha (mantém notas,
   descanso e séries) e na sessão (`replace_workout_exercise`, mantém as séries).
+- **Recordes derivados** (como o saldo de créditos): `exercise_records` e
+  `exercise_workout_stats` são vistas sobre `workout_sets`; `finish_workout` grava
+  `record_kinds` na série e `record_count` no treino, na ordem da sessão, para o
+  histórico não recomputar. Meta `exercise_load` usa o melhor registro como atual.
 - Hevy passa a "Could" pós-MVP (importação para `workouts`; o modelo é compatível).
 
 ## Consequências

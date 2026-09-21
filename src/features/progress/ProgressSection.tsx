@@ -31,7 +31,11 @@ import {
   useProgressEntries,
   useUpdateGoalStatus,
   useUploadPhoto,
+  type GoalWithExercise,
 } from '@/features/progress/queries'
+import { ExercisePicker } from '@/features/workouts/ExercisePicker'
+import { exerciseDisplayName } from '@/features/workouts/queries'
+import { useExerciseRecords } from '@/features/workouts/workout-queries'
 import { useActivitySummary } from '@/features/students/queries'
 import { formatDateOnly, toIsoDate } from '@/lib/format'
 import type { Tables } from '@/lib/supabase/database.types'
@@ -46,8 +50,12 @@ const positionLabels: Record<Position, string> = {
   back: 'Costas',
 }
 
-const goalKindLabels = { weight: 'Peso', attendance: 'Frequência' }
-const goalUnits = { weight: 'kg', attendance: 'aulas/semana' }
+const goalKindLabels = {
+  weight: 'Peso',
+  attendance: 'Frequência',
+  exercise_load: 'Carga',
+}
+const goalUnits = { weight: 'kg', attendance: 'aulas/semana', exercise_load: 'kg' }
 
 /**
  * Evolução física de um aluno. O aluno registra peso/medidas e envia/exclui fotos;
@@ -378,7 +386,7 @@ function GoalsCard({
   studentId,
   trainerId,
 }: {
-  goals: Tables<'student_goals'>[]
+  goals: GoalWithExercise[]
   currentWeight: number | null
   studentId: string
   trainerId: string | null
@@ -386,6 +394,13 @@ function GoalsCard({
   const [isCreating, setIsCreating] = useState(false)
   const activity = useActivitySummary(studentId)
   const weeklyAverage = activity.data?.weekly_average_4w ?? null
+  const records = useExerciseRecords(studentId)
+  const bestWeightFor = (exerciseId: string | null) => {
+    const record = records.data?.find((item) => item.exercise_id === exerciseId)
+    return record?.best_weight_kg === null || record === undefined
+      ? null
+      : Number(record.best_weight_kg)
+  }
   const updateStatus = useUpdateGoalStatus(studentId)
   const active = goals.filter((goal) => goal.status === 'active')
   const finished = goals.filter((goal) => goal.status !== 'active')
@@ -410,15 +425,22 @@ function GoalsCard({
 
       <ul className="mt-4 space-y-3">
         {active.map((goal) => {
-          const current = goal.kind === 'weight' ? currentWeight : weeklyAverage
+          const current =
+            goal.kind === 'weight'
+              ? currentWeight
+              : goal.kind === 'attendance'
+                ? weeklyAverage
+                : bestWeightFor(goal.exercise_id)
           const progress = goalProgress(goal, current)
           const days = daysUntil(goal.target_date)
           return (
             <li key={goal.id} className="rounded-xl bg-slate-50 p-4">
               <div className="flex items-center justify-between gap-3">
                 <p className="font-semibold">
-                  {goalKindLabels[goal.kind]}:{' '}
-                  {Number(goal.initial_value).toLocaleString('pt-BR')} →{' '}
+                  {goalKindLabels[goal.kind]}
+                  {goal.exercise &&
+                    ` · ${goal.exercise.name_pt ?? goal.exercise.name_en}`}
+                  : {Number(goal.initial_value).toLocaleString('pt-BR')} →{' '}
                   {Number(goal.target_value).toLocaleString('pt-BR')}{' '}
                   {goalUnits[goal.kind]}
                 </p>
@@ -450,6 +472,12 @@ function GoalsCard({
                     : `${days} dias até ${formatDateOnly(goal.target_date)}`}
                 {goal.kind === 'attendance' &&
                   ` · média de ${Number(weeklyAverage ?? 0).toLocaleString('pt-BR')} aulas/semana nas últimas 4 semanas`}
+                {goal.kind === 'exercise_load' &&
+                  ` · melhor carga registrada: ${
+                    current === null
+                      ? 'nenhuma ainda'
+                      : `${current.toLocaleString('pt-BR')} kg`
+                  }`}
               </p>
               {trainerId && (
                 <div className="mt-3 flex gap-2">
@@ -495,7 +523,9 @@ function GoalsCard({
           <ul className="mt-2 space-y-1 text-slate-500">
             {finished.map((goal) => (
               <li key={goal.id}>
-                {goalKindLabels[goal.kind]}{' '}
+                {goalKindLabels[goal.kind]}
+                {goal.exercise &&
+                  ` · ${goal.exercise.name_pt ?? goal.exercise.name_en}`}{' '}
                 {Number(goal.initial_value).toLocaleString('pt-BR')} →{' '}
                 {Number(goal.target_value).toLocaleString('pt-BR')} ·{' '}
                 {goal.status === 'achieved' ? 'concluída' : 'encerrada'}
@@ -529,6 +559,9 @@ function GoalDialog({
   onClose: () => void
 }) {
   const [kind, setKind] = useState<Tables<'student_goals'>['kind']>('weight')
+  const [exercise, setExercise] = useState<{ id: string; name: string } | null>(null)
+  const [pickingExercise, setPickingExercise] = useState(false)
+  const records = useExerciseRecords(studentId)
   const [initialValue, setInitialValue] = useState(
     currentWeight ? String(currentWeight) : '',
   )
@@ -550,8 +583,19 @@ function GoalDialog({
       setFormError('Escolha uma data-alvo a partir de hoje.')
       return
     }
+    if (kind === 'exercise_load' && !exercise) {
+      setFormError('Escolha o exercício da meta.')
+      return
+    }
     create.mutate(
-      { trainerId, kind, initialValue: initial, targetValue: target, targetDate },
+      {
+        trainerId,
+        kind,
+        exerciseId: kind === 'exercise_load' ? exercise?.id : null,
+        initialValue: initial,
+        targetValue: target,
+        targetDate,
+      },
       { onSuccess: onClose },
     )
   }
@@ -575,8 +619,42 @@ function GoalDialog({
           >
             <option value="weight">Peso (kg)</option>
             <option value="attendance">Frequência (aulas por semana)</option>
+            <option value="exercise_load">Carga em um exercício (kg)</option>
           </select>
         </label>
+        {kind === 'exercise_load' && (
+          <div className="rounded-xl bg-slate-50 p-3">
+            <p className="text-xs font-semibold text-slate-500">Exercício</p>
+            <div className="mt-1 flex items-center justify-between gap-3">
+              <p className="min-w-0 truncate text-sm font-semibold">
+                {exercise?.name ?? 'Nenhum escolhido'}
+              </p>
+              <Button
+                className="h-9 shrink-0 px-3 text-xs"
+                onClick={() => setPickingExercise(true)}
+                type="button"
+                variant="outline"
+              >
+                {exercise ? 'Trocar' : 'Escolher exercício'}
+              </Button>
+            </div>
+          </div>
+        )}
+        {pickingExercise && (
+          <ExercisePicker
+            onClose={() => setPickingExercise(false)}
+            onPick={(picked) => {
+              setExercise({ id: picked.id, name: exerciseDisplayName(picked) })
+              const best = records.data?.find((item) => item.exercise_id === picked.id)
+              if (best?.best_weight_kg !== null && best?.best_weight_kg !== undefined) {
+                setInitialValue(String(best.best_weight_kg))
+              }
+              setPickingExercise(false)
+            }}
+            ownerId={trainerId}
+            title="Exercício da meta"
+          />
+        )}
         <div className="grid grid-cols-2 gap-3">
           <label className="block text-sm font-semibold">
             Valor inicial

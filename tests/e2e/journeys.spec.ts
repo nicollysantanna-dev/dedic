@@ -467,13 +467,33 @@ test('aluna registra uma sessão pela ficha e a próxima sessão traz a carga an
   // Série extra e finalização com resumo.
   await page.getByRole('button', { name: '+ Adicionar série' }).first().click()
   await page.getByLabel('Concluir série 4 de Supino inclinado com barra').click()
+  // Primeira carga registrada no exercício: troféu ao vivo na série 1.
+  await expect(
+    page.getByRole('img', { name: /Recorde na série 1 de Supino inclinado/ }),
+  ).toBeVisible()
   await page.getByRole('button', { name: 'Finalizar' }).click()
   const dialog = page.getByRole('dialog', { name: 'Finalizar treino' })
   await expect(dialog).toContainText('2')
   await dialog.getByRole('button', { name: 'Finalizar treino' }).click()
   await expect(page.getByRole('heading', { name: 'Treino finalizado!' })).toBeVisible()
+  await expect(page.getByText('1 recorde pessoal batido!')).toBeVisible()
   await page.getByRole('link', { name: 'Concluir' }).click()
   await expect(page).toHaveURL(/\/app\/treinos$/)
+
+  // Histórico e recordes.
+  await page.getByRole('button', { name: 'Histórico' }).click()
+  const historyCard = page.getByRole('link', { name: /Treino A/ }).first()
+  await expect(historyCard).toContainText('1 recorde')
+  await expect(historyCard).toContainText('Supino inclinado com barra')
+  await page.getByRole('button', { name: 'Recordes' }).click()
+  const recordCard = page
+    .locator('article')
+    .filter({ hasText: 'Supino inclinado com barra' })
+    .first()
+  await expect(recordCard).toContainText('42,5 kg')
+  await recordCard.getByRole('button', { name: /Ver evolução/ }).click()
+  await expect(recordCard).toContainText('a partir do segundo treino')
+  await page.getByRole('button', { name: 'Fichas' }).click()
 
   // Nova sessão: coluna "anterior" traz 42,5 × 12 da sessão passada.
   await card.getByRole('button', { name: 'Iniciar ficha' }).click()
@@ -487,10 +507,38 @@ test('aluna registra uma sessão pela ficha e a próxima sessão traz a carga an
   await expect(page).toHaveURL(/\/app\/treinos$/)
   await logout(page)
 
-  // Personal recebe a notificação e pode iniciar a sessão pela aula.
+  // Personal recebe a notificação e vê treinos e recordes no perfil da aluna.
   await login(page, users.trainer.email)
   await page.goto('/app/notificacoes')
   await expect(page.getByText('Ana finalizou um treino').first()).toBeVisible()
+  await page.goto('/app/alunos')
+  await page.getByRole('link', { name: /Ana Aluna/ }).click()
+  const workoutsSection = page
+    .locator('section')
+    .filter({ has: page.getByRole('heading', { name: 'Treinos registrados' }) })
+  await expect(workoutsSection).toContainText('1 treino')
+  await expect(workoutsSection).toContainText('Supino inclinado com barra')
+  await expect(workoutsSection).toContainText('42,5 kg')
+
+  // Meta de carga no supino, partindo do melhor registro.
+  await page.getByRole('button', { name: 'Nova meta' }).click()
+  const goalDialog = page.getByRole('dialog', { name: 'Nova meta' })
+  await goalDialog.getByLabel('Tipo').selectOption('exercise_load')
+  await goalDialog.getByRole('button', { name: 'Escolher exercício' }).click()
+  const goalPicker = page.getByRole('dialog', { name: 'Exercício da meta' })
+  await goalPicker.getByPlaceholder('Buscar exercício').fill('supino inclinado com barra')
+  await goalPicker
+    .getByRole('button', { name: /Supino inclinado com barra/ })
+    .first()
+    .click()
+  await expect(goalDialog.getByLabel('Valor inicial')).toHaveValue('42.5')
+  await goalDialog.getByLabel('Valor-alvo').fill('60')
+  await goalDialog.getByLabel('Data-alvo').fill(futureDate(90))
+  await goalDialog.getByRole('button', { name: 'Salvar meta' }).click()
+  await expect(
+    page.getByText(/Carga · Supino inclinado com barra: 42,5 → 60 kg/),
+  ).toBeVisible()
+  await expect(page.getByText(/melhor carga registrada: 42,5 kg/)).toBeVisible()
 })
 
 test('aluna monta a própria ficha e amplia a demonstração do exercício', async ({
