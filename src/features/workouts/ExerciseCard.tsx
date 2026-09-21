@@ -10,21 +10,24 @@ import {
 import { useState } from 'react'
 
 import {
+  ExerciseAnimation,
+  ExerciseMediaLightbox,
+} from '@/features/workouts/ExerciseMediaLightbox'
+import {
   exerciseDisplayName,
   exercisePhotoUrl,
-  useExerciseDetail,
+  searchResultMedia,
   useRemoveExercisePhoto,
   useSaveExercisePhoto,
   type ExerciseSearchResult,
 } from '@/features/workouts/queries'
 import { prepareImage } from '@/lib/image'
-import { ExerciseMediaLightbox } from '@/features/workouts/ExerciseMediaLightbox'
 import { labelFor } from '@/features/workouts/vocabulary'
 import { cn } from '@/lib/utils'
 
 /**
  * Cartão de exercício: nome (apelido > PT > EN), classificação em PT e, ao
- * expandir, GIF e instruções buscados ao vivo no ExerciseDB.
+ * expandir, a demonstração (imagens do catálogo) e as instruções.
  */
 export function ExerciseCard({
   exercise,
@@ -80,7 +83,7 @@ export function ExerciseCard({
                 {labelFor('equipment', equipment)}
               </Tag>
             ))}
-            {exercise.source === 'custom' && <Tag tone="amber">Seu exercício</Tag>}
+            {exercise.source === 'custom' && <Tag tone="amber">Exercício próprio</Tag>}
           </p>
         </button>
         <div className="flex shrink-0 items-center gap-1">
@@ -118,9 +121,9 @@ function ExerciseDetail({
   exercise: ExerciseSearchResult
   trainerId?: string
 }) {
-  const detail = useExerciseDetail(exercise.external_id)
   const [zoomed, setZoomed] = useState(false)
   const photoUrl = exercisePhotoUrl(exercise.photo_path)
+  const media = searchResultMedia(exercise)
   const muscles = [
     ...exercise.target_muscles.map((muscle) => labelFor('muscle', muscle)),
     ...exercise.secondary_muscles.map((muscle) => labelFor('muscle', muscle)),
@@ -129,12 +132,8 @@ function ExerciseDetail({
   return (
     <div className="mt-4 grid gap-4 border-t border-slate-100 pt-4 sm:grid-cols-[12rem_1fr]">
       <div className="overflow-hidden rounded-xl bg-slate-100">
-        {exercise.source === 'custom' ? (
-          <Placeholder text="Exercício personalizado, sem demonstração." />
-        ) : detail.isLoading ? (
-          <div className="aspect-square animate-pulse bg-slate-200" />
-        ) : detail.error || !detail.data ? (
-          <Placeholder text="Demonstração indisponível no momento." />
+        {media.images.length === 0 ? (
+          <Placeholder text="Exercício próprio, sem demonstração." />
         ) : (
           <button
             aria-label={`Ampliar demonstração de ${exerciseDisplayName(exercise)}`}
@@ -142,11 +141,10 @@ function ExerciseDetail({
             onClick={() => setZoomed(true)}
             type="button"
           >
-            <img
-              alt={`Demonstração de ${exerciseDisplayName(exercise)}`}
+            <ExerciseAnimation
               className="aspect-square w-full object-cover"
-              loading="lazy"
-              src={detail.data.gifUrl}
+              images={media.images}
+              name={exerciseDisplayName(exercise)}
             />
           </button>
         )}
@@ -157,16 +155,16 @@ function ExerciseDetail({
             <span className="font-semibold">Músculos:</span> {muscles.join(', ')}
           </p>
         )}
-        {detail.data && detail.data.instructions.length > 0 && (
+        {media.instructions.length > 0 && (
           <ol className="mt-3 list-decimal space-y-1 pl-5 text-slate-600">
-            {detail.data.instructions.map((step, index) => (
+            {media.instructions.map((step, index) => (
               <li key={index}>{step}</li>
             ))}
           </ol>
         )}
-        {detail.data && detail.data.instructions.length > 0 && (
+        {media.instructions.length > 0 && (
           <p className="mt-3 text-[0.7rem] text-slate-400">
-            Instruções em inglês fornecidas pelo ExerciseDB. Toque na imagem para ampliar.
+            Instruções em inglês (free-exercise-db). Toque na imagem para ampliar.
           </p>
         )}
         {trainerId && (
@@ -177,11 +175,10 @@ function ExerciseDetail({
           />
         )}
       </div>
-      {zoomed && exercise.external_id && (
+      {zoomed && (
         <ExerciseMediaLightbox
-          externalId={exercise.external_id}
+          media={media}
           name={exerciseDisplayName(exercise)}
-          photoUrl={photoUrl}
           onClose={() => setZoomed(false)}
         />
       )}

@@ -1,23 +1,27 @@
 import { X } from 'lucide-react'
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
 
-import { useExerciseDetail } from '@/features/workouts/queries'
+import {
+  exerciseImageUrl,
+  exercisePhotoUrl,
+  type ExerciseMedia,
+} from '@/features/workouts/exercise-media'
 
-/** GIF do exercício em tela cheia, para ver a execução com calma. Fecha com toque ou Escape. */
+/**
+ * Execução do exercício em tela cheia: foto do aparelho (se houver) e as duas
+ * posições do movimento alternando como animação. Fecha com toque ou Escape.
+ */
 export function ExerciseMediaLightbox({
-  externalId,
+  media,
   name,
-  photoUrl = null,
   onClose,
 }: {
-  externalId: string | null
+  media: ExerciseMedia
   name: string
-  /** Foto do aparelho da academia, mostrada ao lado da demonstração. */
-  photoUrl?: string | null
   onClose: () => void
 }) {
-  const detail = useExerciseDetail(externalId)
+  const photoUrl = exercisePhotoUrl(media.photoPath)
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
@@ -63,31 +67,28 @@ export function ExerciseMediaLightbox({
             </figcaption>
           </figure>
         )}
-        {externalId && detail.isLoading && (
-          <span className="size-48 animate-pulse rounded-2xl bg-white/10" />
-        )}
-        {externalId && detail.error && (
-          <span className="text-sm text-slate-300">
-            Demonstração indisponível no momento.
-          </span>
-        )}
-        {detail.data && (
-          <img
-            alt={`Demonstração de ${name}`}
+        {media.images.length > 0 && (
+          <ExerciseAnimation
             className={
               photoUrl
                 ? 'max-h-[40dvh] w-full max-w-lg rounded-2xl bg-white object-contain'
                 : 'max-h-full w-full max-w-lg rounded-2xl bg-white object-contain'
             }
-            src={detail.data.gifUrl}
+            images={media.images}
+            name={name}
           />
         )}
+        {!photoUrl && media.images.length === 0 && (
+          <span className="text-sm text-slate-300">
+            Sem demonstração para este exercício.
+          </span>
+        )}
       </button>
-      {detail.data && detail.data.instructions.length > 0 && (
+      {media.instructions.length > 0 && (
         <details className="mx-4 mb-6 rounded-2xl bg-white/10 p-4 text-sm">
           <summary className="cursor-pointer font-semibold">Instruções (inglês)</summary>
           <ol className="mt-2 list-decimal space-y-1 pl-5 text-slate-200">
-            {detail.data.instructions.map((step, index) => (
+            {media.instructions.map((step, index) => (
               <li key={index}>{step}</li>
             ))}
           </ol>
@@ -96,4 +97,30 @@ export function ExerciseMediaLightbox({
     </div>,
     document.body,
   )
+}
+
+/** Alterna as posições inicial e final do movimento, como um GIF de dois quadros. */
+export function ExerciseAnimation({
+  images,
+  name,
+  className,
+  intervalMs = 900,
+}: {
+  images: string[]
+  name: string
+  className?: string
+  intervalMs?: number
+}) {
+  const [frame, setFrame] = useState(0)
+  useEffect(() => {
+    if (images.length < 2) return
+    const timer = window.setInterval(
+      () => setFrame((current) => (current + 1) % images.length),
+      intervalMs,
+    )
+    return () => window.clearInterval(timer)
+  }, [images.length, intervalMs])
+  const src = exerciseImageUrl(images[frame] ?? images[0])
+  if (!src) return null
+  return <img alt={`Demonstração de ${name}`} className={className} src={src} />
 }

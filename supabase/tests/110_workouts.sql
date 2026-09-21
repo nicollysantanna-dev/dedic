@@ -9,8 +9,8 @@ select
   '00000000-0000-4000-8000-000000000001'::uuid as trainer_id,
   '00000000-0000-4000-8000-000000000002'::uuid as ana_id,
   '00000000-0000-4000-8000-000000000003'::uuid as bruno_id,
-  (select id from public.exercises where name_en = 'barbell bench press') as bench_id,
-  (select id from public.exercises where name_en = 'barbell full squat') as squat_id;
+  (select id from public.exercises where external_id = 'Barbell_Bench_Press_-_Medium_Grip') as bench_id,
+  (select id from public.exercises where external_id = 'Barbell_Squat') as squat_id;
 
 create function pg_temp.login(user_id uuid) returns void language sql as $$
   select set_config('request.jwt.claim.sub', user_id::text, true);

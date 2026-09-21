@@ -1,14 +1,22 @@
-import { Check, LoaderCircle, MoreVertical, Plus, Timer, Trash2 } from 'lucide-react'
+import {
+  Check,
+  LoaderCircle,
+  MoreVertical,
+  Plus,
+  Repeat,
+  Timer,
+  Trash2,
+} from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 
 import { Button } from '@/components/ui/button'
 import { Dialog } from '@/components/ui/dialog'
 import { useAuth } from '@/features/auth/auth-context'
+import { exerciseMediaFrom } from '@/features/workouts/exercise-media'
 import { ExercisePicker, ExerciseThumb } from '@/features/workouts/ExercisePicker'
 import { RestTimer } from '@/features/workouts/RestTimer'
 import { restOptions } from '@/features/workouts/routine-model'
-import { exercisePhotoPath } from '@/features/workouts/routine-queries'
 import { formatDuration, formatKg, totalVolume } from '@/features/workouts/workout-math'
 import {
   useAddSet,
@@ -17,6 +25,7 @@ import {
   useFinishWorkout,
   useRemoveSet,
   useRemoveWorkoutExercise,
+  useReplaceWorkoutExercise,
   useUpdateSet,
   useUpdateWorkoutExercise,
   useWorkoutSession,
@@ -40,7 +49,10 @@ export function WorkoutSessionPage() {
   const navigate = useNavigate()
   const session = useWorkoutSession(workoutId ?? null)
   const [rest, setRest] = useState<Rest | null>(null)
-  const [pickerOpen, setPickerOpen] = useState(false)
+  // Seletor aberto para adicionar ou para substituir um exercício (id do bloco).
+  const [picker, setPicker] = useState<
+    { mode: 'add' } | { mode: 'replace'; id: string } | null
+  >(null)
   const [finishing, setFinishing] = useState(false)
   const [summary, setSummary] = useState<{
     sets: number
@@ -48,6 +60,7 @@ export function WorkoutSessionPage() {
     seconds: number
   } | null>(null)
   const addExercise = useAddWorkoutExercise(workoutId ?? '')
+  const replaceExercise = useReplaceWorkoutExercise(workoutId ?? '')
   const discard = useDiscardWorkout()
 
   const backTo =
@@ -121,6 +134,7 @@ export function WorkoutSessionPage() {
               trainerId={workout.trainer_id}
               workoutId={workout.id}
               readOnly={finished}
+              onReplace={() => setPicker({ mode: 'replace', id: item.id })}
               onSetCompleted={(restSeconds) => {
                 if (restSeconds && restSeconds > 0) {
                   setRest({ endsAt: Date.now() + restSeconds * 1000, total: restSeconds })
@@ -140,7 +154,7 @@ export function WorkoutSessionPage() {
             <Button
               className="mt-4 w-full border-blue-400/40 bg-blue-500/10 text-blue-100 hover:bg-blue-500/20"
               disabled={addExercise.isPending}
-              onClick={() => setPickerOpen(true)}
+              onClick={() => setPicker({ mode: 'add' })}
               variant="outline"
             >
               <Plus size={17} /> Adicionar exercício
@@ -165,13 +179,20 @@ export function WorkoutSessionPage() {
           </>
         )}
 
-        {pickerOpen && (
+        {picker && (
           <ExercisePicker
-            onClose={() => setPickerOpen(false)}
+            onClose={() => setPicker(null)}
             onPick={(picked) => {
-              addExercise.mutate(picked.id)
-              setPickerOpen(false)
+              if (picker.mode === 'add') addExercise.mutate(picked.id)
+              else
+                replaceExercise.mutate({
+                  workoutExerciseId: picker.id,
+                  exerciseId: picked.id,
+                })
+              setPicker(null)
             }}
+            ownerId={profile.id}
+            title={picker.mode === 'add' ? 'Adicionar exercício' : 'Substituir exercício'}
           />
         )}
         {rest && (
@@ -218,12 +239,14 @@ function ExerciseSessionBlock({
   trainerId,
   workoutId,
   readOnly,
+  onReplace,
   onSetCompleted,
 }: {
   exercise: WorkoutExercise
   trainerId: string | null
   workoutId: string
   readOnly: boolean
+  onReplace: () => void
   onSetCompleted: (restSeconds: number | null) => void
 }) {
   const [menuOpen, setMenuOpen] = useState(false)
@@ -238,9 +261,8 @@ function ExerciseSessionBlock({
     <section className="rounded-[1.5rem] bg-white p-4 text-slate-950 sm:p-5">
       <div className="flex items-center gap-3">
         <ExerciseThumb
-          externalId={exercise.exercise.external_id}
+          media={exerciseMediaFrom(exercise.exercise, trainerId)}
           name={name}
-          photoPath={exercisePhotoPath(exercise.exercise, trainerId)}
         />
         <h2 className="min-w-0 flex-1 truncate font-semibold text-[var(--brand)]">
           {name}
@@ -258,6 +280,16 @@ function ExerciseSessionBlock({
             </button>
             {menuOpen && (
               <div className="absolute right-0 z-10 mt-1 w-48 overflow-hidden rounded-xl border border-slate-200 bg-white text-sm shadow-lg">
+                <button
+                  className="flex w-full items-center gap-2 px-3 py-2.5 text-left hover:bg-slate-50"
+                  onClick={() => {
+                    onReplace()
+                    setMenuOpen(false)
+                  }}
+                  type="button"
+                >
+                  <Repeat size={15} /> Substituir exercício
+                </button>
                 <button
                   className="flex w-full items-center gap-2 px-3 py-2.5 text-left text-red-600 hover:bg-slate-50"
                   onClick={() => removeExercise.mutate(exercise.id)}

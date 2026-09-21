@@ -43,14 +43,13 @@ O MVP deve permitir que:
 7. O aluno visualize a próxima aula, o saldo, a renovação prevista e a situação do pagamento.
 8. Personal e aluno acompanhem metas, peso e fotos comparativas.
 9. O personal identifique alunos que precisam de atenção a partir de alertas objetivos.
-10. Treinos, cargas, volume e recordes possam ser importados do Hevy quando o aluno conectar uma conta compatível.
+10. Personal e aluno montem fichas e registrem treinos (séries, cargas, repetições) dentro do Dedic, com catálogo próprio de exercícios (ADR 0006).
 
 ## 5. Não objetivos do MVP
 
 Não fazem parte desta primeira versão:
 
-- criação nativa de fichas ou biblioteca própria de exercícios;
-- edição de séries, cargas ou repetições importadas do Hevy;
+- importação de treinos do Hevy (fica para depois do MVP, ADR 0006);
 - garantia de integração com Wellhub sem aprovação comercial;
 - chat interno;
 - videochamadas;
@@ -81,7 +80,7 @@ O aluno poderá:
 - consultar valor, vencimento e situação do pagamento.
 - registrar peso e enviar ou remover as próprias fotos de evolução;
 - visualizar metas definidas pelo personal;
-- conectar e desconectar a própria conta Hevy quando elegível.
+- montar as próprias fichas, registrar treinos e criar exercícios próprios com foto.
 
 O aluno não poderá:
 
@@ -311,7 +310,7 @@ Deve exibir:
 
 ### RF-22 — Metas e peso
 
-- O personal deve definir metas de peso, frequência e, quando houver dados do Hevy, carga por exercício.
+- O personal deve definir metas de peso, frequência e carga por exercício (a partir dos treinos registrados).
 - Uma meta deve possuir valor inicial, valor-alvo, data-alvo e estado.
 - Personal e aluno devem visualizar a evolução do peso em gráfico e por período.
 - Personal e aluno podem registrar peso, com autoria e data preservadas.
@@ -324,13 +323,15 @@ Deve exibir:
 - A interface deve permitir comparar duas avaliações e ocultar o rosto na visualização.
 - Arquivos devem permanecer privados e ser entregues por acesso autenticado temporário.
 
-### RF-24 — Integração opcional com Hevy
+### RF-24 — Treinos e fichas
 
-- O aluno elegível deve conseguir conectar e desconectar a própria conta Hevy.
-- Credenciais do Hevy nunca devem ser expostas ao navegador após a configuração.
-- A sincronização deve importar treinos, exercícios, séries, repetições, cargas, volume e recordes.
-- Dados importados devem ser identificados como externos e manter a última sincronização.
-- Uma falha de sincronização não deve impedir agenda, financeiro ou progresso manual.
+- O catálogo de exercícios (free-exercise-db, domínio público) deve ter nome em português, imagens servidas do próprio projeto e instruções; nenhuma chamada a API externa em tempo de execução.
+- Personal e aluno devem montar fichas (exercícios em ordem, séries-alvo, descanso, notas), editar as fichas um do outro e duplicá-las.
+- Personal e aluno devem criar exercícios próprios com nome e foto do aparelho; o exercício é visível a quem tem vínculo ativo com o dono.
+- O personal deve poder apelidar e fotografar qualquer exercício do catálogo para seus alunos.
+- A sessão de treino deve seguir o padrão série · anterior · kg · reps · concluída, com descanso automático, adicionar/substituir/remover exercício e finalização com resumo.
+- Iniciar uma ficha deve pré-preencher cada série com a última carga e repetições registradas para o exercício.
+- Fichas e treinos nunca são apagados: fichas são arquivadas e treinos descartados.
 
 ### RF-25 — Recorrência e tipos de compromisso
 
@@ -518,7 +519,7 @@ O MVP estará funcionalmente pronto quando for possível demonstrar que:
 - registro de pagamento.
 - lista e perfil individual de alunos;
 - metas, peso, fotos comparativas e progresso;
-- treinos importados do Hevy.
+- fichas, treinos registrados e biblioteca de exercícios.
 
 ## 15. Modelo conceitual inicial
 
@@ -558,8 +559,8 @@ As métricas não precisam de uma plataforma analítica externa no primeiro lan�
 Todas as decisões pendentes foram resolvidas em 18/09/2026 e estão registradas na
 [ADR 0005](adr/0005-decisoes-de-produto-para-o-mvp.md): autocadastro como personal,
 agendamento no mesmo dia permitido, remarcação como única forma de mover uma aula,
-fuso fixo em São Paulo, fotos sem ocultação de rosto, Hevy opcional com registro
-manual, cobrança por pacote e aula avulsa, cancelamento sem penalidade até o dia
+fuso fixo em São Paulo, fotos sem ocultação de rosto, treinos nativos (ADR 0006,
+que substituiu a integração Hevy), cobrança por pacote e aula avulsa, cancelamento sem penalidade até o dia
 anterior, exclusão de conta por anonimização e recorrência fora do MVP.
 
 ## 18. Stack aprovada para o MVP

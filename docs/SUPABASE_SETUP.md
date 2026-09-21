@@ -158,6 +158,23 @@ email**. Só então ajuste o limite em **Authentication → Rate Limits**.
 6. Aceite o convite.
 7. Confirme que o personal vê o aluno como vínculo ativo.
 
+## Catálogo de exercícios e imagens
+
+As migrações criam o catálogo (free-exercise-db, domínio público) e o bucket
+público `exercise-media`. As imagens não vão por migração: copie-as uma vez para
+cada projeto (local e remoto) com a chave de serviço:
+
+```bash
+SUPABASE_URL=https://<ref>.supabase.co SUPABASE_SERVICE_ROLE_KEY=... \
+  node scripts/sync-exercise-media.mjs
+```
+
+O script é idempotente (pula o que já existe). No ambiente local, `supabase db
+reset` apaga os objetos do bucket; rode o script de novo quando quiser ver as
+imagens. Para atualizar o catálogo: `node scripts/import-free-exercise-db.mjs`,
+revise `supabase/seed/exercises.pt-BR.json` e gere a migração com
+`node scripts/build-catalog-migration.mjs <timestamp>`.
+
 ## Autenticar a CLI posteriormente
 
 Quando a CLI estiver autenticada, conecte este diretório ao projeto:

@@ -376,13 +376,13 @@ test('biblioteca de exercícios: busca em português, apelido e exercício próp
     .filter({ hasText: 'Supino reto com barra' })
     .first()
   await expect(card).toBeVisible()
-  await expect(card).toContainText('barbell bench press')
+  await expect(card).toContainText('Barbell Bench Press - Medium Grip')
 
-  // Demonstração vem da API ao vivo (GIF ou aviso de indisponibilidade).
+  // Demonstração vem do nosso bucket (imagens do free-exercise-db).
   await card.getByRole('button', { name: 'Ver demonstração' }).click()
   await expect(
-    card.getByRole('img').or(card.getByText('Demonstração indisponível no momento.')),
-  ).toBeVisible({ timeout: 15_000 })
+    card.getByRole('img', { name: 'Demonstração de Supino reto com barra' }),
+  ).toBeVisible()
 
   await card.getByRole('button', { name: /Apelidar/ }).click()
   await page.getByLabel('Apelido').fill('Supino reto (Paula)')
@@ -397,7 +397,9 @@ test('biblioteca de exercícios: busca em português, apelido e exercício próp
   await createDialog.getByRole('button', { name: 'Criar exercício' }).click()
   await expect(createDialog).toBeHidden()
   await page.getByLabel('Buscar exercício').fill('caixote')
-  await expect(page.locator('article').filter({ hasText: 'Seu exercício' })).toBeVisible()
+  await expect(
+    page.locator('article').filter({ hasText: 'Exercício próprio' }),
+  ).toBeVisible()
 })
 
 test('personal monta uma ficha estilo Hevy e a aluna a vê em Treinos', async ({
@@ -491,7 +493,9 @@ test('aluna registra uma sessão pela ficha e a próxima sessão traz a carga an
   await expect(page.getByText('Ana finalizou um treino').first()).toBeVisible()
 })
 
-test('aluna monta a própria ficha e amplia o GIF do exercício', async ({ page }) => {
+test('aluna monta a própria ficha e amplia a demonstração do exercício', async ({
+  page,
+}) => {
   await login(page, users.student.email)
   await page.goto('/app/treinos')
 
@@ -512,9 +516,9 @@ test('aluna monta a própria ficha e amplia o GIF do exercício', async ({ page 
   await expect(page.getByLabel('Aluno')).toHaveCount(0)
   await page.getByPlaceholder('Nome da ficha').fill('Meu treino de braço')
   await page.getByRole('button', { name: 'Adicionar exercício' }).click()
-  await page.getByPlaceholder('Buscar exercício').fill('rosca martelo com halteres')
+  await page.getByPlaceholder('Buscar exercício').fill('rosca martelo')
   await page
-    .getByRole('button', { name: /Rosca martelo com halteres/ })
+    .getByRole('button', { name: /Rosca martelo/ })
     .first()
     .click()
   await page.getByRole('button', { name: 'Salvar' }).click()
@@ -527,23 +531,15 @@ test('aluna monta a própria ficha e amplia o GIF do exercício', async ({ page 
   await expect(ownCard).toContainText('Sua ficha')
   await expect(ownCard.getByRole('link', { name: 'Editar' })).toBeVisible()
 
-  // Tocar na miniatura abre a execução em tela cheia (quando o ExerciseDB responde).
+  // Tocar na miniatura abre a execução em tela cheia.
   await ownCard.getByRole('button', { name: 'Ver exercícios' }).click()
   const thumb = ownCard.getByRole('button', { name: /Ver execução de Rosca martelo/ })
-  const mediaAvailable = await thumb
-    .waitFor({ state: 'visible', timeout: 15_000 })
-    .then(() => true)
-    .catch(() => false)
-  if (mediaAvailable) {
-    await thumb.click()
-    const lightbox = page.getByRole('dialog', { name: /Execução de Rosca martelo/ })
-    await expect(lightbox).toBeVisible()
-    await expect(lightbox.getByRole('img')).toBeVisible({ timeout: 15_000 })
-    await page.keyboard.press('Escape')
-    await expect(lightbox).toHaveCount(0)
-  } else {
-    console.warn('ExerciseDB indisponível: lightbox não verificado nesta execução.')
-  }
+  await thumb.click()
+  const lightbox = page.getByRole('dialog', { name: /Execução de Rosca martelo/ })
+  await expect(lightbox).toBeVisible()
+  await expect(lightbox.getByRole('img', { name: /Demonstração de/ })).toBeVisible()
+  await page.keyboard.press('Escape')
+  await expect(lightbox).toHaveCount(0)
 })
 
 test('personal cadastra a foto do aparelho e a aluna a vê nas listas e na sessão', async ({
@@ -568,7 +564,7 @@ test('personal cadastra a foto do aparelho e a aluna a vê nas listas e na sess�
   await expect(card.getByRole('button', { name: 'Trocar foto' })).toBeVisible()
   await logout(page)
 
-  // Aluna: a foto aparece no seletor de exercícios (sem chamar a API) e na ficha.
+  // Aluna: a foto aparece no seletor de exercícios e na ficha.
   await login(page, users.student.email)
   await page.goto('/app/treinos')
   const routineCard = page.locator('article').filter({ hasText: 'Treino A' }).first()
@@ -589,4 +585,95 @@ test('personal cadastra a foto do aparelho e a aluna a vê nas listas e na sess�
   await page.getByPlaceholder('Buscar exercício').fill('supino inclinado com barra')
   const row = page.getByRole('button', { name: /Supino inclinado com barra/ }).first()
   await expect(row.getByRole('button', { name: /Ver execução/ })).toBeVisible()
+})
+
+test('aluna cria um exercício próprio com foto pelo seletor e substitui exercícios na ficha e na sessão', async ({
+  page,
+}) => {
+  await login(page, users.student.email)
+  await page.goto('/app/fichas/nova')
+  await page.getByPlaceholder('Nome da ficha').fill('Treino da academia')
+
+  // O seletor mostra miniaturas do catálogo em toda linha.
+  await page.getByRole('button', { name: 'Adicionar exercício' }).click()
+  await page.getByPlaceholder('Buscar exercício').fill('supino declinado com barra')
+  const row = page.getByRole('button', { name: /Supino declinado com barra/ }).first()
+  await expect(row.getByRole('button', { name: /Ver execução/ })).toBeVisible()
+  await row.click()
+
+  // Aparelho que não está no catálogo: nome + foto, já entra na ficha.
+  await page.getByRole('button', { name: 'Adicionar exercício' }).click()
+  await page.getByRole('button', { name: 'Criar exercício' }).click()
+  const createDialog = page.getByRole('dialog', { name: 'Criar exercício' })
+  await createDialog.getByLabel('Nome').fill('Leg press da academia')
+  await createDialog.getByLabel('Parte do corpo').selectOption('upper legs')
+  await page.getByTestId('custom-exercise-photo-input').setInputFiles({
+    name: 'leg-press.png',
+    mimeType: 'image/png',
+    buffer: await page.screenshot({ clip: { x: 0, y: 0, width: 80, height: 60 } }),
+  })
+  await expect(createDialog.getByRole('img', { name: 'Foto do aparelho' })).toBeVisible()
+  await createDialog.getByRole('button', { name: 'Criar e adicionar' }).click()
+  await expect(createDialog).toHaveCount(0)
+  await expect(
+    page.getByRole('button', { name: 'Ver execução de Leg press da academia' }),
+  ).toBeVisible()
+
+  // Substituir mantém o bloco (séries) e troca só o exercício.
+  await page.getByLabel('Carga da série 1 de Supino declinado com barra').fill('30')
+  await page.getByRole('button', { name: 'Opções de Supino declinado com barra' }).click()
+  await page.getByRole('button', { name: 'Substituir exercício' }).click()
+  const replaceSheet = page.getByRole('dialog', { name: 'Substituir exercício' })
+  await replaceSheet
+    .getByPlaceholder('Buscar exercício')
+    .fill('supino inclinado com barra')
+  await replaceSheet
+    .getByRole('button', { name: /Supino inclinado com barra/ })
+    .first()
+    .click()
+  await expect(
+    page.getByLabel('Carga da série 1 de Supino inclinado com barra'),
+  ).toHaveValue('30')
+  await expect(page.getByLabel(/Carga da série 1 de Supino declinado/)).toHaveCount(0)
+  await page.getByRole('button', { name: 'Salvar' }).click()
+  await expect(page).toHaveURL(/\/app\/treinos$/)
+
+  const card = page.locator('article').filter({ hasText: 'Treino da academia' }).first()
+  await expect(card).toContainText('Leg press da academia')
+
+  // Na sessão, o mesmo menu substitui o exercício em andamento.
+  await card.getByRole('button', { name: 'Iniciar ficha' }).click()
+  await expect(page).toHaveURL(/\/app\/treinos\/sessao\//)
+  await page.getByRole('button', { name: 'Opções de Leg press da academia' }).click()
+  await page.getByRole('button', { name: 'Substituir exercício' }).click()
+  await page
+    .getByRole('dialog', { name: 'Substituir exercício' })
+    .getByPlaceholder('Buscar exercício')
+    .fill('leg press')
+  await page
+    .getByRole('button', { name: /Leg press Quadríceps/ })
+    .first()
+    .click()
+  await expect(
+    page.getByRole('heading', { name: 'Leg press', exact: true }),
+  ).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Leg press da academia' })).toHaveCount(
+    0,
+  )
+  page.once('dialog', (dialog) => void dialog.accept())
+  await page.getByRole('button', { name: 'Descartar treino' }).click()
+  await logout(page)
+
+  // O personal vinculado vê o exercício da aluna, com a foto, na biblioteca.
+  await login(page, users.trainer.email)
+  await page.goto('/app/exercicios')
+  await page.getByLabel('Buscar exercício').fill('leg press da academia')
+  const trainerCard = page
+    .locator('article')
+    .filter({ hasText: 'Leg press da academia' })
+    .first()
+  await expect(trainerCard).toContainText('Exercício próprio')
+  await expect(
+    trainerCard.getByRole('img', { name: 'Aparelho: Leg press da academia' }),
+  ).toBeVisible()
 })

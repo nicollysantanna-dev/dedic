@@ -408,9 +408,13 @@ export type Database = {
           equipments: string[]
           external_id: string | null
           id: string
+          image_paths: string[]
+          instructions: string[]
           name_en: string
           name_pt: string | null
-          owner_trainer_id: string | null
+          owner_id: string | null
+          photo_path: string | null
+          retired_at: string | null
           secondary_muscles: string[]
           source: Database['public']['Enums']['exercise_source']
           target_muscles: string[]
@@ -421,9 +425,13 @@ export type Database = {
           equipments?: string[]
           external_id?: string | null
           id?: string
+          image_paths?: string[]
+          instructions?: string[]
           name_en: string
           name_pt?: string | null
-          owner_trainer_id?: string | null
+          owner_id?: string | null
+          photo_path?: string | null
+          retired_at?: string | null
           secondary_muscles?: string[]
           source: Database['public']['Enums']['exercise_source']
           target_muscles?: string[]
@@ -434,9 +442,13 @@ export type Database = {
           equipments?: string[]
           external_id?: string | null
           id?: string
+          image_paths?: string[]
+          instructions?: string[]
           name_en?: string
           name_pt?: string | null
-          owner_trainer_id?: string | null
+          owner_id?: string | null
+          photo_path?: string | null
+          retired_at?: string | null
           secondary_muscles?: string[]
           source?: Database['public']['Enums']['exercise_source']
           target_muscles?: string[]
@@ -444,7 +456,7 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: 'exercises_owner_trainer_id_fkey'
-            columns: ['owner_trainer_id']
+            columns: ['owner_id']
             isOneToOne: false
             referencedRelation: 'profiles'
             referencedColumns: ['id']
@@ -1793,6 +1805,10 @@ export type Database = {
           weight_kg: number
         }[]
       }
+      replace_workout_exercise: {
+        Args: { target_exercise_id: string; target_workout_exercise_id: string }
+        Returns: undefined
+      }
       reschedule_appointment: {
         Args: {
           requested_reschedule_id: string
@@ -1895,6 +1911,8 @@ export type Database = {
           equipments: string[]
           external_id: string
           id: string
+          image_paths: string[]
+          instructions: string[]
           name_en: string
           name_pt: string
           photo_path: string
@@ -1952,7 +1970,7 @@ export type Database = {
         | 'appointment_consumption'
         | 'cancellation_refund'
         | 'manual_adjustment'
-      exercise_source: 'exercisedb' | 'custom'
+      exercise_source: 'exercisedb' | 'custom' | 'free_exercise_db'
       goal_kind: 'weight' | 'attendance'
       goal_status: 'active' | 'achieved' | 'abandoned'
       invitation_status: 'pending' | 'accepted' | 'declined' | 'expired' | 'cancelled'
@@ -2123,7 +2141,7 @@ export const Constants = {
         'cancellation_refund',
         'manual_adjustment',
       ],
-      exercise_source: ['exercisedb', 'custom'],
+      exercise_source: ['exercisedb', 'custom', 'free_exercise_db'],
       goal_kind: ['weight', 'attendance'],
       goal_status: ['active', 'achieved', 'abandoned'],
       invitation_status: ['pending', 'accepted', 'declined', 'expired', 'cancelled'],

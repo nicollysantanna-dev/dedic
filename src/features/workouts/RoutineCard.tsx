@@ -1,10 +1,10 @@
 import { ChevronDown, ChevronUp, Timer } from 'lucide-react'
 import { useState } from 'react'
 
+import { exerciseMediaFrom } from '@/features/workouts/exercise-media'
 import { ExerciseThumb } from '@/features/workouts/ExercisePicker'
 import { formatRest } from '@/features/workouts/routine-model'
 import {
-  exercisePhotoPath,
   routineExerciseName,
   type RoutineWithExercises,
 } from '@/features/workouts/routine-queries'
@@ -69,9 +69,8 @@ export function RoutineCard({
           {routine.routine_exercises.map((item) => (
             <li key={item.id} className="flex gap-3">
               <ExerciseThumb
-                externalId={item.exercise.external_id}
+                media={exerciseMediaFrom(item.exercise, trainerId)}
                 name={routineExerciseName(item.exercise, trainerId)}
-                photoPath={exercisePhotoPath(item.exercise, trainerId)}
                 size={36}
               />
               <div className="min-w-0 flex-1">

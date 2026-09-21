@@ -15,7 +15,7 @@ const workoutSelect = `
   *,
   workout_exercises(
     id, position, notes, rest_seconds,
-    exercise:exercises(id, external_id, name_en, name_pt, source,
+    exercise:exercises(id, external_id, name_en, name_pt, source, photo_path, image_paths, instructions,
       aliases:exercise_aliases(alias, trainer_id, photo_path)),
     workout_sets(id, position, set_type, weight_kg, reps, previous_weight_kg, previous_reps, completed_at)
   )
@@ -38,7 +38,14 @@ export type WorkoutExercise = Pick<
 > & {
   exercise: Pick<
     Tables<'exercises'>,
-    'id' | 'external_id' | 'name_en' | 'name_pt' | 'source'
+    | 'id'
+    | 'external_id'
+    | 'name_en'
+    | 'name_pt'
+    | 'source'
+    | 'photo_path'
+    | 'image_paths'
+    | 'instructions'
   > & {
     aliases: Pick<Tables<'exercise_aliases'>, 'alias' | 'trainer_id' | 'photo_path'>[]
   }
@@ -211,6 +218,19 @@ export function useAddWorkoutExercise(workoutId: string) {
     })
     if (error) throw error
   })
+}
+
+export function useReplaceWorkoutExercise(workoutId: string) {
+  return useSessionMutation(
+    workoutId,
+    async (input: { workoutExerciseId: string; exerciseId: string }) => {
+      const { error } = await requireSupabase().rpc('replace_workout_exercise', {
+        target_workout_exercise_id: input.workoutExerciseId,
+        target_exercise_id: input.exerciseId,
+      })
+      if (error) throw error
+    },
+  )
 }
 
 export function useRemoveWorkoutExercise(workoutId: string) {

@@ -5,6 +5,7 @@ import {
   LoaderCircle,
   MoreVertical,
   Plus,
+  Repeat,
   Timer,
   Trash2,
 } from 'lucide-react'
@@ -13,8 +14,9 @@ import { Link, Navigate, useNavigate, useParams, useSearchParams } from 'react-r
 
 import { Button } from '@/components/ui/button'
 import { useAuth } from '@/features/auth/auth-context'
+import { exerciseMediaFrom } from '@/features/workouts/exercise-media'
 import { ExercisePicker, ExerciseThumb } from '@/features/workouts/ExercisePicker'
-import { exerciseDisplayName } from '@/features/workouts/queries'
+import { exerciseDisplayName, searchResultMedia } from '@/features/workouts/queries'
 import {
   emptyRoutine,
   newRoutineExercise,
@@ -25,7 +27,6 @@ import {
   type RoutineExerciseDraft,
 } from '@/features/workouts/routine-model'
 import {
-  exercisePhotoPath,
   routineExerciseName,
   useRoutine,
   useSaveRoutine,
@@ -54,7 +55,10 @@ export function RoutineEditorPage() {
       ? emptyRoutine(isTrainer ? searchParams.get('aluno') : (profile?.id ?? null))
       : null,
   )
-  const [pickerOpen, setPickerOpen] = useState(false)
+  // Seletor aberto para adicionar ou para substituir um exercício (id do bloco).
+  const [picker, setPicker] = useState<
+    { mode: 'add' } | { mode: 'replace'; id: string } | null
+  >(null)
   const [formError, setFormError] = useState('')
   const save = useSaveRoutine()
 
@@ -220,6 +224,7 @@ export function RoutineEditorPage() {
               isLast={index === draft.exercises.length - 1}
               onChange={(patch) => updateExercise(exercise.id, patch)}
               onMove={(direction) => moveExercise(exercise.id, direction)}
+              onReplace={() => setPicker({ mode: 'replace', id: exercise.id })}
               onRemove={() =>
                 update({
                   exercises: draft.exercises.filter((item) => item.id !== exercise.id),
@@ -231,7 +236,7 @@ export function RoutineEditorPage() {
 
         <Button
           className="mt-4 w-full border-blue-400/40 bg-blue-500/10 text-blue-100 hover:bg-blue-500/20"
-          onClick={() => setPickerOpen(true)}
+          onClick={() => setPicker({ mode: 'add' })}
           variant="outline"
         >
           <Plus size={17} /> Adicionar exercício
@@ -246,23 +251,27 @@ export function RoutineEditorPage() {
           </p>
         )}
 
-        {pickerOpen && (
+        {picker && (
           <ExercisePicker
-            onClose={() => setPickerOpen(false)}
+            onClose={() => setPicker(null)}
             onPick={(picked) => {
-              update({
-                exercises: [
-                  ...draft.exercises,
-                  newRoutineExercise({
-                    exerciseId: picked.id,
-                    externalId: picked.external_id,
-                    photoPath: picked.photo_path,
-                    name: exerciseDisplayName(picked),
-                  }),
-                ],
-              })
-              setPickerOpen(false)
+              const name = exerciseDisplayName(picked)
+              const media = searchResultMedia(picked)
+              if (picker.mode === 'add') {
+                update({
+                  exercises: [
+                    ...draft.exercises,
+                    newRoutineExercise({ exerciseId: picked.id, media, name }),
+                  ],
+                })
+              } else {
+                // Substituir mantém notas, descanso e séries do bloco.
+                updateExercise(picker.id, { exerciseId: picked.id, media, name })
+              }
+              setPicker(null)
             }}
+            ownerId={profile.id}
+            title={picker.mode === 'add' ? 'Adicionar exercício' : 'Substituir exercício'}
           />
         )}
       </div>
@@ -276,6 +285,7 @@ function ExerciseBlock({
   isLast,
   onChange,
   onMove,
+  onReplace,
   onRemove,
 }: {
   exercise: RoutineExerciseDraft
@@ -283,6 +293,7 @@ function ExerciseBlock({
   isLast: boolean
   onChange: (patch: Partial<RoutineExerciseDraft>) => void
   onMove: (direction: -1 | 1) => void
+  onReplace: () => void
   onRemove: () => void
 }) {
   const [menuOpen, setMenuOpen] = useState(false)
@@ -295,11 +306,7 @@ function ExerciseBlock({
   return (
     <section className="rounded-[1.5rem] bg-white p-4 text-slate-950 sm:p-5">
       <div className="flex items-center gap-3">
-        <ExerciseThumb
-          externalId={exercise.externalId}
-          name={exercise.name}
-          photoPath={exercise.photoPath}
-        />
+        <ExerciseThumb media={exercise.media} name={exercise.name} />
         <h3 className="min-w-0 flex-1 truncate font-semibold text-[var(--brand)]">
           {exercise.name}
         </h3>
@@ -332,6 +339,14 @@ function ExerciseBlock({
                 }}
               >
                 <ArrowDown size={15} /> Mover para baixo
+              </MenuItem>
+              <MenuItem
+                onClick={() => {
+                  onReplace()
+                  setMenuOpen(false)
+                }}
+              >
+                <Repeat size={15} /> Substituir exercício
               </MenuItem>
               <MenuItem danger onClick={onRemove}>
                 <Trash2 size={15} /> Remover exercício
@@ -480,8 +495,7 @@ function toDraft(routine: RoutineWithExercises, trainerId: string | null): Routi
     exercises: routine.routine_exercises.map((item) => ({
       id: item.id,
       exerciseId: item.exercise.id,
-      externalId: item.exercise.external_id,
-      photoPath: exercisePhotoPath(item.exercise, trainerId),
+      media: exerciseMediaFrom(item.exercise, trainerId),
       name: routineExerciseName(item.exercise, trainerId),
       notes: item.notes ?? '',
       restSeconds: item.rest_seconds,

@@ -1,6 +1,9 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 
-import { getExerciseDetail } from '@/features/workouts/exercisedb-client'
+import {
+  exercisePhotosBucket,
+  type ExerciseMedia,
+} from '@/features/workouts/exercise-media'
 import { workoutKeys } from '@/features/workouts/keys'
 import { requireSupabase } from '@/lib/supabase/client'
 import type { Database } from '@/lib/supabase/database.types'
@@ -19,20 +22,23 @@ export type ExerciseSearchResult = Omit<
   photo_path: string | null
 }
 
-export const exercisePhotosBucket = 'exercise-photos'
-
-/** URL pública (CDN) da foto do aparelho cadastrada pelo personal. */
-export function exercisePhotoUrl(path: string | null | undefined) {
-  if (!path) return null
-  return requireSupabase().storage.from(exercisePhotosBucket).getPublicUrl(path).data
-    .publicUrl
-}
+export { exercisePhotoUrl } from '@/features/workouts/exercise-media'
 
 /** Nome exibido: apelido do personal > tradução > nome original. */
 export function exerciseDisplayName(
   exercise: Pick<ExerciseSearchResult, 'alias' | 'name_pt' | 'name_en'>,
 ) {
   return exercise.alias ?? exercise.name_pt ?? exercise.name_en
+}
+
+export function searchResultMedia(
+  exercise: Pick<ExerciseSearchResult, 'image_paths' | 'photo_path' | 'instructions'>,
+): ExerciseMedia {
+  return {
+    images: exercise.image_paths,
+    photoPath: exercise.photo_path,
+    instructions: exercise.instructions,
+  }
 }
 
 export function useExerciseSearch(input: {
@@ -59,16 +65,17 @@ export function useExerciseSearch(input: {
   })
 }
 
-/** GIF e instruções ao vivo; cache abaixo de uma semana por causa da rotação das URLs. */
-export function useExerciseDetail(externalId: string | null) {
-  return useQuery({
-    queryKey: workoutKeys.exerciseDetail(externalId ?? ''),
-    enabled: Boolean(externalId),
-    staleTime: 6 * 24 * 60 * 60 * 1000,
-    retry: 1,
-    queryFn: () => getExerciseDetail(externalId!),
-  })
+async function uploadPhoto(ownerId: string, label: string, file: Blob) {
+  const path = `${ownerId}/${label}-${Date.now()}.jpg`
+  const { error } = await requireSupabase()
+    .storage.from(exercisePhotosBucket)
+    .upload(path, file, { contentType: 'image/jpeg', upsert: false })
+  if (error) throw error
+  return path
 }
+
+const removePhotos = (paths: string[]) =>
+  requireSupabase().storage.from(exercisePhotosBucket).remove(paths)
 
 export function useSaveExercisePhoto(trainerId: string) {
   const queryClient = useQueryClient()
@@ -78,23 +85,17 @@ export function useSaveExercisePhoto(trainerId: string) {
       file: Blob
       previousPath: string | null
     }) => {
-      const path = `${trainerId}/${input.exerciseId}-${Date.now()}.jpg`
-      const storage = requireSupabase().storage.from(exercisePhotosBucket)
-      const upload = await storage.upload(path, input.file, {
-        contentType: 'image/jpeg',
-        upsert: false,
-      })
-      if (upload.error) throw upload.error
+      const path = await uploadPhoto(trainerId, input.exerciseId, input.file)
       const { error } = await requireSupabase().from('exercise_aliases').upsert({
         trainer_id: trainerId,
         exercise_id: input.exerciseId,
         photo_path: path,
       })
       if (error) {
-        await storage.remove([path])
+        await removePhotos([path])
         throw error
       }
-      if (input.previousPath) await storage.remove([input.previousPath])
+      if (input.previousPath) await removePhotos([input.previousPath])
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: workoutKeys.all }),
   })
@@ -108,7 +109,7 @@ export function useRemoveExercisePhoto(trainerId: string) {
       path: string
       alias: string | null
     }) => {
-      await requireSupabase().storage.from(exercisePhotosBucket).remove([input.path])
+      await removePhotos([input.path])
       const table = requireSupabase().from('exercise_aliases')
       const { error } = input.alias
         ? await table
@@ -160,7 +161,11 @@ export function useSaveExerciseAlias(trainerId: string) {
   })
 }
 
-export function useCreateCustomExercise(trainerId: string) {
+/**
+ * Exercício próprio (aluno ou personal), com foto opcional do aparelho.
+ * Devolve a linha no formato da busca para entrar direto na ficha/sessão.
+ */
+export function useCreateCustomExercise(ownerId: string) {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: async (input: {
@@ -168,17 +173,32 @@ export function useCreateCustomExercise(trainerId: string) {
       bodyParts: string[]
       equipments: string[]
       targetMuscles: string[]
-    }) => {
-      const { error } = await requireSupabase().from('exercises').insert({
-        source: 'custom',
-        owner_trainer_id: trainerId,
-        name_en: input.name,
-        name_pt: input.name,
-        body_parts: input.bodyParts,
-        equipments: input.equipments,
-        target_muscles: input.targetMuscles,
-      })
-      if (error) throw error
+      photo?: Blob | null
+    }): Promise<ExerciseSearchResult> => {
+      const photoPath = input.photo
+        ? await uploadPhoto(ownerId, 'custom', input.photo)
+        : null
+      const { data, error } = await requireSupabase()
+        .from('exercises')
+        .insert({
+          source: 'custom',
+          owner_id: ownerId,
+          name_en: input.name,
+          name_pt: input.name,
+          body_parts: input.bodyParts,
+          equipments: input.equipments,
+          target_muscles: input.targetMuscles,
+          photo_path: photoPath,
+        })
+        .select(
+          'id, source, external_id, name_en, name_pt, photo_path, image_paths, instructions, body_parts, equipments, target_muscles, secondary_muscles',
+        )
+        .single()
+      if (error) {
+        if (photoPath) await removePhotos([photoPath])
+        throw error
+      }
+      return { ...data, alias: null }
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: workoutKeys.all }),
   })

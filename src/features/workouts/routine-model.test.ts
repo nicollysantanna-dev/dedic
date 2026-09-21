@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
+import { emptyMedia } from './exercise-media'
 import {
   emptyRoutine,
   newRoutineExercise,
@@ -8,7 +9,7 @@ import {
 } from './routine-model'
 
 const exercise = () =>
-  newRoutineExercise({ exerciseId: 'ex-1', externalId: 'EIeI8Vf', name: 'Supino reto' })
+  newRoutineExercise({ exerciseId: 'ex-1', media: emptyMedia, name: 'Supino reto' })
 
 describe('serializeRoutine', () => {
   it('exige nome e exercícios', () => {

@@ -1,3 +1,4 @@
+import type { ExerciseMedia } from '@/features/workouts/exercise-media'
 import type { Json } from '@/lib/supabase/database.types'
 
 /** Modelo do editor de ficha (estilo Hevy): exercícios em ordem com séries-alvo individuais. */
@@ -7,8 +8,7 @@ export type RoutineSetDraft = { id: string; weightKg: string; reps: string }
 export type RoutineExerciseDraft = {
   id: string
   exerciseId: string
-  externalId: string | null
-  photoPath: string | null
+  media: ExerciseMedia
   name: string
   notes: string
   restSeconds: number | null
@@ -43,15 +43,13 @@ export function newSet(previous?: RoutineSetDraft): RoutineSetDraft {
 
 export function newRoutineExercise(input: {
   exerciseId: string
-  externalId: string | null
-  photoPath?: string | null
+  media: ExerciseMedia
   name: string
 }): RoutineExerciseDraft {
   return {
     id: crypto.randomUUID(),
     exerciseId: input.exerciseId,
-    externalId: input.externalId,
-    photoPath: input.photoPath ?? null,
+    media: input.media,
     name: input.name,
     notes: '',
     restSeconds: 90,
