@@ -10,6 +10,7 @@ const summary = (overrides: Partial<ActivitySummary>): ActivitySummary => ({
   started_at: '2026-06-01T00:00:00Z',
   full_name: 'Ana',
   phone: null,
+  avatar_path: null,
   balance: 5,
   next_renewal_on: '2026-12-01',
   completed_30d: 2,

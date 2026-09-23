@@ -6,4 +6,5 @@ export type Profile = {
   phone: string | null
   role: AppRole
   default_lesson_duration_minutes: number | null
+  avatar_path: string | null
 }

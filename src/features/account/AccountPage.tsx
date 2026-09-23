@@ -2,6 +2,7 @@ import { LogOut, ShieldCheck, UserRound } from 'lucide-react'
 import { useState } from 'react'
 
 import { Button } from '@/components/ui/button'
+import { useAvatarUrl } from '@/features/account/avatar'
 import { EditProfileDialog } from '@/features/account/EditProfileDialog'
 import { useAuth } from '@/features/auth/auth-context'
 import { formatPhoneInput } from '@/features/students/invitation-contact'
@@ -10,6 +11,7 @@ export function AccountPage() {
   const { profile, session, signOut, refreshProfile } = useAuth()
   const [isEditing, setIsEditing] = useState(false)
   const [notice, setNotice] = useState('')
+  const avatarUrl = useAvatarUrl(profile?.avatar_path ?? null)
 
   return (
     <main className="min-h-dvh px-4 pb-28 pt-6 text-white sm:px-7 lg:px-8 lg:pb-8">
@@ -20,8 +22,12 @@ export function AccountPage() {
         </header>
         <section className="mt-6 rounded-[1.5rem] bg-white p-6 text-slate-950">
           <div className="flex flex-col gap-5 sm:flex-row sm:items-center">
-            <span className="grid size-20 place-items-center rounded-full bg-blue-100 text-blue-700">
-              <UserRound size={30} />
+            <span className="grid size-20 place-items-center overflow-hidden rounded-full bg-blue-100 text-blue-700">
+              {avatarUrl.data ? (
+                <img alt="" className="size-full object-cover" src={avatarUrl.data} />
+              ) : (
+                <UserRound size={30} />
+              )}
             </span>
             <div className="flex-1">
               <h2 className="text-xl font-bold">{profile?.full_name}</h2>

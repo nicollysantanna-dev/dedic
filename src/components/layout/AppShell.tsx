@@ -12,6 +12,7 @@ import {
 import { motion } from 'motion/react'
 import { NavLink, Outlet } from 'react-router-dom'
 
+import { useAvatarUrl } from '@/features/account/avatar'
 import { useAuth } from '@/features/auth/auth-context'
 import { NotificationsBell } from '@/features/notifications/NotificationsBell'
 import { initials } from '@/lib/format'
@@ -36,6 +37,7 @@ const studentNavigation = [
 export function AppShell() {
   const { profile, signOut } = useAuth()
   const navigation = profile?.role === 'trainer' ? trainerNavigation : studentNavigation
+  const avatarUrl = useAvatarUrl(profile?.avatar_path ?? null)
 
   return (
     <div className="min-h-dvh bg-[var(--app-bg)] text-[var(--app-text)]">
@@ -58,8 +60,12 @@ export function AppShell() {
 
         <div className="mt-auto border-t border-white/8 pt-5">
           <div className="flex items-center gap-3 px-2">
-            <span className="grid size-10 shrink-0 place-items-center rounded-full bg-blue-500/18 text-sm font-bold text-blue-300">
-              {initials(profile?.full_name ?? 'Usuário')}
+            <span className="grid size-10 shrink-0 place-items-center overflow-hidden rounded-full bg-blue-500/18 text-sm font-bold text-blue-300">
+              {avatarUrl.data ? (
+                <img alt="" className="size-full object-cover" src={avatarUrl.data} />
+              ) : (
+                initials(profile?.full_name ?? 'Usuário')
+              )}
             </span>
             <div className="min-w-0 flex-1">
               <p className="truncate text-sm font-semibold text-white">

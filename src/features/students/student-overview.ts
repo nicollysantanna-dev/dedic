@@ -10,6 +10,7 @@ export type StudentOverview = {
   studentId: string
   name: string
   phone: string | null
+  avatarPath: string | null
   balance: number
   attendance: number | null
   nextAppointment: string | null
@@ -32,6 +33,7 @@ export function toStudentOverview(
     studentId: summary.student_id ?? '',
     name: summary.full_name ?? 'Aluno',
     phone: summary.phone ?? null,
+    avatarPath: summary.avatar_path ?? null,
     balance: summary.balance ?? 0,
     attendance: summary.attendance_rate ?? null,
     nextAppointment: summary.next_appointment_at ?? null,

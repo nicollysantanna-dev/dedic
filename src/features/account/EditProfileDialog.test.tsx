@@ -24,6 +24,7 @@ describe('EditProfileDialog', () => {
             phone: null,
             role: 'trainer',
             default_lesson_duration_minutes: 60,
+            avatar_path: null,
           }}
           onClose={onClose}
           onSaved={onSaved}
@@ -57,6 +58,7 @@ describe('EditProfileDialog', () => {
             phone: '+5511999990002',
             role: 'student',
             default_lesson_duration_minutes: null,
+            avatar_path: null,
           }}
           onClose={vi.fn()}
           onSaved={vi.fn()}

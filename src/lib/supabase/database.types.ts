@@ -746,6 +746,7 @@ export type Database = {
       }
       profiles: {
         Row: {
+          avatar_path: string | null
           created_at: string
           default_lesson_duration_minutes: number | null
           full_name: string
@@ -755,6 +756,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          avatar_path?: string | null
           created_at?: string
           default_lesson_duration_minutes?: number | null
           full_name: string
@@ -764,6 +766,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          avatar_path?: string | null
           created_at?: string
           default_lesson_duration_minutes?: number | null
           full_name?: string
@@ -1416,6 +1419,7 @@ export type Database = {
           active_goals: number | null
           attendance_goal_per_week: number | null
           attendance_rate: number | null
+          avatar_path: string | null
           balance: number | null
           completed_30d: number | null
           completed_total: number | null
@@ -2015,6 +2019,27 @@ export type Database = {
         }
         Returns: string
       }
+      update_own_avatar: {
+        Args: {
+          requested_avatar_path?: string
+        }
+        Returns: {
+          avatar_path: string | null
+          created_at: string
+          default_lesson_duration_minutes: number | null
+          full_name: string
+          id: string
+          phone: string | null
+          role: Database['public']['Enums']['app_role']
+          updated_at: string
+        }
+        SetofOptions: {
+          from: '*'
+          to: 'profiles'
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       update_own_profile: {
         Args: {
           requested_full_name: string
@@ -2022,6 +2047,7 @@ export type Database = {
           requested_phone?: string
         }
         Returns: {
+          avatar_path: string | null
           created_at: string
           default_lesson_duration_minutes: number | null
           full_name: string

@@ -4,6 +4,7 @@ import { LoaderCircle, X } from 'lucide-react'
 import { useForm } from 'react-hook-form'
 
 import { Button } from '@/components/ui/button'
+import { AvatarPicker } from '@/features/account/AvatarPicker'
 import { profileSchema, type ProfileValues } from '@/features/account/schemas'
 import type { Profile } from '@/features/auth/types'
 import {
@@ -89,6 +90,14 @@ export function EditProfileDialog({
             <X size={19} />
           </button>
         </header>
+
+        <div className="mt-5">
+          <AvatarPicker
+            avatarPath={profile.avatar_path}
+            onChanged={onSaved}
+            userId={profile.id}
+          />
+        </div>
 
         <form
           className="mt-5 space-y-4"

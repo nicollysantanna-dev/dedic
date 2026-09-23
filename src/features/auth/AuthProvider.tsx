@@ -14,7 +14,7 @@ async function loadProfile(userId: string) {
 
   const { data, error } = await supabase
     .from('profiles')
-    .select('id, full_name, phone, role, default_lesson_duration_minutes')
+    .select('id, full_name, phone, role, default_lesson_duration_minutes, avatar_path')
     .eq('id', userId)
     .single()
 

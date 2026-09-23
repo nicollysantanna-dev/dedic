@@ -13,6 +13,7 @@ import { useMemo, useState } from 'react'
 import { Link, Navigate } from 'react-router-dom'
 
 import { Button } from '@/components/ui/button'
+import { useAvatarUrl } from '@/features/account/avatar'
 import { useAuth } from '@/features/auth/auth-context'
 import {
   buildStudentOverviews,
@@ -189,9 +190,7 @@ function StudentRow({ student, index }: { student: StudentOverview; index: numbe
       transition={{ delay: index * 0.035 }}
     >
       <div className="flex min-w-0 items-center gap-3">
-        <span className="grid size-11 shrink-0 place-items-center rounded-full bg-blue-100 text-sm font-bold text-blue-700">
-          {initials(student.name)}
-        </span>
+        <StudentAvatar avatarPath={student.avatarPath} name={student.name} />
         <div className="min-w-0">
           <Link
             className="after:absolute after:inset-0 truncate font-semibold hover:text-blue-700"
@@ -283,4 +282,23 @@ function formatAppointment(value: string) {
     hour: '2-digit',
     minute: '2-digit',
   }).format(new Date(value))
+}
+
+function StudentAvatar({
+  avatarPath,
+  name,
+}: {
+  avatarPath: string | null
+  name: string
+}) {
+  const signedUrl = useAvatarUrl(avatarPath)
+  return (
+    <span className="grid size-11 shrink-0 place-items-center overflow-hidden rounded-full bg-blue-100 text-sm font-bold text-blue-700">
+      {signedUrl.data ? (
+        <img alt="" className="size-full object-cover" src={signedUrl.data} />
+      ) : (
+        initials(name)
+      )}
+    </span>
+  )
 }
