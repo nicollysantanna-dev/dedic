@@ -20,6 +20,7 @@ const routes: Record<
   () => Promise<{ default: (req: VercelRequest, res: VercelResponse) => Promise<void> }>
 > = {
   '/api/hevy-sync': () => import('../api/hevy-sync'),
+  '/api/hevy-sync-cron': () => import('../api/hevy-sync-cron'),
 }
 
 const port = Number(process.env.DEV_API_PORT ?? 3002)
