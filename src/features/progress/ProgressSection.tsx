@@ -22,6 +22,7 @@ import {
   type MeasurementKey,
 } from '@/features/progress/progress-summary'
 import {
+  photoLimit,
   useAddProgressEntry,
   useCreateGoal,
   useDeletePhoto,
@@ -718,6 +719,8 @@ function PhotosCard({
   const [takenOn, setTakenOn] = useState(toIsoDate(new Date()))
   const [position, setPosition] = useState<Position>('front')
 
+  const limitReached = photos.length >= photoLimit
+
   const onFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
     event.target.value = ''
@@ -726,8 +729,12 @@ function PhotosCard({
     try {
       const prepared = await prepareImage(file)
       await upload.mutateAsync({ file: prepared, takenOn, position })
-    } catch {
-      setUploadError('Não foi possível enviar a foto. Tente novamente.')
+    } catch (error) {
+      setUploadError(
+        error instanceof Error && error.message.includes('PHOTO_LIMIT_REACHED')
+          ? `Limite de ${photoLimit} fotos atingido. Exclua uma foto antiga para enviar outra.`
+          : 'Não foi possível enviar a foto. Tente novamente.',
+      )
     }
   }
 
@@ -741,7 +748,8 @@ function PhotosCard({
       </div>
       <p className="mt-1 text-sm text-slate-500">
         Visíveis apenas para você e seu personal.{' '}
-        {canManage && 'Você pode excluí-las quando quiser.'}
+        {canManage && 'Você pode excluí-las quando quiser.'}{' '}
+        {canManage && `${photos.length}/${photoLimit} fotos enviadas.`}
       </p>
 
       {canManage && (
@@ -776,14 +784,14 @@ function PhotosCard({
               accept="image/*"
               className="sr-only"
               data-testid="photo-input"
-              disabled={upload.isPending}
+              disabled={upload.isPending || limitReached}
               onChange={(event) => void onFileChange(event)}
               type="file"
             />
             <span
               className={cn(
                 'inline-flex min-h-11 cursor-pointer items-center justify-center gap-2 rounded-xl bg-[var(--brand)] px-5 text-sm font-semibold text-white transition hover:bg-[var(--brand-hover)]',
-                upload.isPending && 'pointer-events-none opacity-60',
+                (upload.isPending || limitReached) && 'pointer-events-none opacity-60',
               )}
             >
               {upload.isPending ? (
@@ -794,6 +802,12 @@ function PhotosCard({
               Enviar foto
             </span>
           </label>
+          {limitReached && (
+            <p className="text-xs text-slate-500 sm:col-span-3">
+              Limite de {photoLimit} fotos atingido. Exclua uma foto antiga para liberar
+              espaço.
+            </p>
+          )}
         </div>
       )}
       {uploadError && (
