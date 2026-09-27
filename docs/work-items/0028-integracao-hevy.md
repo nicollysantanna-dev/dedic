@@ -30,8 +30,12 @@ treinos do Dedic (mesma tela de histórico que já existe para treinos nativos).
 ## Fora do escopo
 
 - Escrever de volta no Hevy (o Dedic nunca envia dados para lá).
-- Importar rotinas/fichas do Hevy (só treinos realizados).
-- Sincronização automática/agendada (só sob demanda, por botão).
+- Importar rotinas/fichas do Hevy diretamente (só treinos realizados) — gerar
+  fichas nativas a partir do padrão do histórico é uma feature separada, ver
+  `docs/work-items/0030-fichas-a-partir-do-hevy.md`.
+- Sincronização automática/agendada por este work item — passa a existir como
+  complemento do botão manual, ver
+  `docs/work-items/0029-hevy-sync-diario-automatico.md`.
 - Suporte a mais de uma conta Hevy por usuário.
 
 ## Impacto previsto
@@ -50,14 +54,14 @@ treinos do Dedic (mesma tela de histórico que já existe para treinos nativos).
 ### Domínio e banco
 
 - `hevy_connections (user_id pk, secret_id uuid, connected_at, last_synced_at,
-  last_sync_status, last_sync_error)` — RLS: select apenas do próprio dono;
+last_sync_status, last_sync_error)` — RLS: select apenas do próprio dono;
   toda escrita passa por função `security definer`.
 - Chave de API guardada via `supabase_vault` (`vault.create_secret`), nunca
   em coluna de texto simples.
 - `hevy_workout_imports (hevy_workout_id text pk, workout_id uuid, student_id
-  uuid, imported_at)` — garante idempotência da importação.
+uuid, imported_at)` — garante idempotência da importação.
 - `hevy_exercise_template_map (template_id text, owner_id uuid, exercise_id
-  uuid, primary key (template_id, owner_id))` — cache do casamento entre
+uuid, primary key (template_id, owner_id))` — cache do casamento entre
   exercício do Hevy e exercício do catálogo do Dedic, evita recriar
   `custom` a cada sincronização.
 - Funções novas, todas `security definer`:
@@ -67,11 +71,11 @@ treinos do Dedic (mesma tela de histórico que já existe para treinos nativos).
   - `get_hevy_api_key(target_user_id uuid) returns text` — **apenas
     `service_role`**, decifra a chave para uso da função serverless.
   - `match_or_create_hevy_exercise(hevy_template_id text, requested_title
-    text, owner_id uuid) returns uuid` — casa por similaridade de nome
+text, owner_id uuid) returns uuid` — casa por similaridade de nome
     (reaproveita os índices trigram já existentes em `exercises`) ou cria
     `custom`.
   - `import_hevy_workout(target_student_id uuid, hevy_workout_id text,
-    payload jsonb) returns uuid` — **apenas `service_role`**, insere
+payload jsonb) returns uuid` — **apenas `service_role`**, insere
     `workouts`/`workout_exercises`/`workout_sets` a partir do JSON bruto do
     Hevy, idempotente por `hevy_workout_id`.
 - `/api/hevy-sync.ts` (função serverless na Vercel, Node/TypeScript):
@@ -121,10 +125,12 @@ treinos do Dedic (mesma tela de histórico que já existe para treinos nativos).
 
 ## Verificação
 
-- [ ] Critérios de aceite atendidos
-- [ ] Layout validado em celular
-- [ ] Estados de carregamento, vazio e erro tratados
-- [ ] Autorização verificada no banco
-- [ ] Testes adicionados
-- [ ] Quality gate executado
-- [ ] Documentação atualizada, se necessário
+- [x] Critérios de aceite atendidos (validado com conta Hevy Pro real: 68
+      treinos importados, sem duplicação em nova sincronização)
+- [ ] Layout validado em celular — ver
+      `docs/work-items/0031-auditoria-mobile-pos-hevy.md`
+- [x] Estados de carregamento, vazio e erro tratados
+- [x] Autorização verificada no banco
+- [x] Testes adicionados
+- [x] Quality gate executado
+- [x] Documentação atualizada (ADR 0007 marcada como aceita)

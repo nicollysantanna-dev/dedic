@@ -1,7 +1,7 @@
 # ADR 0007 — Integração com o Hevy: importação somente leitura de treinos realizados
 
-- Status: proposta
-- Data: 2026-09-23
+- Status: aceita
+- Data: 2026-09-23 (atualizada em 2026-09-27)
 - Responsáveis: Nic
 
 ## Contexto
@@ -43,9 +43,10 @@ usuário sem expor essa chave.
   Vault** (`supabase_vault`), nunca em texto plano numa coluna comum. Só uma
   função `security definer` restrita ao papel `service_role` consegue
   decifrá-la; o cliente autenticado nunca lê a chave de volta.
-- A sincronização é **manual** (botão "Sincronizar agora"), sem tarefa
-  agendada nesta primeira versão — evita a complexidade de rodar algo
-  periódico sem um servidor de longa duração.
+- A sincronização paginada do `/api/hevy-sync` importa **do treino mais
+  antigo para o mais novo** (descobre `page_count` na primeira chamada e desce
+  até a página 1) — respeita a ordem exigida por `apply_workout_records` sem
+  depender de reconstruir o histórico inteiro a cada rodada.
 - Importação é idempotente por `hevy_workout_id`: rodar de novo não duplica
   treinos.
 - Exercícios do Hevy são casados com o catálogo do Dedic por nome
@@ -83,13 +84,35 @@ ganho real sobre uma função serverless na própria Vercel.
 
 - Depende de uma API de terceiro sem garantia de estabilidade e atrás de
   assinatura paga (Hevy Pro) — cada usuário arca com esse custo, não o Dedic.
-- Sincronização manual: sem tarefa agendada, o histórico só atualiza quando
-  o usuário pedir.
 - Casamento de exercícios por nome é heurístico; pode gerar exercícios
   `custom` duplicados quando o nome do Hevy diverge muito do catálogo.
 
 ## Validação
 
-Testar primeiro com uma conta real (Hevy Pro do Nic): conectar, importar o
-histórico existente, conferir que treinos, exercícios e séries aparecem
-corretos no Dedic e que rodar a sincronização de novo não duplica nada.
+Testado com uma conta real (Hevy Pro do Nic): conectar, importar o histórico
+existente (68 treinos), conferir que treinos, exercícios e séries aparecem
+corretos no Dedic e que rodar a sincronização de novo não duplica nada. A
+ordem de importação (mais antigo → mais novo) foi corrigida em 2026-09-27
+depois de observar reconstruções de recorde desnecessárias a cada página.
+
+## Trabalho futuro (fora desta ADR, registrado aqui para não perder o fio)
+
+Decisões tomadas em 2026-09-27, ainda sem ADR/work-item de implementação
+próprios (a criar quando entrarem em rodada):
+
+- **Sincronização automática diária** (substitui "sincronização manual" como
+  única forma de atualizar): usar Vercel Cron Jobs para chamar
+  `/api/hevy-sync` uma vez por dia para cada conta conectada, mantendo o botão
+  "Sincronizar agora" para quem quiser forçar antes disso. Ver
+  `docs/work-items/0029-hevy-sync-diario-automatico.md`.
+- **Gerar ficha (rotina) a partir do histórico do Hevy**: a importação hoje só
+  traz treinos realizados (`workouts`), não fichas — a ideia é detectar o
+  padrão recorrente do histórico importado (ex.: "Quarta: Peito + Tríceps"
+  repetindo toda semana) e propor uma ficha nativa a partir dele, cruzando os
+  exercícios já casados no catálogo (`hevy_exercise_template_map`) para herdar
+  a foto do exercício correspondente em vez de ficar sem imagem. Ver
+  `docs/work-items/0030-fichas-a-partir-do-hevy.md`.
+- **Auditoria mobile-first pós-Hevy**: revisão geral do card de integração,
+  histórico e recordes em celular, já que ainda não existe app nativo — hoje é
+  a forma menos confortável de o usuário chegar até aqui. Ver
+  `docs/work-items/0031-auditoria-mobile-pos-hevy.md`.
