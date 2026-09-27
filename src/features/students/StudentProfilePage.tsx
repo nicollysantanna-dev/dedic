@@ -15,6 +15,7 @@ import { useState, type FormEvent } from 'react'
 import { Link, Navigate, useNavigate, useParams } from 'react-router-dom'
 
 import { Button } from '@/components/ui/button'
+import { useAvatarUrl } from '@/features/account/avatar'
 import { useAuth } from '@/features/auth/auth-context'
 import { creditAdjustmentSchema, packageSchema } from '@/features/packages/schemas'
 import { ProgressSection } from '@/features/progress/ProgressSection'
@@ -130,9 +131,10 @@ export function StudentProfilePage() {
           <>
             <header className="mt-5 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
               <div className="flex items-center gap-4">
-                <span className="grid size-14 place-items-center rounded-full bg-blue-500/20 text-lg font-bold text-blue-300">
-                  {student.data.overview.name.slice(0, 2).toUpperCase()}
-                </span>
+                <StudentAvatar
+                  avatarPath={student.data.overview.avatarPath}
+                  name={student.data.overview.name}
+                />
                 <div>
                   <p className="text-sm text-slate-400">Perfil do aluno</p>
                   <h1 className="text-2xl font-bold tracking-[-0.04em] sm:text-3xl">
@@ -187,88 +189,33 @@ export function StudentProfilePage() {
               />
             </section>
 
-            <section className="mt-5 grid gap-5 lg:grid-cols-[1.2fr_0.8fr]">
-              <div className="rounded-[1.5rem] bg-white p-5 text-slate-950 sm:p-6">
-                <h2 className="font-bold">Histórico recente de aulas</h2>
-                <div className="mt-4 divide-y divide-slate-100">
-                  {student.data.appointments.slice(0, 6).map((appointment) => (
-                    <div
-                      className="flex items-center justify-between gap-4 py-3 text-sm"
-                      key={appointment.id}
-                    >
-                      <div>
-                        <p className="font-semibold">
-                          {formatDateTime(appointment.starts_at)}
-                        </p>
-                        <p className="mt-0.5 text-xs text-slate-500">
-                          {formatTime(appointment.starts_at)}–
-                          {formatTime(appointment.ends_at)}
-                        </p>
-                      </div>
-                      <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold">
-                        {statusLabel(appointment.status)}
-                      </span>
-                    </div>
-                  ))}
-                  {!student.data.appointments.length && (
-                    <p className="py-10 text-center text-sm text-slate-500">
-                      Nenhuma aula registrada.
-                    </p>
-                  )}
-                </div>
-              </div>
-
-              <div className="space-y-3">
-                <div className="rounded-[1.25rem] border border-white/10 bg-white/5 p-5">
-                  <h3 className="font-bold">Encerrar vínculo</h3>
-                  <p className="mt-2 text-sm leading-6 text-slate-400">
-                    O histórico de aulas, créditos e pagamentos é preservado. O aluno
-                    deixa de ver sua agenda e não consegue mais agendar.
-                  </p>
-                  {isEndingRelationship ? (
-                    <div className="mt-4 space-y-3">
-                      <p className="text-sm font-semibold text-red-200" role="alert">
-                        Confirma o encerramento do vínculo com{' '}
-                        {student.data.overview.name}?
+            <section className="mt-5 rounded-[1.5rem] bg-white p-5 text-slate-950 sm:p-6">
+              <h2 className="font-bold">Histórico recente de aulas</h2>
+              <div className="mt-4 divide-y divide-slate-100">
+                {student.data.appointments.slice(0, 6).map((appointment) => (
+                  <div
+                    className="flex items-center justify-between gap-4 py-3 text-sm"
+                    key={appointment.id}
+                  >
+                    <div>
+                      <p className="font-semibold">
+                        {formatDateTime(appointment.starts_at)}
                       </p>
-                      <div className="flex flex-wrap gap-2">
-                        <Button
-                          className="bg-red-600 hover:bg-red-700"
-                          disabled={endRelationship.isPending}
-                          onClick={() =>
-                            endRelationship.mutate(student.data!.relationship.id)
-                          }
-                        >
-                          {endRelationship.isPending && (
-                            <LoaderCircle className="animate-spin" size={17} />
-                          )}
-                          Sim, encerrar
-                        </Button>
-                        <Button
-                          className="border-white/15 bg-transparent text-white hover:bg-white/10"
-                          disabled={endRelationship.isPending}
-                          onClick={() => setIsEndingRelationship(false)}
-                          variant="outline"
-                        >
-                          Manter vínculo
-                        </Button>
-                      </div>
-                      {endRelationship.error && (
-                        <p className="text-sm text-red-200" role="alert">
-                          Não foi possível encerrar o vínculo. Tente novamente.
-                        </p>
-                      )}
+                      <p className="mt-0.5 text-xs text-slate-500">
+                        {formatTime(appointment.starts_at)}–
+                        {formatTime(appointment.ends_at)}
+                      </p>
                     </div>
-                  ) : (
-                    <Button
-                      className="mt-4 border-white/15 bg-transparent text-white hover:bg-white/10"
-                      onClick={() => setIsEndingRelationship(true)}
-                      variant="outline"
-                    >
-                      Encerrar vínculo
-                    </Button>
-                  )}
-                </div>
+                    <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold">
+                      {statusLabel(appointment.status)}
+                    </span>
+                  </div>
+                ))}
+                {!student.data.appointments.length && (
+                  <p className="py-10 text-center text-sm text-slate-500">
+                    Nenhuma aula registrada.
+                  </p>
+                )}
               </div>
             </section>
 
@@ -290,6 +237,56 @@ export function StudentProfilePage() {
                 viewerId={trainerId}
                 viewerRole="trainer"
               />
+            </section>
+
+            <section className="mt-5 rounded-[1.25rem] border border-white/10 bg-white/5 p-5">
+              <h3 className="font-bold">Encerrar vínculo</h3>
+              <p className="mt-2 text-sm leading-6 text-slate-400">
+                O histórico de aulas, créditos e pagamentos é preservado. O aluno deixa de
+                ver sua agenda e não consegue mais agendar.
+              </p>
+              {isEndingRelationship ? (
+                <div className="mt-4 space-y-3">
+                  <p className="text-sm font-semibold text-red-200" role="alert">
+                    Confirma o encerramento do vínculo com {student.data.overview.name}?
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    <Button
+                      className="bg-red-600 hover:bg-red-700"
+                      disabled={endRelationship.isPending}
+                      onClick={() =>
+                        endRelationship.mutate(student.data!.relationship.id)
+                      }
+                    >
+                      {endRelationship.isPending && (
+                        <LoaderCircle className="animate-spin" size={17} />
+                      )}
+                      Sim, encerrar
+                    </Button>
+                    <Button
+                      className="border-white/15 bg-transparent text-white hover:bg-white/10"
+                      disabled={endRelationship.isPending}
+                      onClick={() => setIsEndingRelationship(false)}
+                      variant="outline"
+                    >
+                      Manter vínculo
+                    </Button>
+                  </div>
+                  {endRelationship.error && (
+                    <p className="text-sm text-red-200" role="alert">
+                      Não foi possível encerrar o vínculo. Tente novamente.
+                    </p>
+                  )}
+                </div>
+              ) : (
+                <Button
+                  className="mt-4 border-white/15 bg-transparent text-white hover:bg-white/10"
+                  onClick={() => setIsEndingRelationship(true)}
+                  variant="outline"
+                >
+                  Encerrar vínculo
+                </Button>
+              )}
             </section>
 
             {isCreditManagerOpen && (
@@ -314,6 +311,25 @@ export function StudentProfilePage() {
         )}
       </div>
     </main>
+  )
+}
+
+function StudentAvatar({
+  avatarPath,
+  name,
+}: {
+  avatarPath: string | null
+  name: string
+}) {
+  const avatarUrl = useAvatarUrl(avatarPath)
+  return (
+    <span className="grid size-14 shrink-0 place-items-center overflow-hidden rounded-full bg-blue-500/20 text-lg font-bold text-blue-300">
+      {avatarUrl.data ? (
+        <img alt="" className="size-full object-cover" src={avatarUrl.data} />
+      ) : (
+        name.slice(0, 2).toUpperCase()
+      )}
+    </span>
   )
 }
 

@@ -1,4 +1,5 @@
 import { ChevronRight, Clock, Dumbbell, Trophy } from 'lucide-react'
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
 
 import { formatDateTime } from '@/lib/format'
@@ -8,6 +9,8 @@ import {
   type WorkoutHistoryItem,
 } from '@/features/workouts/workout-queries'
 import { formatDuration, formatKg, totalVolume } from '@/features/workouts/workout-math'
+
+const PAGE_SIZE = 10
 
 /** Sessões finalizadas (estilo Hevy): nome, quando, duração, volume, recordes e exercícios. */
 export function WorkoutHistorySection({
@@ -20,6 +23,7 @@ export function WorkoutHistorySection({
   emptyMessage?: string
 }) {
   const history = useWorkoutHistory(studentId)
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE)
 
   if (history.isLoading) {
     return <p className="p-6 text-center text-sm text-slate-400">Carregando histórico…</p>
@@ -31,7 +35,9 @@ export function WorkoutHistorySection({
       </p>
     )
   }
-  const items = limit ? (history.data ?? []).slice(0, limit) : (history.data ?? [])
+  const all = history.data ?? []
+  const items = limit ? all.slice(0, limit) : all.slice(0, visibleCount)
+  const hasMore = !limit && all.length > items.length
   if (items.length === 0) {
     return (
       <p className="rounded-[1.5rem] border border-dashed border-white/15 bg-white/5 p-8 text-center text-sm text-slate-400">
@@ -40,13 +46,24 @@ export function WorkoutHistorySection({
     )
   }
   return (
-    <ul className="grid gap-3">
-      {items.map((workout) => (
-        <li key={workout.id}>
-          <WorkoutHistoryCard workout={workout} />
-        </li>
-      ))}
-    </ul>
+    <div className="grid gap-3">
+      <ul className="grid gap-3">
+        {items.map((workout) => (
+          <li key={workout.id}>
+            <WorkoutHistoryCard workout={workout} />
+          </li>
+        ))}
+      </ul>
+      {hasMore && (
+        <button
+          className="min-h-11 rounded-[1.25rem] border border-white/15 bg-white/5 text-sm font-semibold text-white transition hover:bg-white/10"
+          onClick={() => setVisibleCount((count) => count + PAGE_SIZE)}
+          type="button"
+        >
+          Carregar mais sessões
+        </button>
+      )}
+    </div>
   )
 }
 

@@ -12,8 +12,10 @@ import {
   TrendingUp,
   Target,
   UserRound,
+  X,
 } from 'lucide-react'
 import { motion } from 'motion/react'
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
 
 import { Button } from '@/components/ui/button'
@@ -34,6 +36,7 @@ import { requireSupabase } from '@/lib/supabase/client'
 export function StudentHomePage() {
   const { profile, invitationClaimStatus } = useAuth()
   const studentId = profile?.id ?? ''
+  const [isInvitationNoticeDismissed, setIsInvitationNoticeDismissed] = useState(false)
 
   const relationship = useQuery({
     queryKey: ['student-home-relationship', studentId],
@@ -141,23 +144,43 @@ export function StudentHomePage() {
           </h1>
         </header>
 
-        {invitationClaimStatus === 'success' && (
+        {!isInvitationNoticeDismissed && invitationClaimStatus === 'success' && (
           <p
             className="mt-6 flex items-center gap-3 rounded-2xl border border-emerald-400/20 bg-emerald-400/10 p-4 text-sm text-emerald-100"
             role="status"
           >
             <CheckCircle2 className="shrink-0" size={19} />
-            Vínculo criado. Seu personal e sua agenda já estão disponíveis.
+            <span className="flex-1">
+              Vínculo criado. Seu personal e sua agenda já estão disponíveis.
+            </span>
+            <button
+              aria-label="Fechar aviso"
+              className="shrink-0 rounded-lg p-1 hover:bg-emerald-400/10"
+              onClick={() => setIsInvitationNoticeDismissed(true)}
+              type="button"
+            >
+              <X size={16} />
+            </button>
           </p>
         )}
-        {invitationClaimStatus === 'error' && (
+        {!isInvitationNoticeDismissed && invitationClaimStatus === 'error' && (
           <p
             className="mt-6 flex items-center gap-3 rounded-2xl border border-amber-400/20 bg-amber-400/10 p-4 text-sm text-amber-100"
             role="alert"
           >
             <CircleAlert className="shrink-0" size={19} />
-            Não foi possível ativar este convite. Confirme se ele ainda é válido e se foi
-            enviado para o contato desta conta.
+            <span className="flex-1">
+              Não foi possível ativar este convite. Confirme se ele ainda é válido e se
+              foi enviado para o contato desta conta.
+            </span>
+            <button
+              aria-label="Fechar aviso"
+              className="shrink-0 rounded-lg p-1 hover:bg-amber-400/10"
+              onClick={() => setIsInvitationNoticeDismissed(true)}
+              type="button"
+            >
+              <X size={16} />
+            </button>
           </p>
         )}
 
