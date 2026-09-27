@@ -17,6 +17,8 @@
     "vite.config.ts",
     "playwright.config.ts",
     "eslint.config.js",
-    "tests/e2e/**/*.ts"
+    "tests/e2e/**/*.ts",
+    "api/**/*.ts",
+    "scripts/dev-api-server.ts"
   ]
 }

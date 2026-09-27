@@ -16,3 +16,4 @@ dev-dist/
 *.tsbuildinfo
 .vercel
 supabase/.temp/
+.env*

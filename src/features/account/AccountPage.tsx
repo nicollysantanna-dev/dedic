@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { useAvatarUrl } from '@/features/account/avatar'
 import { EditProfileDialog } from '@/features/account/EditProfileDialog'
+import { HevyIntegrationCard } from '@/features/account/HevyIntegrationCard'
 import { useAuth } from '@/features/auth/auth-context'
 import { formatPhoneInput } from '@/features/students/invitation-contact'
 
@@ -75,6 +76,7 @@ export function AccountPage() {
               próximo incremento.
             </p>
           </div>
+          {profile?.role === 'student' && <HevyIntegrationCard userId={profile.id} />}
           <div className="rounded-[1.5rem] bg-white p-6 text-slate-950">
             <LogOut className="text-red-500" />
             <h2 className="mt-4 font-bold">Encerrar sessão</h2>

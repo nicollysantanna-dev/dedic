@@ -463,6 +463,123 @@ export type Database = {
           },
         ]
       }
+      hevy_connections: {
+        Row: {
+          connected_at: string
+          last_sync_error: string | null
+          last_sync_status: string | null
+          last_synced_at: string | null
+          secret_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          connected_at?: string
+          last_sync_error?: string | null
+          last_sync_status?: string | null
+          last_synced_at?: string | null
+          secret_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          connected_at?: string
+          last_sync_error?: string | null
+          last_sync_status?: string | null
+          last_synced_at?: string | null
+          secret_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'hevy_connections_user_id_fkey'
+            columns: ['user_id']
+            isOneToOne: true
+            referencedRelation: 'profiles'
+            referencedColumns: ['id']
+          },
+        ]
+      }
+      hevy_exercise_template_map: {
+        Row: {
+          created_at: string
+          exercise_id: string
+          owner_id: string
+          template_id: string
+        }
+        Insert: {
+          created_at?: string
+          exercise_id: string
+          owner_id: string
+          template_id: string
+        }
+        Update: {
+          created_at?: string
+          exercise_id?: string
+          owner_id?: string
+          template_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'hevy_exercise_template_map_exercise_id_fkey'
+            columns: ['exercise_id']
+            isOneToOne: false
+            referencedRelation: 'exercises'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'hevy_exercise_template_map_owner_id_fkey'
+            columns: ['owner_id']
+            isOneToOne: false
+            referencedRelation: 'profiles'
+            referencedColumns: ['id']
+          },
+        ]
+      }
+      hevy_workout_imports: {
+        Row: {
+          hevy_workout_id: string
+          imported_at: string
+          student_id: string
+          workout_id: string
+        }
+        Insert: {
+          hevy_workout_id: string
+          imported_at?: string
+          student_id: string
+          workout_id: string
+        }
+        Update: {
+          hevy_workout_id?: string
+          imported_at?: string
+          student_id?: string
+          workout_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'hevy_workout_imports_student_id_fkey'
+            columns: ['student_id']
+            isOneToOne: false
+            referencedRelation: 'profiles'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'hevy_workout_imports_workout_id_fkey'
+            columns: ['workout_id']
+            isOneToOne: false
+            referencedRelation: 'exercise_workout_stats'
+            referencedColumns: ['workout_id']
+          },
+          {
+            foreignKeyName: 'hevy_workout_imports_workout_id_fkey'
+            columns: ['workout_id']
+            isOneToOne: false
+            referencedRelation: 'workouts'
+            referencedColumns: ['id']
+          },
+        ]
+      }
       lesson_packages: {
         Row: {
           activated_at: string | null
@@ -1517,6 +1634,10 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      apply_workout_records: {
+        Args: { target_workout_id: string }
+        Returns: number
+      }
       archive_routine: {
         Args: { target_routine_id: string }
         Returns: undefined
@@ -1706,6 +1827,10 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      connect_hevy_account: {
+        Args: { requested_api_key: string }
+        Returns: undefined
+      }
       correct_appointment_outcome: {
         Args: {
           correction_reason: string
@@ -1792,6 +1917,7 @@ export type Database = {
         Args: { target_workout_id: string }
         Returns: undefined
       }
+      disconnect_hevy_account: { Args: never; Returns: undefined }
       display_name: { Args: { target_user_id: string }; Returns: string }
       duplicate_routine: {
         Args: { target_routine_id: string; target_student_id?: string }
@@ -1863,6 +1989,15 @@ export type Database = {
         Args: { target_student_id: string }
         Returns: number
       }
+      get_hevy_api_key: { Args: { target_user_id: string }; Returns: string }
+      import_hevy_workout: {
+        Args: {
+          payload: Json
+          target_hevy_workout_id: string
+          target_student_id: string
+        }
+        Returns: string
+      }
       is_active_trainer_of: {
         Args: { target_student_id: string }
         Returns: boolean
@@ -1873,6 +2008,14 @@ export type Database = {
         Returns: number
       }
       mark_overdue_payments: { Args: never; Returns: number }
+      match_or_create_hevy_exercise: {
+        Args: {
+          hevy_template_id: string
+          requested_title: string
+          target_owner_id: string
+        }
+        Returns: string
+      }
       notify_user: {
         Args: {
           notification_body?: string
@@ -1893,6 +2036,18 @@ export type Database = {
           reps: number
           weight_kg: number
         }[]
+      }
+      recompute_workout_records: {
+        Args: { target_student_id: string }
+        Returns: undefined
+      }
+      record_hevy_sync_result: {
+        Args: {
+          sync_error?: string
+          sync_status: string
+          target_user_id: string
+        }
+        Returns: undefined
       }
       replace_workout_exercise: {
         Args: { target_exercise_id: string; target_workout_exercise_id: string }
@@ -2020,9 +2175,7 @@ export type Database = {
         Returns: string
       }
       update_own_avatar: {
-        Args: {
-          requested_avatar_path?: string
-        }
+        Args: { requested_avatar_path?: string }
         Returns: {
           avatar_path: string | null
           created_at: string

@@ -53,6 +53,13 @@ export default defineConfig({
       '@': fileURLToPath(new URL('./src', import.meta.url)),
     },
   },
+  server: {
+    // Em dev, as funções de api/ rodam à parte via `npm run dev:api`
+    // (scripts/dev-api-server.ts) — ver comentário lá para o motivo.
+    proxy: {
+      '/api': 'http://localhost:3002',
+    },
+  },
   test: {
     globals: true,
     environment: 'jsdom',
