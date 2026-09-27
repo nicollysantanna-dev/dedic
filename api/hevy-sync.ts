@@ -1,6 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 
-import { SYNC_ERROR_MESSAGES, createAdminClient, syncHevyPage } from './hevy-sync-core'
+import { SYNC_ERROR_MESSAGES, createAdminClient, syncHevyPage } from './hevy-sync-core.js'
 
 /**
  * Sincroniza uma página do histórico de treinos do Hevy para o aluno

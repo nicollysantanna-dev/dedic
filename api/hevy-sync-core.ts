@@ -1,7 +1,7 @@
 import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 
-import type { Database } from '../src/lib/supabase/database.types'
-import { normalizeHevyWorkout, type HevyApiWorkout } from './hevy-mapping'
+import type { Database } from '../src/lib/supabase/database.types.js'
+import { normalizeHevyWorkout, type HevyApiWorkout } from './hevy-mapping.js'
 
 const HEVY_API_BASE_URL = process.env.HEVY_API_BASE_URL ?? 'https://api.hevyapp.com'
 const PAGE_SIZE = 10

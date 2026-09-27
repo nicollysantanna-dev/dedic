@@ -1,8 +1,8 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 import type { SupabaseClient } from '@supabase/supabase-js'
 
-import type { Database } from '../src/lib/supabase/database.types'
-import { createAdminClient, syncHevyPage } from './hevy-sync-core'
+import type { Database } from '../src/lib/supabase/database.types.js'
+import { createAdminClient, syncHevyPage } from './hevy-sync-core.js'
 
 type UserSyncSummary = {
   userId: string

@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest'
 
-import { mapHevySetType, normalizeHevyWorkout, type HevyApiWorkout } from './hevy-mapping'
+import {
+  mapHevySetType,
+  normalizeHevyWorkout,
+  type HevyApiWorkout,
+} from './hevy-mapping.js'
 
 describe('mapHevySetType', () => {
   it('preserva warmup e failure', () => {
