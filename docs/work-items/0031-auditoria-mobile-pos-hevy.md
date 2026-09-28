@@ -38,12 +38,36 @@ usuário final mexer nisso.
   amadurecer) — esta auditoria só garante que a experiência web atual não
   quebrou, independente dessa decisão.
 
+## Achados e correções (2026-09-27)
+
+Revisão de código feita com a conta Hevy real (73 treinos, dezenas de
+exercícios distintos) como referência de volume:
+
+- **Bug de dados** — `useWorkoutHistory` sempre buscava um limite fixo de 50
+  treinos no servidor; "Carregar mais sessões" só revelava o que já tinha
+  vindo, nunca buscava mais. Com a conta real (73 treinos), os 23 mais antigos
+  ficavam permanentemente inacessíveis na tela. Corrigido para o limite
+  crescer no servidor a cada clique (`workoutSessionKeys.history` agora inclui
+  o limite na chave, `keepPreviousData` evita a lista sumir durante a busca).
+  Teste de regressão em `WorkoutHistorySection.test.tsx` (comprovadamente
+  falhava antes da correção).
+- **Tela sem paginação** — `ExerciseRecordsSection` (aba Recordes, uso sem
+  `limit`) renderizava todos os exercícios distintos do aluno de uma vez, sem
+  nenhum corte. Aplicado o mesmo padrão de "Carregar mais" já usado no
+  histórico. Teste em `ExerciseRecordsSection.test.tsx`.
+- `HevyIntegrationCard` e a visão do personal (`StudentWorkoutsSummary`, que
+  usa `limit={5}` nos dois componentes acima) revisados por código — sem
+  achados; os dois só usam `limit` fixo, então não sofriam do bug acima.
+
 ## Verificação
 
 - [ ] Testado em viewport de celular real ou emulado (não só desktop
-      redimensionado)
-- [ ] Testado com uma conta com histórico grande (dezenas de treinos
+      redimensionado) — revisão até aqui foi só por código, falta olhar num
+      celular de verdade
+- [x] Testado com uma conta com histórico grande (dezenas de treinos
       importados), não só com poucos registros
-- [ ] Estados de carregamento, vazio e erro revisados em cada tela do escopo
-- [ ] Nenhuma regressão nas jornadas já cobertas por Playwright
-- [ ] Quality gate executado
+- [x] Estados de carregamento, vazio e erro revisados em cada tela do escopo
+- [x] Nenhuma regressão nas jornadas já cobertas por Playwright (25/25
+      passaram, incluindo as que exercitam histórico e recordes)
+- [x] Quality gate executado (`format:check`, `lint`, `typecheck`, `test`,
+      `build`)

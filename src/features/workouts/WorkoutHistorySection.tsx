@@ -22,8 +22,8 @@ export function WorkoutHistorySection({
   limit?: number
   emptyMessage?: string
 }) {
-  const history = useWorkoutHistory(studentId)
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE)
+  const history = useWorkoutHistory(studentId, limit ?? visibleCount)
 
   if (history.isLoading) {
     return <p className="p-6 text-center text-sm text-slate-400">Carregando histórico…</p>
@@ -35,9 +35,9 @@ export function WorkoutHistorySection({
       </p>
     )
   }
-  const all = history.data ?? []
-  const items = limit ? all.slice(0, limit) : all.slice(0, visibleCount)
-  const hasMore = !limit && all.length > items.length
+  const items = history.data ?? []
+  // Se voltou tanta coisa quanto foi pedido, pode haver mais no servidor.
+  const hasMore = !limit && items.length >= visibleCount
   if (items.length === 0) {
     return (
       <p className="rounded-[1.5rem] border border-dashed border-white/15 bg-white/5 p-8 text-center text-sm text-slate-400">
@@ -56,11 +56,12 @@ export function WorkoutHistorySection({
       </ul>
       {hasMore && (
         <button
-          className="min-h-11 rounded-[1.25rem] border border-white/15 bg-white/5 text-sm font-semibold text-white transition hover:bg-white/10"
+          className="min-h-11 rounded-[1.25rem] border border-white/15 bg-white/5 text-sm font-semibold text-white transition hover:bg-white/10 disabled:opacity-60"
+          disabled={history.isFetching}
           onClick={() => setVisibleCount((count) => count + PAGE_SIZE)}
           type="button"
         >
-          Carregar mais sessões
+          {history.isFetching ? 'Carregando…' : 'Carregar mais sessões'}
         </button>
       )}
     </div>

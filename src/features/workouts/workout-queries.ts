@@ -1,4 +1,9 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import {
+  keepPreviousData,
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from '@tanstack/react-query'
 
 import { appointmentKeys } from '@/features/appointments/keys'
 import { requireSupabase } from '@/lib/supabase/client'
@@ -8,7 +13,8 @@ export const workoutSessionKeys = {
   all: ['workout-sessions'] as const,
   detail: (workoutId: string) => ['workout-sessions', 'detail', workoutId] as const,
   open: (studentId: string) => ['workout-sessions', 'open', studentId] as const,
-  history: (studentId: string) => ['workout-sessions', 'history', studentId] as const,
+  history: (studentId: string, limit: number) =>
+    ['workout-sessions', 'history', studentId, limit] as const,
   records: (studentId: string) => ['workout-sessions', 'records', studentId] as const,
   loadHistory: (studentId: string, exerciseId: string) =>
     ['workout-sessions', 'load', studentId, exerciseId] as const,
@@ -137,11 +143,19 @@ export type WorkoutHistoryItem = Pick<
   }[]
 }
 
-/** Treinos finalizados do aluno, do mais recente ao mais antigo. */
+/**
+ * Treinos finalizados do aluno, do mais recente ao mais antigo. `limit` cresce
+ * junto com "Carregar mais sessões" (ver WorkoutHistorySection) — cada valor
+ * de `limit` é uma busca nova no servidor, não um corte do que já veio antes,
+ * senão um histórico maior que o `limit` inicial (ex.: importado do Hevy)
+ * ficaria com sessões antigas permanentemente inacessíveis na tela.
+ * `keepPreviousData` evita a lista sumir enquanto a busca maior carrega.
+ */
 export function useWorkoutHistory(studentId: string, limit = 50) {
   return useQuery({
-    queryKey: workoutSessionKeys.history(studentId),
+    queryKey: workoutSessionKeys.history(studentId, limit),
     enabled: Boolean(studentId),
+    placeholderData: keepPreviousData,
     queryFn: async (): Promise<WorkoutHistoryItem[]> => {
       const { data, error } = await requireSupabase()
         .from('workouts')

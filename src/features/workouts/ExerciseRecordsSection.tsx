@@ -1,5 +1,6 @@
 import { ChevronDown, ChevronUp, Trophy } from 'lucide-react'
 import { useState } from 'react'
+
 import {
   CartesianGrid,
   Line,
@@ -21,6 +22,8 @@ import {
 } from '@/features/workouts/workout-queries'
 import { formatDateOnly, formatDateTime } from '@/lib/format'
 
+const PAGE_SIZE = 10
+
 /** Recordes por exercício: carga, 1RM estimado e volume; toque abre a curva de carga. */
 export function ExerciseRecordsSection({
   studentId,
@@ -32,6 +35,7 @@ export function ExerciseRecordsSection({
   limit?: number
 }) {
   const records = useExerciseRecords(studentId)
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE)
 
   if (records.isLoading) {
     return <p className="p-6 text-center text-sm text-slate-400">Carregando recordes…</p>
@@ -43,9 +47,11 @@ export function ExerciseRecordsSection({
       </p>
     )
   }
-  const items = [...(records.data ?? [])]
-    .sort((left, right) => Number(right.best_weight_kg) - Number(left.best_weight_kg))
-    .slice(0, limit)
+  const all = [...(records.data ?? [])].sort(
+    (left, right) => Number(right.best_weight_kg) - Number(left.best_weight_kg),
+  )
+  const items = limit ? all.slice(0, limit) : all.slice(0, visibleCount)
+  const hasMore = !limit && all.length > items.length
   if (items.length === 0) {
     return (
       <p className="rounded-[1.5rem] border border-dashed border-white/15 bg-white/5 p-8 text-center text-sm text-slate-400">
@@ -54,13 +60,24 @@ export function ExerciseRecordsSection({
     )
   }
   return (
-    <ul className="grid gap-3">
-      {items.map((record) => (
-        <li key={record.exercise_id}>
-          <RecordCard record={record} studentId={studentId} trainerId={trainerId} />
-        </li>
-      ))}
-    </ul>
+    <div className="grid gap-3">
+      <ul className="grid gap-3">
+        {items.map((record) => (
+          <li key={record.exercise_id}>
+            <RecordCard record={record} studentId={studentId} trainerId={trainerId} />
+          </li>
+        ))}
+      </ul>
+      {hasMore && (
+        <button
+          className="min-h-11 rounded-[1.25rem] border border-white/15 bg-white/5 text-sm font-semibold text-white transition hover:bg-white/10"
+          onClick={() => setVisibleCount((count) => count + PAGE_SIZE)}
+          type="button"
+        >
+          Carregar mais recordes
+        </button>
+      )}
+    </div>
   )
 }
 
