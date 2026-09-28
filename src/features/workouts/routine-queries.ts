@@ -162,3 +162,22 @@ export function useDuplicateRoutine() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: routineKeys.all }),
   })
 }
+
+/**
+ * Transforma nome de treino que se repete (2+ vezes, nativo ou importado do
+ * Hevy — tanto faz) em ficha, usando a sessão mais recente como molde. Sempre
+ * gera só para o próprio usuário autenticado (a função não recebe parâmetro).
+ */
+export function useGenerateRoutinesFromHistory() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async () => {
+      const { data, error } = await requireSupabase().rpc(
+        'generate_routines_from_history',
+      )
+      if (error) throw error
+      return data
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: routineKeys.all }),
+  })
+}

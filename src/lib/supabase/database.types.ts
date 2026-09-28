@@ -463,6 +463,42 @@ export type Database = {
           },
         ]
       }
+      generated_routine_sources: {
+        Row: {
+          routine_id: string
+          source_name: string
+          student_id: string
+          updated_at: string
+        }
+        Insert: {
+          routine_id: string
+          source_name: string
+          student_id: string
+          updated_at?: string
+        }
+        Update: {
+          routine_id?: string
+          source_name?: string
+          student_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'generated_routine_sources_routine_id_fkey'
+            columns: ['routine_id']
+            isOneToOne: false
+            referencedRelation: 'routines'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'generated_routine_sources_student_id_fkey'
+            columns: ['student_id']
+            isOneToOne: false
+            referencedRelation: 'profiles'
+            referencedColumns: ['id']
+          },
+        ]
+      }
       hevy_connections: {
         Row: {
           connected_at: string
@@ -1974,6 +2010,14 @@ export type Database = {
       }
       format_brl: { Args: { cents: number }; Returns: string }
       format_lesson_moment: { Args: { moment: string }; Returns: string }
+      generate_routines_from_history: {
+        Args: never
+        Returns: {
+          routine_id: string
+          source_name: string
+          status: string
+        }[]
+      }
       get_available_slots: {
         Args: {
           range_end: string

@@ -23,49 +23,59 @@ existente do catálogo em vez de ficarem sem imagem.
   `routine-queries.ts` — modelo de ficha nativo já existente, que esta feature
   passa a alimentar automaticamente além da criação manual.
 
-## Cenários de aceite (a refinar quando entrar em rodada)
+## Cenários de aceite
 
-- Dado um histórico do Hevy com um mesmo conjunto de exercícios repetindo em
-  um dia da semana específico, quando o usuário pede para gerar fichas, então
-  o Dedic propõe uma ficha por padrão detectado, com os exercícios na ordem
-  mais comum observada.
+- Dado um nome de treino que se repete 2+ vezes no histórico (nativo ou
+  importado do Hevy — tanto faz, `generate_routines_from_history` não sabe
+  nem precisa saber a origem), quando a aluna clica "Gerar fichas", então uma
+  ficha é criada com os exercícios e séries da sessão **mais recente** com
+  aquele nome.
 - Dado um exercício da ficha gerada que já foi casado com o catálogo nativo
-  na importação, quando a ficha é exibida, então a foto do catálogo aparece
-  (mesmo comportamento visual de uma ficha criada manualmente).
-- Dado um exercício sem correspondência clara (virou `custom` na importação),
-  quando a ficha é gerada, então ele aparece sem foto, do mesmo jeito que um
-  exercício `custom` criado manualmente sem foto do aparelho.
-- Dado que o usuário já tem uma ficha gerada anteriormente para o mesmo
-  padrão, quando o histórico é sincronizado de novo (ver 0029) e o padrão se
-  mantém, então a ficha existente é **atualizada**, nunca duplicada.
+  na importação (`exercise_id` já resolvido em `workout_exercises`), quando a
+  ficha é exibida, então a foto do catálogo aparece (mesmo comportamento
+  visual de uma ficha criada manualmente — nenhum código novo de exibição foi
+  necessário).
+- Dado um exercício sem correspondência clara (virou `custom` na
+  importação), quando a ficha é gerada, então ele aparece sem foto, do mesmo
+  jeito que um exercício `custom` criado manualmente sem foto do aparelho.
+- Dado que a aluna já tem uma ficha gerada anteriormente para o mesmo nome de
+  treino, quando ela clica "Gerar fichas" de novo, então a ficha existente é
+  **atualizada** (reflete a sessão mais recente), nunca duplicada.
+- Dado que a aluna arquivou manualmente uma ficha gerada anteriormente,
+  quando ela clica "Gerar fichas" de novo, então essa ficha **não** é
+  recriada nem desarquivada — a geração respeita a decisão já tomada.
 
-## Fora do escopo (a confirmar)
+## Fora do escopo
 
 - Detectar padrões complexos de periodização (ex.: mesociclos, progressão de
-  carga programada) — a v1 é só "o que se repete costuma virar ficha".
+  carga programada) — a v1 é só "o que se repete 2x+ vira ficha, molde é a
+  sessão mais recente".
 - Editar a ficha gerada automaticamente sem passar pelo Editor de Rotina já
   existente — a geração só cria/atualiza; a edição continua manual.
+- Geração automática após sincronizar — só sob demanda, botão dedicado.
+- Revisão/aprovação do personal antes da ficha valer para a aluna.
 
-## Perguntas em aberto (resolver antes de detalhar o plano)
+## Perguntas em aberto — respondidas em 2026-09-27
 
-- Como decidir "isso é o mesmo padrão de antes" para evitar duplicar fichas a
-  cada geração — por nome do treino no Hevy (`title`), por conjunto de
-  `exercise_template_id`s, ou por dia da semana observado? Precisa de uma
-  chave estável para upsert, análoga ao `hevy_workout_id` da importação de
-  treinos.
-- A geração é automática (dispara sozinha após X sincronizações) ou sob
-  demanda (botão "Gerar fichas a partir do meu histórico")? Dado que ADR 0007
-  já trata o Hevy como estritamente opcional e o usuário decide quando agir,
-  a favorita inicial é sob demanda.
-- O personal do aluno participa dessa geração (revisa/aprova a ficha antes de
-  valer) ou ela fica disponível direto para o aluno, como o histórico
-  importado já fica hoje?
+- **Identidade do padrão**: pelo nome do treino (`workouts.name`, via
+  `btrim`) — mais simples e previsível do que agrupar por conjunto de
+  exercícios ou por dia da semana, e já é como a aluna organiza os treinos no
+  Hevy hoje. Chave de upsert: `generated_routine_sources (student_id,
+source_name) → routine_id`.
+- **Gatilho**: só sob demanda, botão "Gerar fichas" em Treinos → Fichas.
+- **Papel do personal**: nenhuma revisão — a ficha fica disponível direto
+  para a aluna, mesmo padrão do histórico importado. O personal já pode
+  editá-la depois via edição compartilhada de fichas, como qualquer outra.
 
 ## Verificação
 
-- [ ] Perguntas em aberto respondidas e plano detalhado antes de implementar
-- [ ] Critérios de aceite atendidos
-- [ ] Layout validado em celular
-- [ ] Fichas geradas não duplicam em sincronizações repetidas
-- [ ] Testes adicionados
-- [ ] Quality gate executado
+- [x] Perguntas em aberto respondidas e plano detalhado antes de implementar
+- [x] Critérios de aceite atendidos
+- [ ] Layout validado em celular — pendente de conferência visual real (ver
+      `docs/work-items/0031-auditoria-mobile-pos-hevy.md`)
+- [x] Fichas geradas não duplicam em sincronizações repetidas
+- [x] Testes adicionados (12 pgTAP em
+      `supabase/tests/101_generate_routines_from_history.sql`, 4 Testing
+      Library em `GenerateRoutinesFromHistoryButton.test.tsx`)
+- [x] Quality gate executado (`format:check`, `lint`, `typecheck`, `test`,
+      `test:db`, `test:e2e`, `build`)

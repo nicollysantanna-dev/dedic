@@ -4,6 +4,7 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { useAuth } from '@/features/auth/auth-context'
 import { ExerciseRecordsSection } from '@/features/workouts/ExerciseRecordsSection'
+import { GenerateRoutinesFromHistoryButton } from '@/features/workouts/GenerateRoutinesFromHistoryButton'
 import { RoutineCard } from '@/features/workouts/RoutineCard'
 import { WorkoutHistorySection } from '@/features/workouts/WorkoutHistorySection'
 import {
@@ -68,6 +69,7 @@ export function StudentWorkoutsPage() {
                 <Plus size={17} /> Nova ficha
               </Link>
             </Button>
+            {tab === 'fichas' && <GenerateRoutinesFromHistoryButton />}
           </div>
         </header>
 
