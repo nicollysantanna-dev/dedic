@@ -16,14 +16,14 @@ grant select on ctx to authenticated;
 set local role authenticated;
 select pg_temp.login((select ana_id from ctx));
 
--- Preenche até o limite (60) direto pela tabela, sem passar pelo Storage —
+-- Preenche até o limite (20) direto pela tabela, sem passar pelo Storage —
 -- só o contador do trigger importa aqui.
 insert into storage.objects (bucket_id, name, owner_id)
 select
   'progress-photos',
   (select ana_id from ctx)::text || '/foto-' || generate_series || '.jpg',
   (select ana_id from ctx)::text
-from generate_series(1, 60);
+from generate_series(1, 20);
 
 insert into public.progress_photos (student_id, taken_on, position, storage_path)
 select
@@ -31,20 +31,20 @@ select
   current_date,
   'front',
   (select ana_id from ctx)::text || '/foto-' || generate_series || '.jpg'
-from generate_series(1, 60);
+from generate_series(1, 20);
 
 select is(
   (select count(*) from public.progress_photos where student_id = (select ana_id from ctx)),
-  60::bigint,
-  'aluna preenche as 60 fotos permitidas'
+  20::bigint,
+  'aluna preenche as 20 fotos permitidas'
 );
 
 select throws_like(
   $$ insert into public.progress_photos (student_id, taken_on, position, storage_path)
      values ((select ana_id from ctx), current_date, 'front',
-             (select ana_id from ctx)::text || '/foto-61.jpg') $$,
+             (select ana_id from ctx)::text || '/foto-21.jpg') $$,
   '%PHOTO_LIMIT_REACHED%',
-  'a 61ª foto é recusada'
+  'a 21ª foto é recusada'
 );
 
 -- Excluir uma foto libera espaço (o contador só considera deleted_at is null).
@@ -59,7 +59,7 @@ select lives_ok(
 select lives_ok(
   $$ insert into public.progress_photos (student_id, taken_on, position, storage_path)
      values ((select ana_id from ctx), current_date, 'front',
-             (select ana_id from ctx)::text || '/foto-61.jpg') $$,
+             (select ana_id from ctx)::text || '/foto-21.jpg') $$,
   'depois de excluir, aluna envia outra foto normalmente'
 );
 

@@ -9,7 +9,7 @@ security definer
 set search_path = ''
 as $$
 declare
-  photo_limit constant integer := 60;
+  photo_limit constant integer := 20;
   active_count integer;
 begin
   select count(*) into active_count

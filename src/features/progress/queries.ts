@@ -6,7 +6,7 @@ import type { Tables } from '@/lib/supabase/database.types'
 
 export const photosBucket = 'progress-photos'
 /** Espelha o limite aplicado em `enforce_progress_photo_limit()` (banco é a fonte da verdade). */
-export const photoLimit = 60
+export const photoLimit = 20
 const signedUrlSeconds = 120
 
 export function useProgressEntries(studentId: string) {

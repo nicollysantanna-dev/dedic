@@ -323,8 +323,9 @@ Deve exibir:
 - O aluno deve conseguir excluir as próprias fotos.
 - A interface deve permitir comparar duas avaliações e ocultar o rosto na visualização.
 - Arquivos devem permanecer privados e ser entregues por acesso autenticado temporário.
-- Cada aluno pode ter no máximo 60 fotos ativas simultâneas (evita crescimento sem
-  controle do bucket); excluir uma foto libera espaço para enviar outra.
+- Cada aluno pode ter no máximo 20 fotos ativas simultâneas (evita crescimento sem
+  controle do bucket, número inicial conservador, revisável com uso real);
+  excluir uma foto libera espaço para enviar outra.
 
 ### RF-24 — Treinos e fichas
 
