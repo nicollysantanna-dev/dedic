@@ -445,6 +445,9 @@ Deve exibir:
 - Chaves administrativas nunca devem ser expostas no navegador.
 - Dados de um aluno não devem ser acessíveis por outro aluno.
 - O sistema deve coletar apenas os dados necessários ao MVP.
+- Termos de uso (`/termos`) e política de privacidade (`/privacidade`) devem ser públicos,
+  e o cadastro deve informar que criar a conta implica concordar com ambos, inclusive com
+  o tratamento dos dados de saúde ([ADR 0009](adr/0009-termos-e-privacidade-sem-registro-de-aceite.md)).
 
 ### RNF-03 — Consistência
 
