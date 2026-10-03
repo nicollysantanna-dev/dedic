@@ -1,6 +1,6 @@
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { DeleteAccountDialog } from './DeleteAccountDialog'
 
@@ -39,6 +39,10 @@ describe('DeleteAccountDialog', () => {
     impact.isError = false
     refetch.mockReset()
     auth.role = 'trainer'
+  })
+
+  afterEach(() => {
+    vi.unstubAllGlobals()
   })
 
   it('botão Excluir conta só habilita com EXCLUIR', async () => {

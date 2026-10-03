@@ -52,25 +52,35 @@ Logs registram apenas o código de erro.
 - Ativa a GUC `dedic.account_deletion` (local à transação). O trigger de imutabilidade de
   `progress_entries` aceita `DELETE` e `appointments_same_day_lock` deixa passar somente
   com ela ativa; nenhum outro caminho a define.
-- Se `profiles.deleted_at` já estiver preenchido, retorna sem alterar nada. Isso garante que
-  cancelar ou excluir duas vezes nunca devolve créditos adicionais.
+- Se `profiles.deleted_at` já estiver preenchido, retorna logo no início sem alterar nada
+  (uma chamada repetida é no-op). Isso garante que cancelar ou excluir duas vezes nunca
+  devolve créditos adicionais.
 - **Cancelamento reutiliza `cancel_appointment`**: a função define
   `request.jwt.claim.sub` como o usuário excluído dentro da transação e chama a RPC existente
   para cada aula `scheduled` futura (inclusive de hoje, ainda não iniciada). Assim estorno
   `cancellation_refund`, evento `cancelled` com autoria do usuário excluído e notificação
   para a outra parte seguem exatamente a regra do cancelamento manual, sem extrair função
-  interna nem duplicar lógica.
+  interna nem duplicar lógica. O status segue o papel do ator: `cancelled_by_student` quando
+  o aluno exclui a conta e `cancelled_by_trainer` quando o personal exclui.
 - Encerra vínculos ativos/pendentes, cancela convites `pending` enviados e anula
   `student_email`/`student_phone` dos convites aceitos pelo usuário.
 - A constraint `invitation_has_single_contact` foi relaxada: os dois contatos podem ser
   nulos somente quando `accepted_by` está preenchido (necessário para limpar o contato do
   aluno excluído sem perder o vínculo histórico).
 - Aluno: apaga `progress_entries`, `progress_photos` e `student_goals`.
-- Limpa `notes` de `workouts`, `workout_exercises`, `routines` e `routine_exercises` em que o
-  usuário é aluno ou criador. Para personal, notas de treinos que ele não possui como aluno
-  nem criou são mantidas.
+- Limpa `notes` de `workouts` e `workout_exercises` em que o usuário é o aluno ou quem
+  registrou o treino (`recorded_by`), e de `routines` e `routine_exercises` em que o usuário é
+  o personal, o aluno ou o criador (`created_by`) da ficha. Notas de treinos de terceiros que o
+  personal não registrou são mantidas.
 - Apaga `hevy_connections` (e o segredo no Vault), `hevy_exercise_template_map` e as
   `notifications` do próprio usuário.
+- Apaga as linhas de `auth.audit_log_entries` do usuário (`payload.actor_id` ou
+  `payload.traits.user_id` igual ao uid), onde o GoTrue grava o e-mail original
+  (`actor_username`) e o nome (`actor_name`) em cadastro, login e logout. As linhas que o
+  endpoint gera depois da RPC (troca de e-mail, `signOut`) já trazem apenas o placeholder,
+  verificado localmente; por isso basta limpar na RPC, sem segunda chamada. O `DELETE` fica num
+  bloco que ignora `insufficient_privilege`: no Supabase hospedado o papel `postgres` pode não
+  ter `DELETE` nessa tabela e, nesse caso, a limpeza vira no-op sem impedir a exclusão.
 
 ### Auth
 
@@ -124,11 +134,23 @@ Resíduos aceitos:
 - `auth.users.phone` não é limpo (cadastro por celular não é usado no MVP).
 - A listagem do Storage cobre uma página de 1000 arquivos por bucket.
 - A exclusão é irreversível e não há exportação de dados (portabilidade fica para depois do piloto).
+- Log de auditoria do Auth: no Supabase hospedado, se o `postgres` não puder apagar
+  `auth.audit_log_entries`, o e-mail original permanece ali. Recomendação: desligar
+  "Write auth audit logs to database" nas configurações de Auth do projeto. Os logs da
+  plataforma Supabase (Auth/API) também guardam o e-mail até expirar a retenção do plano.
+- Um access token emitido em outro dispositivo continua válido por até 1 h após a exclusão
+  (a RLS não verifica `deleted_at`); nessa janela ainda são possíveis escritas por esse token.
+- Se a resposta 200 se perder e o cliente repetir a chamada, a repetição recebe 401 (token
+  revogado) e a UI mostra erro, embora a conta já tenha sido excluída.
+- Convites pendentes enviados por **outros** personais para o e-mail do aluno são mantidos:
+  são dados digitados por esses personais.
+- Os arquivos em `exercise-photos/{uid}/` são mantidos de propósito: são imagens do catálogo
+  de exercícios, não dados pessoais.
 
 ## Validação
 
 - pgTAP `supabase/tests/140_account_deletion.sql` (cancelamento com estorno, dados de saúde,
-  idempotência, permissão e imutabilidade fora da RPC).
+  log de auditoria do Auth, idempotência, permissão e imutabilidade fora da RPC).
 - Vitest do endpoint e Testing Library do diálogo.
 - Playwright: usuário exclui a conta, vê o aviso e não consegue entrar de novo.
 - Reavaliar os resíduos aceitos quando houver termos de uso e política de privacidade.

@@ -182,6 +182,9 @@ Segredos administrativos pertencem exclusivamente a ambientes de servidor e não
 Em builds na Vercel (`VERCEL` definido), as duas variáveis são obrigatórias e o build
 falha sem elas (`scripts/build-config.ts`). Em dev, CI e testes a ausência continua
 permitida e o app mostra a tela de configuração.
+A detecção depende da variável de sistema `VERCEL`, que a Vercel expõe ao build por
+padrão ("Automatically expose System Environment Variables"); se essa opção for desligada,
+o guard deixa de valer.
 
 ### Headers de segurança
 
@@ -190,6 +193,8 @@ O `vercel.json` é a fonte única dos headers de produção (CSP, HSTS, `nosniff
 mesmos headers, liberando também a origem do Supabase para a qual o build aponta, e a
 fixture `tests/e2e/fixtures.ts` reprova qualquer jornada E2E com violação de CSP. Uma
 nova origem externa (CDN, monitoramento) precisa entrar na CSP do `vercel.json`.
+A CSP de produção libera apenas `https://*.supabase.co` (e `wss://*.supabase.co`): um
+domínio próprio do Supabase (custom domain) precisa ser acrescentado à CSP antes do uso.
 
 ## 10. Dados de teste
 
