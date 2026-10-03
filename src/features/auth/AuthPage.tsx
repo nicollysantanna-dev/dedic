@@ -26,6 +26,7 @@ export function AuthPage({ mode }: AuthPageProps) {
   const [serverMessage, setServerMessage] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const isSignUp = mode === 'signup'
+  const accountDeleted = new URLSearchParams(location.search).get('conta') === 'excluida'
 
   const loginForm = useForm<LoginValues>({
     resolver: zodResolver(loginSchema),
@@ -231,6 +232,15 @@ export function AuthPage({ mode }: AuthPageProps) {
                 >
                   Esqueci minha senha
                 </Link>
+              </p>
+            )}
+
+            {accountDeleted && !isSignUp && (
+              <p
+                className="rounded-2xl bg-blue-50 px-4 py-3 text-sm text-blue-950"
+                role="status"
+              >
+                Sua conta foi excluída.
               </p>
             )}
 

@@ -1,8 +1,9 @@
-import { LogOut, ShieldCheck, UserRound } from 'lucide-react'
+import { LogOut, ShieldCheck, Trash2, UserRound } from 'lucide-react'
 import { useState } from 'react'
 
 import { Button } from '@/components/ui/button'
 import { useAvatarUrl } from '@/features/account/avatar'
+import { DeleteAccountDialog } from '@/features/account/DeleteAccountDialog'
 import { EditProfileDialog } from '@/features/account/EditProfileDialog'
 import { HevyIntegrationCard } from '@/features/account/HevyIntegrationCard'
 import { useAuth } from '@/features/auth/auth-context'
@@ -11,6 +12,7 @@ import { formatPhoneInput } from '@/features/students/invitation-contact'
 export function AccountPage() {
   const { profile, session, signOut, refreshProfile } = useAuth()
   const [isEditing, setIsEditing] = useState(false)
+  const [isDeleting, setIsDeleting] = useState(false)
   const [notice, setNotice] = useState('')
   const avatarUrl = useAvatarUrl(profile?.avatar_path ?? null)
 
@@ -87,7 +89,22 @@ export function AccountPage() {
               <LogOut size={17} /> Sair da conta
             </Button>
           </div>
+          <div className="rounded-[1.5rem] bg-white p-6 text-slate-950">
+            <Trash2 className="text-red-600" />
+            <h2 className="mt-4 font-bold">Excluir conta</h2>
+            <p className="mt-2 text-sm text-slate-500">
+              Apague seus dados pessoais do Dedic de forma permanente.
+            </p>
+            <Button
+              className="mt-5 border-red-200 text-red-700 hover:bg-red-50"
+              variant="outline"
+              onClick={() => setIsDeleting(true)}
+            >
+              Excluir conta
+            </Button>
+          </div>
         </section>
+        <DeleteAccountDialog open={isDeleting} onOpenChange={setIsDeleting} />
       </div>
     </main>
   )
