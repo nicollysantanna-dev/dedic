@@ -902,6 +902,7 @@ export type Database = {
           avatar_path: string | null
           created_at: string
           default_lesson_duration_minutes: number | null
+          deleted_at: string | null
           full_name: string
           id: string
           phone: string | null
@@ -912,6 +913,7 @@ export type Database = {
           avatar_path?: string | null
           created_at?: string
           default_lesson_duration_minutes?: number | null
+          deleted_at?: string | null
           full_name: string
           id: string
           phone?: string | null
@@ -922,6 +924,7 @@ export type Database = {
           avatar_path?: string | null
           created_at?: string
           default_lesson_duration_minutes?: number | null
+          deleted_at?: string | null
           full_name?: string
           id?: string
           phone?: string | null
@@ -1931,6 +1934,7 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      delete_account: { Args: { target_user_id: string }; Returns: undefined }
       delete_progress_photo: {
         Args: { target_photo_id: string }
         Returns: {
@@ -2224,6 +2228,7 @@ export type Database = {
           avatar_path: string | null
           created_at: string
           default_lesson_duration_minutes: number | null
+          deleted_at: string | null
           full_name: string
           id: string
           phone: string | null
@@ -2247,6 +2252,7 @@ export type Database = {
           avatar_path: string | null
           created_at: string
           default_lesson_duration_minutes: number | null
+          deleted_at: string | null
           full_name: string
           id: string
           phone: string | null
