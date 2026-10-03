@@ -119,8 +119,8 @@ do Hevy fica em cofre cifrado e toda a comunicação usa HTTPS. Nenhum sistema �
 imune a incidentes; se ocorrer um que possa causar risco relevante, avisaremos você e a ANPD.
 
 **8. Armazenamento no navegador**
-Usamos o armazenamento local do navegador apenas para manter sua sessão de login e
-preferências do aplicativo. Não usamos cookies de rastreamento, de publicidade ou de
+Usamos o armazenamento local do navegador apenas para manter sua sessão de login e,
+quando você abre um link de convite, guardar o convite até concluir o cadastro. Não usamos cookies de rastreamento, de publicidade ou de
 análise de terceiros.
 
 **9. Menores de idade**
