@@ -81,7 +81,7 @@ export default defineConfig(({ mode }) => {
       // Em dev, as funções de api/ rodam à parte via `npm run dev:api`
       // (scripts/dev-api-server.ts) — ver comentário lá para o motivo.
       proxy: {
-        '/api': 'http://localhost:3002',
+        '/api': `http://127.0.0.1:${process.env.DEV_API_PORT ?? 3002}`,
       },
     },
     preview: {

@@ -1,6 +1,5 @@
 import { LoaderCircle } from 'lucide-react'
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
 
 import { Button } from '@/components/ui/button'
 import { Dialog } from '@/components/ui/dialog'
@@ -29,7 +28,6 @@ export function DeleteAccountDialog({
 
 function DeleteAccountDialogContent({ onClose }: { onClose: () => void }) {
   const { profile, session, signOut } = useAuth()
-  const navigate = useNavigate()
   const impact = useDeletionImpact(profile)
   const deleteAccount = useDeleteAccount()
   const isTrainer = profile?.role === 'trainer'
@@ -50,7 +48,9 @@ function DeleteAccountDialogContent({ onClose }: { onClose: () => void }) {
     }
     // O servidor já revogou as sessões; falha no signOut local é irrelevante.
     await signOut().catch(() => undefined)
-    void navigate('/?conta=excluida', { replace: true })
+    // Navegação completa: ao limpar a sessão, o RequireAuth redireciona para "/" e
+    // descartaria o `?conta=excluida` de um navigate() do roteador.
+    window.location.replace('/?conta=excluida')
   }
 
   const futureLessons = impact.data?.futureLessons ?? 0

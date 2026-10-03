@@ -13,7 +13,7 @@ const impact: {
   refetch: typeof refetch
 } = { data: undefined, isError: false, refetch }
 const auth = { role: 'trainer' }
-const navigate = vi.fn()
+const replace = vi.fn()
 const signOut = vi.fn().mockResolvedValue(undefined)
 
 vi.mock('./delete-account-queries', () => ({
@@ -27,12 +27,12 @@ vi.mock('@/features/auth/auth-context', () => ({
     signOut,
   }),
 }))
-vi.mock('react-router-dom', () => ({ useNavigate: () => navigate }))
 
 describe('DeleteAccountDialog', () => {
   beforeEach(() => {
     mutateAsync.mockReset()
-    navigate.mockReset()
+    replace.mockReset()
+    vi.stubGlobal('location', { replace })
     signOut.mockClear()
     mutation.isError = false
     impact.data = undefined
@@ -77,7 +77,7 @@ describe('DeleteAccountDialog', () => {
     )
     await userEvent.click(screen.getByRole('button', { name: 'Excluir conta' }))
     expect(mutateAsync).toHaveBeenCalledWith('token-123')
-    expect(navigate).toHaveBeenCalledWith('/?conta=excluida', { replace: true })
+    expect(replace).toHaveBeenCalledWith('/?conta=excluida')
   })
 
   it('erro mostra tentar novamente', async () => {
@@ -94,7 +94,7 @@ describe('DeleteAccountDialog', () => {
     )
     await userEvent.click(screen.getByRole('button', { name: 'Tentar novamente' }))
     expect(mutateAsync).toHaveBeenCalledWith('token-123')
-    expect(navigate).not.toHaveBeenCalled()
+    expect(replace).not.toHaveBeenCalled()
   })
 
   it('personal com impacto carregando mantém confirmar desabilitado', async () => {
