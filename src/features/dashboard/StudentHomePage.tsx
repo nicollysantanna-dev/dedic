@@ -68,14 +68,18 @@ export function StudentHomePage() {
       return data
     },
   })
+  // Pacote e cobrança só do personal com vínculo ativo: pacotes de um vínculo
+  // encerrado ficam no histórico, mas não contam (mesma regra do saldo no banco).
+  const trainerId = relationship.data?.trainer_id ?? null
   const activePackage = useQuery({
-    queryKey: creditKeys.activePackage(studentId),
-    enabled: Boolean(studentId),
+    queryKey: creditKeys.activePackage(studentId, trainerId),
+    enabled: Boolean(studentId && trainerId),
     queryFn: async () => {
       const { data, error } = await requireSupabase()
         .from('lesson_packages')
         .select('id, lesson_count, expires_on, status')
         .eq('student_id', studentId)
+        .eq('trainer_id', trainerId ?? '')
         .eq('status', 'active')
         .order('created_at', { ascending: false })
         .limit(1)
@@ -96,13 +100,14 @@ export function StudentHomePage() {
     },
   })
   const payment = useQuery({
-    queryKey: paymentKeys.next(studentId),
-    enabled: Boolean(studentId),
+    queryKey: paymentKeys.next(studentId, trainerId),
+    enabled: Boolean(studentId && trainerId),
     queryFn: async () => {
       const { data, error } = await requireSupabase()
         .from('payments')
         .select('amount_cents, due_on, status')
         .eq('student_id', studentId)
+        .eq('trainer_id', trainerId ?? '')
         .in('status', ['pending', 'overdue'])
         .order('due_on')
         .limit(1)
