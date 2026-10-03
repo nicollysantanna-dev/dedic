@@ -1,9 +1,6 @@
 import { cn } from '@/lib/utils'
 
-/**
- * Ícone do Dedic (o mesmo do PWA). O recorte arredondado esconde os cantos claros da
- * arte, para que ela funcione sobre fundos escuros.
- */
+/** Ícone do Dedic (o mesmo do PWA), com cantos arredondados como no celular. */
 export function AppLogo({ label, className }: { label?: string; className?: string }) {
   return (
     <span
@@ -11,7 +8,7 @@ export function AppLogo({ label, className }: { label?: string; className?: stri
     >
       <img
         alt={label ?? ''}
-        className="size-full scale-[1.06] object-cover"
+        className="size-full object-cover"
         decoding="async"
         height={192}
         src="/pwa-192x192.png"
