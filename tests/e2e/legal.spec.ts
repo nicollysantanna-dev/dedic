@@ -10,9 +10,10 @@ test('termos e privacidade abrem sem login', async ({ page }) => {
   for (const doc of documents) {
     await page.goto(doc.path)
     await expect(page.getByRole('heading', { level: 1, name: doc.title })).toBeVisible()
-    const overflow = await page
-      .locator('html')
-      .evaluate((html) => html.scrollWidth - html.clientWidth)
+    // Expressão em texto: o tsconfig dos E2E não carrega os tipos do DOM.
+    const overflow = await page.evaluate<number>(
+      'document.documentElement.scrollWidth - document.documentElement.clientWidth',
+    )
     expect(overflow, `rolagem horizontal em ${doc.path}`).toBeLessThanOrEqual(0)
   }
 })
