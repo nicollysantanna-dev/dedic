@@ -130,6 +130,16 @@ describe('deleteAccount', () => {
     expect(f.signOut).toHaveBeenCalledWith(TOKEN, 'global')
   })
 
+  it('revoga as sessões antes de bloquear o login', async () => {
+    // Com o usuário já banido, o GoTrue recusa o logout global ("User is banned").
+    const f = makeAdmin()
+    await deleteAccount(f.admin, TOKEN)
+
+    const signOutOrder = f.signOut.mock.invocationCallOrder[0]
+    const banOrder = f.updateUserById.mock.invocationCallOrder[0]
+    expect(signOutOrder).toBeLessThan(banOrder)
+  })
+
   it('limpa as chaves existentes de user_metadata (GoTrue mescla)', async () => {
     const f = makeAdmin({
       getUser: {

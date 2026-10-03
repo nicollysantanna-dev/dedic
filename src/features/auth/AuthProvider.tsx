@@ -22,12 +22,31 @@ async function loadProfile(userId: string) {
   return data
 }
 
+/** O banco recusa toda requisição de uma conta excluída (pré-requisição do PostgREST). */
+function isAccountDeletedError(error: unknown) {
+  return (
+    typeof error === 'object' &&
+    error !== null &&
+    'message' in error &&
+    error.message === 'ACCOUNT_DELETED'
+  )
+}
+
 async function loadProfileSafely(userId: string) {
   try {
-    return { profile: await loadProfile(userId), failed: false }
-  } catch {
-    return { profile: null, failed: true }
+    return { profile: await loadProfile(userId), failed: false, deleted: false }
+  } catch (error) {
+    return { profile: null, failed: true, deleted: isAccountDeletedError(error) }
   }
+}
+
+/**
+ * Sessão de uma conta já excluída (outra aba, outro aparelho, app instalado): encerra
+ * só a sessão local, porque o login já está bloqueado, e leva ao aviso de exclusão.
+ */
+async function leaveDeletedAccount() {
+  await supabase?.auth.signOut({ scope: 'local' }).catch(() => undefined)
+  window.location.replace('/?conta=excluida')
 }
 
 async function claimPendingInvitation() {
@@ -57,6 +76,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
   const refreshProfile = useCallback(async () => {
     if (!session?.user) return
     const result = await loadProfileSafely(session.user.id)
+    if (result.deleted) return leaveDeletedAccount()
     setProfile(result.profile)
     setProfileError(result.failed)
   }, [session])
@@ -82,6 +102,10 @@ export function AuthProvider({ children }: PropsWithChildren) {
       }
       const result = await loadProfileSafely(userId)
       if (!active) return null
+      if (result.deleted) {
+        await leaveDeletedAccount()
+        return null
+      }
       setProfile(result.profile)
       setProfileError(result.failed)
       return result.profile

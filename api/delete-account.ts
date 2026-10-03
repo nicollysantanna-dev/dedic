@@ -48,6 +48,11 @@ export async function deleteAccount(
     if (removeError) return fail('STORAGE_CLEANUP_FAILED')
   }
 
+  // Revoga as outras sessões antes do bloqueio: com o usuário já banido, o GoTrue
+  // recusa o logout. Falha aqui não reprova, porque o bloqueio impede renovar a sessão.
+  const { error: signOutError } = await admin.auth.admin.signOut(accessToken, 'global')
+  if (signOutError) console.error('[delete-account] SIGN_OUT_FAILED')
+
   // O GoTrue mescla `user_metadata` (`{}` não apaga nada); chave `null` remove.
   const clearedMetadata = Object.fromEntries(
     Object.keys(userData.user.user_metadata ?? {}).map((key) => [key, null]),
@@ -59,10 +64,6 @@ export async function deleteAccount(
     password: randomBytes(32).toString('base64url'),
   })
   if (authError) return fail('AUTH_CLEANUP_FAILED')
-
-  // A sessão expira sozinha e o login já está banido; falha aqui não reprova.
-  const { error: signOutError } = await admin.auth.admin.signOut(accessToken, 'global')
-  if (signOutError) console.error('[delete-account] SIGN_OUT_FAILED')
 
   return { ok: true }
 }
