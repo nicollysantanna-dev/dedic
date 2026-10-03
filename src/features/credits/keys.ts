@@ -4,4 +4,5 @@ export const creditKeys = {
   ledger: (studentId: string) => ['credits', 'ledger', studentId] as const,
   packages: (studentId: string) => ['credits', 'packages', studentId] as const,
   activePackage: (studentId: string) => ['credits', 'active-package', studentId] as const,
+  activeTrainer: (studentId: string) => ['credits', 'active-trainer', studentId] as const,
 }

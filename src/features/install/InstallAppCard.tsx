@@ -73,6 +73,9 @@ export function InstallAppCard({ className }: { className?: string }) {
         <p className="mt-1 text-slate-300">
           Na tela inicial, o Dedic abre como um aplicativo, em tela cheia.
         </p>
+        <p className="mt-1 text-slate-400">
+          Se já instalou, abra o Dedic pelo ícone da tela inicial.
+        </p>
         {canPrompt ? (
           <Button
             className="mt-3"
@@ -85,6 +88,13 @@ export function InstallAppCard({ className }: { className?: string }) {
         ) : (
           <p className="mt-2 font-semibold text-white">{steps}</p>
         )}
+        <button
+          type="button"
+          onClick={dismiss}
+          className="mt-3 text-xs font-semibold text-blue-300 underline underline-offset-4 hover:text-white"
+        >
+          Já instalei
+        </button>
       </div>
       <button
         type="button"

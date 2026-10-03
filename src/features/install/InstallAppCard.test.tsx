@@ -73,6 +73,31 @@ describe('InstallAppCard', () => {
     ).not.toBeInTheDocument()
   })
 
+  it('avisa para abrir pelo ícone quem já instalou', () => {
+    useBrowser({ userAgent: iphoneSafari })
+    render(<InstallAppCard />)
+
+    expect(
+      screen.getByText('Se já instalou, abra o Dedic pelo ícone da tela inicial.'),
+    ).toBeInTheDocument()
+  })
+
+  it('"Já instalei" esconde o card de vez neste navegador', async () => {
+    useBrowser({ userAgent: iphoneSafari })
+    const { unmount } = render(<InstallAppCard />)
+
+    await userEvent.click(screen.getByRole('button', { name: 'Já instalei' }))
+    expect(
+      screen.queryByRole('heading', { name: /Instale o Dedic/ }),
+    ).not.toBeInTheDocument()
+
+    unmount()
+    render(<InstallAppCard />)
+    expect(
+      screen.queryByRole('heading', { name: /Instale o Dedic/ }),
+    ).not.toBeInTheDocument()
+  })
+
   it('no Android sem convite do navegador mostra o menu do Chrome', () => {
     useBrowser({ userAgent: androidChrome })
     render(<InstallAppCard />)

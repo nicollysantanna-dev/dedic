@@ -13,21 +13,18 @@ import { useAuth } from '@/features/auth/auth-context'
 import {
   transactionTypeLabels,
   useCreditBalance,
+  useActiveTrainerId,
   useCreditLedger,
   useStudentPackages,
 } from '@/features/credits/queries'
+import {
+  currentTrainerPackages,
+  packageDisplayStatus,
+} from '@/features/credits/package-status'
 import { paymentKeys } from '@/features/payments/keys'
 import { requireSupabase } from '@/lib/supabase/client'
 import { formatCurrency, formatDateOnly, formatDateTime } from '@/lib/format'
 import { cn } from '@/lib/utils'
-
-const packageStatusLabels = {
-  draft: 'Aguardando ativação',
-  active: 'Ativo',
-  exhausted: 'Esgotado',
-  expired: 'Encerrado',
-  cancelled: 'Cancelado',
-}
 
 const paymentStatusLabels = {
   pending: 'Pendente',
@@ -42,14 +39,17 @@ export function StudentCreditsPage() {
   const balance = useCreditBalance(studentId)
   const ledger = useCreditLedger(studentId)
   const packages = useStudentPackages(studentId)
+  const activeTrainer = useActiveTrainerId(studentId)
+  const activeTrainerId = activeTrainer.data ?? null
   const nextPayment = useQuery({
-    queryKey: paymentKeys.next(studentId),
-    enabled: Boolean(studentId),
+    queryKey: paymentKeys.next(studentId, activeTrainerId),
+    enabled: Boolean(studentId && activeTrainerId),
     queryFn: async () => {
       const { data, error } = await requireSupabase()
         .from('payments')
         .select('amount_cents, due_on, status')
         .eq('student_id', studentId)
+        .eq('trainer_id', activeTrainerId ?? '')
         .in('status', ['pending', 'overdue'])
         .order('due_on')
         .limit(1)
@@ -59,9 +59,10 @@ export function StudentCreditsPage() {
     },
   })
 
-  const loading = balance.isLoading || ledger.isLoading || packages.isLoading
-  const error = balance.error || ledger.error || packages.error
-  const activePackages = (packages.data ?? []).filter((item) => item.status === 'active')
+  const loading =
+    balance.isLoading || ledger.isLoading || packages.isLoading || activeTrainer.isLoading
+  const error = balance.error || ledger.error || packages.error || activeTrainer.error
+  const activePackages = currentTrainerPackages(packages.data ?? [], activeTrainerId)
 
   return (
     <main className="min-h-dvh px-4 pb-28 pt-5 text-white sm:px-7 lg:px-8 lg:pb-8 lg:pt-7">
@@ -156,12 +157,12 @@ export function StudentCreditsPage() {
                       <span
                         className={cn(
                           'rounded-full px-3 py-1 text-xs font-semibold',
-                          item.status === 'active'
+                          item.status === 'active' && item.trainer_id === activeTrainerId
                             ? 'bg-emerald-100 text-emerald-800'
                             : 'bg-slate-100 text-slate-600',
                         )}
                       >
-                        {packageStatusLabels[item.status]}
+                        {packageDisplayStatus(item, activeTrainerId)}
                       </span>
                     </li>
                   ))}

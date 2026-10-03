@@ -63,3 +63,21 @@ export function useStudentPackages(studentId: string) {
     },
   })
 }
+
+/** Personal com vínculo ativo; só os pacotes dele contam como utilizáveis. */
+export function useActiveTrainerId(studentId: string) {
+  return useQuery({
+    queryKey: creditKeys.activeTrainer(studentId),
+    enabled: Boolean(studentId),
+    queryFn: async () => {
+      const { data, error } = await requireSupabase()
+        .from('trainer_student_relationships')
+        .select('trainer_id')
+        .eq('student_id', studentId)
+        .eq('status', 'active')
+        .maybeSingle()
+      if (error) throw error
+      return data?.trainer_id ?? null
+    },
+  })
+}
