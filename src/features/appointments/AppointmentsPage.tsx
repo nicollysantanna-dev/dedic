@@ -1,4 +1,9 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import {
+  keepPreviousData,
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from '@tanstack/react-query'
 import {
   CalendarClock,
   CalendarPlus,
@@ -75,6 +80,9 @@ export function AppointmentsPage() {
   const appointments = useQuery({
     queryKey: appointmentKeys.range(userId, calendarRange.start, calendarRange.end),
     enabled: Boolean(userId),
+    // Mantém a grade montada ao navegar para um período ainda não carregado; sem
+    // isso o calendário desmonta e volta para a semana atual na visão padrão.
+    placeholderData: keepPreviousData,
     queryFn: async () => {
       const { data, error } = await requireSupabase()
         .from('appointments')
