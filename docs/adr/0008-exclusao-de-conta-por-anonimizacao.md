@@ -159,3 +159,18 @@ Resíduos aceitos:
 
 `progress_entries` deixou de ser imutável ([ADR 0010](0010-evolucao-editavel.md)); a exceção
 por GUC continua necessária apenas para a trava de aula no mesmo dia.
+
+## Atualização (03/10/2026, primeiro uso real)
+
+Uma sessão aberta antes da exclusão (o token vale até 1 hora) editou o perfil
+anonimizado e trouxe nome e telefone de volta. Correções (migração
+`20261003150000_deleted_accounts_and_balance.sql`):
+
+- `pgrst.db_pre_request = public.reject_deleted_accounts`: toda requisição do
+  PostgREST de uma conta com `deleted_at` é recusada com `403 ACCOUNT_DELETED`; o app
+  encerra a sessão local e mostra "Sua conta foi excluída".
+- Perfis excluídos editados depois da exclusão foram anonimizados de novo.
+- O endpoint revoga as sessões (`signOut global`) antes de banir o login; com o
+  usuário já banido o GoTrue recusava o logout.
+- Créditos de um personal excluído ou de vínculo encerrado continuam no extrato, mas
+  não entram no saldo nem nos pacotes ativos do aluno.
