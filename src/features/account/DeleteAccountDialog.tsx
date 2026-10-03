@@ -32,9 +32,14 @@ function DeleteAccountDialogContent({ onClose }: { onClose: () => void }) {
   const navigate = useNavigate()
   const impact = useDeletionImpact(profile)
   const deleteAccount = useDeleteAccount()
+  const isTrainer = profile?.role === 'trainer'
+  const impactBlocking = isTrainer && !impact.data
   const [confirmation, setConfirmation] = useState('')
   const canDelete =
-    confirmation === CONFIRMATION_WORD && !deleteAccount.isPending && Boolean(session)
+    confirmation === CONFIRMATION_WORD &&
+    !deleteAccount.isPending &&
+    Boolean(session) &&
+    !impactBlocking
 
   async function handleDelete() {
     if (!session) return
@@ -76,7 +81,20 @@ function DeleteAccountDialogContent({ onClose }: { onClose: () => void }) {
             outra parte.
           </p>
         </div>
-        {profile?.role === 'trainer' && impact.data && (
+        {isTrainer && impact.isError && (
+          <div className="space-y-2 rounded-xl bg-red-50 p-3 text-red-700">
+            <p role="alert">Não foi possível calcular o impacto da exclusão.</p>
+            <Button onClick={() => void impact.refetch()} type="button" variant="outline">
+              Tentar novamente
+            </Button>
+          </div>
+        )}
+        {isTrainer && !impact.data && !impact.isError && (
+          <p className="rounded-xl bg-slate-50 p-3" role="status">
+            Calculando o impacto…
+          </p>
+        )}
+        {isTrainer && impact.data && (
           <ul className="list-disc rounded-xl bg-amber-50 py-3 pl-8 pr-3 text-amber-900">
             <li>
               {plural(
@@ -106,7 +124,7 @@ function DeleteAccountDialogContent({ onClose }: { onClose: () => void }) {
         </label>
         {deleteAccount.isError && (
           <p className="rounded-xl bg-red-50 p-3 text-red-700" role="alert">
-            Não foi possível excluir sua conta. Tente novamente.
+            Não foi possível excluir sua conta.
           </p>
         )}
         <Button
