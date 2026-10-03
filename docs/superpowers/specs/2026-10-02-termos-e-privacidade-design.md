@@ -118,8 +118,7 @@ do Hevy fica em cofre cifrado e toda a comunicação usa HTTPS. Nenhum sistema �
 imune a incidentes; se ocorrer um que possa causar risco relevante, avisaremos você e a ANPD.
 
 **8. Armazenamento no navegador**
-Usamos o armazenamento local do navegador apenas para manter sua sessão de login e,
-quando você abre um link de convite, guardar o convite até concluir o cadastro. Não usamos cookies de rastreamento, de publicidade ou de
+Usamos o armazenamento local do navegador apenas para manter sua sessão de login e, quando você abre um link de convite, guardar o convite até concluir o cadastro. Como o Dedic pode ser instalado como aplicativo (PWA), o navegador também guarda em cache os arquivos do próprio aplicativo, para carregar mais rápido e funcionar com conexão instável; esse cache não contém seus dados pessoais. Não usamos cookies de rastreamento, de publicidade ou de
 análise de terceiros.
 
 **9. Menores de idade**

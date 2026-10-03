@@ -89,7 +89,10 @@ export function PrivacyPage() {
         <p>
           Usamos o armazenamento local do navegador apenas para manter sua sessão de login
           e, quando você abre um link de convite, guardar o convite até concluir o
-          cadastro. Não usamos cookies de rastreamento, de publicidade ou de análise de
+          cadastro. Como o Dedic pode ser instalado como aplicativo (PWA), o navegador
+          também guarda em cache os arquivos do próprio aplicativo, para carregar mais
+          rápido e funcionar com conexão instável; esse cache não contém seus dados
+          pessoais. Não usamos cookies de rastreamento, de publicidade ou de análise de
           terceiros.
         </p>
       </LegalSection>

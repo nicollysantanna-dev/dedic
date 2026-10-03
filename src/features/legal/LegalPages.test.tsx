@@ -43,6 +43,16 @@ describe('páginas legais', () => {
     ).toBeInTheDocument()
   })
 
+  it('política menciona o cache do aplicativo instalado (PWA)', () => {
+    renderAt('/privacidade')
+
+    expect(
+      screen.getByText(
+        /Como o Dedic pode ser instalado como aplicativo \(PWA\), o navegador também guarda em cache os arquivos do próprio aplicativo/,
+      ),
+    ).toBeInTheDocument()
+  })
+
   it('termos mostram título, vigência e 13 seções', () => {
     renderAt('/termos')
 
