@@ -33,6 +33,19 @@ describe('páginas legais', () => {
     expect(screen.getAllByRole('heading', { level: 2 })).toHaveLength(10)
   })
 
+  it('política só promete a exclusão de dados de saúde que o app permite', () => {
+    renderAt('/privacidade')
+
+    expect(
+      screen.queryByText(/excluindo os registros ou a conta/),
+    ).not.toBeInTheDocument()
+    expect(
+      screen.getByText(
+        /Você pode excluir fotos de evolução a qualquer momento; os demais dados de saúde são apagados quando você exclui a conta ou pede a eliminação pelo e-mail de contato\./,
+      ),
+    ).toBeInTheDocument()
+  })
+
   it('termos mostram título, vigência e 13 seções', () => {
     renderAt('/termos')
 
