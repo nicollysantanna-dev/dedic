@@ -7,6 +7,7 @@ import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { useAuth } from '@/features/auth/auth-context'
 import { authPathWithInvitation } from '@/features/auth/invitation-session'
+import { LegalFooterLinks, SignUpLegalNotice } from '@/features/legal/LegalLinks'
 import {
   loginSchema,
   signUpSchema,
@@ -253,6 +254,8 @@ export function AuthPage({ mode }: AuthPageProps) {
               </p>
             )}
 
+            {isSignUp && <SignUpLegalNotice />}
+
             <Button className="w-full" disabled={isSubmitting} type="submit">
               {isSubmitting && <LoaderCircle className="animate-spin" size={17} />}
               {isSignUp ? 'Criar conta' : 'Entrar'}
@@ -269,6 +272,7 @@ export function AuthPage({ mode }: AuthPageProps) {
             </Link>
           </p>
         </div>
+        {!isSignUp && <LegalFooterLinks className="mt-6" />}
       </section>
     </main>
   )

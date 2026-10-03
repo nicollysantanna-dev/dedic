@@ -7,6 +7,7 @@ import { DeleteAccountDialog } from '@/features/account/DeleteAccountDialog'
 import { EditProfileDialog } from '@/features/account/EditProfileDialog'
 import { HevyIntegrationCard } from '@/features/account/HevyIntegrationCard'
 import { useAuth } from '@/features/auth/auth-context'
+import { LegalFooterLinks } from '@/features/legal/LegalLinks'
 import { formatPhoneInput } from '@/features/students/invitation-contact'
 
 export function AccountPage() {
@@ -105,6 +106,7 @@ export function AccountPage() {
           </div>
         </section>
         <DeleteAccountDialog open={isDeleting} onOpenChange={setIsDeleting} />
+        <LegalFooterLinks className="mt-8" />
       </div>
     </main>
   )
