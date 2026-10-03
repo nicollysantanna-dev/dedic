@@ -57,8 +57,9 @@ Ordem, numa única transação:
 
 1. Se `profiles.deleted_at` já estiver preenchido, retorna sem alterar nada.
 2. Cancela toda aula `scheduled` com `starts_at > now()` em que o usuário é aluno ou
-   personal, reaproveitando a lógica de `cancel_appointment` (extraída para uma função
-   interna que recebe o ator): estorno `cancellation_refund` no extrato, evento
+   personal, chamando `cancel_appointment` com
+   `request.jwt.claim.sub` definido como o usuário excluído (sem função interna extraída):
+   estorno `cancellation_refund` no extrato, evento
    `cancelled` com autor = usuário excluído e notificação para a outra parte. Status:
    `cancelled_by_student` ou `cancelled_by_trainer` conforme o papel do usuário.
 3. Encerra vínculos ativos/pendentes (`status = 'ended'`, `ended_at = now()`).

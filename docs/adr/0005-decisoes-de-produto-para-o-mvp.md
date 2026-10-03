@@ -22,7 +22,7 @@ preparação para produção). Elas foram resolvidas com a responsável pelo pro
 | D6  | Treinos                  | Substituída pela ADR 0006: treinos nativos com catálogo free-exercise-db; Hevy fica para depois do MVP.    |
 | D7  | Tipos de cobrança        | Pacote e aula avulsa. Mensalidade fica fora do MVP.                                                        |
 | D8  | Cancelamento tardio      | Sem penalidade: até o dia anterior devolve o crédito; no dia da aula não há cancelamento.                  |
-| D9  | Exclusão de conta        | Anonimização do perfil preservando o histórico de negócio, conforme a LGPD.                                |
+| D9  | Exclusão de conta        | Anonimização do perfil preservando o histórico de negócio, conforme a LGPD. Ver ADR 0008.                  |
 | D10 | Recorrência de aulas     | Fora do MVP.                                                                                               |
 
 ## Consequências

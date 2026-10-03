@@ -153,6 +153,7 @@ O personal não poderá acessar dados de alunos sem vínculo ativo com ele.
 - O sistema deve armazenar nome, e-mail e telefone do usuário.
 - O personal deve informar a duração padrão das aulas.
 - O sistema deve exibir apenas dados necessários para a relação entre aluno e personal.
+- O usuário deve conseguir excluir a própria conta; a exclusão anonimiza o perfil, apaga dados de saúde e preserva o histórico de negócio da outra parte, conforme a [ADR 0008](adr/0008-exclusao-de-conta-por-anonimizacao.md).
 
 ### RF-03 — Vínculo entre aluno e personal
 
