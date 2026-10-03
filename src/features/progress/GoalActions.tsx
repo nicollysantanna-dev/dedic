@@ -9,6 +9,7 @@ import {
   useUpdateGoal,
   type GoalWithExercise,
 } from '@/features/progress/queries'
+import { formatDateOnly } from '@/lib/format'
 
 /** Editar e excluir uma meta; disponível para o aluno e o personal da meta. */
 export function GoalActions({
@@ -21,6 +22,7 @@ export function GoalActions({
   const [isEditing, setIsEditing] = useState(false)
   const [isConfirming, setIsConfirming] = useState(false)
   const remove = useDeleteGoal(studentId)
+  const deadline = `com prazo em ${formatDateOnly(goal.target_date)}`
 
   return (
     <div className="mt-3">
@@ -50,6 +52,7 @@ export function GoalActions({
       ) : (
         <div className="flex gap-2">
           <Button
+            aria-label={`Editar meta ${deadline}`}
             className="h-8 px-3 text-xs"
             onClick={() => setIsEditing(true)}
             variant="ghost"
@@ -57,6 +60,7 @@ export function GoalActions({
             <Pencil size={14} /> Editar meta
           </Button>
           <Button
+            aria-label={`Excluir meta ${deadline}`}
             className="h-8 px-3 text-xs text-red-700"
             onClick={() => setIsConfirming(true)}
             variant="ghost"

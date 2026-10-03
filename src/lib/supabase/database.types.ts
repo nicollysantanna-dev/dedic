@@ -1178,6 +1178,7 @@ export type Database = {
           target_value: number
           trainer_id: string
           updated_at: string
+          updated_by: string | null
         }
         Insert: {
           created_at?: string
@@ -1192,6 +1193,7 @@ export type Database = {
           target_value: number
           trainer_id: string
           updated_at?: string
+          updated_by?: string | null
         }
         Update: {
           created_at?: string
@@ -1206,6 +1208,7 @@ export type Database = {
           target_value?: number
           trainer_id?: string
           updated_at?: string
+          updated_by?: string | null
         }
         Relationships: [
           {
@@ -1232,6 +1235,13 @@ export type Database = {
           {
             foreignKeyName: 'student_goals_trainer_id_fkey'
             columns: ['trainer_id']
+            isOneToOne: false
+            referencedRelation: 'profiles'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'student_goals_updated_by_fkey'
+            columns: ['updated_by']
             isOneToOne: false
             referencedRelation: 'profiles'
             referencedColumns: ['id']

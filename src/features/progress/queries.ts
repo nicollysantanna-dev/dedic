@@ -181,11 +181,14 @@ export function useUpdateGoalStatus(studentId: string) {
       goalId: string
       status: Tables<'student_goals'>['status']
     }) => {
-      const { error } = await requireSupabase()
+      const { data, error } = await requireSupabase()
         .from('student_goals')
         .update({ status: input.status })
         .eq('id', input.goalId)
+        .eq('student_id', studentId)
+        .select('id')
       if (error) throw error
+      if (!data.length) throw new Error('GOAL_NOT_UPDATED')
     },
     onSuccess: () =>
       queryClient.invalidateQueries({ queryKey: progressKeys.goals(studentId) }),

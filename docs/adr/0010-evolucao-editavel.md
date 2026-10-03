@@ -24,8 +24,14 @@ negócio da outra parte: são dados do titular.
 - Só os campos de conteúdo podem mudar (permissão por coluna): registro — data, peso,
   medidas, observação; meta — valor inicial, valor-alvo, prazo e estado. Aluno, autor
   original e personal da meta ficam fixos.
-- `progress_entries.updated_at`/`updated_by`, preenchidos por trigger, guardam a última
-  alteração. Editar e excluir não geram notificação.
+- `progress_entries.updated_at`/`updated_by` e `student_goals.updated_at`/`updated_by`,
+  preenchidos por trigger, guardam a última alteração. Editar e excluir não geram
+  notificação.
+- A permissão de UPDATE existe só por coluna: a migração revoga explicitamente o UPDATE da
+  tabela inteira para não depender dos privilégios padrão do projeto (pgTAP confere).
+- Notificações de registro de progresso e de meta nova não copiam valores de saúde (só
+  "registrou progresso" / "nova meta"), e os valores já gravados foram limpos — assim a
+  edição, a exclusão ou a exclusão da conta não deixam cópias nas notificações da outra parte.
 - A tela de evolução ganha o histórico de registros com Editar/Excluir e ações de
   Editar/Excluir em cada meta; exclusão sempre pede confirmação.
 - A política de privacidade passa a dizer que o titular pode editar ou apagar esses dados a

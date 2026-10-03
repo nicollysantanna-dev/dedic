@@ -296,6 +296,12 @@ function GoalsCard({
         )}
       </div>
 
+      {updateStatus.error && (
+        <p className="mt-4 rounded-xl bg-red-50 p-3 text-sm text-red-700" role="alert">
+          Não foi possível atualizar a meta. Tente novamente.
+        </p>
+      )}
+
       <ul className="mt-4 space-y-3">
         {active.map((goal) => {
           const current =

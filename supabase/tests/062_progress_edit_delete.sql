@@ -1,7 +1,7 @@
 -- Evolução editável: aluno e personal vinculado editam e apagam registros e metas do aluno.
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(20);
+select plan(32);
 
 create temporary table ctx as
 select
@@ -14,7 +14,11 @@ select
   '71000000-0000-4000-8000-000000000003'::uuid as ana_extra_entry,
   '71000000-0000-4000-8000-000000000004'::uuid as carla_entry,
   '72000000-0000-4000-8000-000000000001'::uuid as ana_goal,
-  '72000000-0000-4000-8000-000000000002'::uuid as carla_goal;
+  '72000000-0000-4000-8000-000000000002'::uuid as carla_goal,
+  '72000000-0000-4000-8000-000000000003'::uuid as ana_other_trainer_goal,
+  '72000000-0000-4000-8000-000000000004'::uuid as ana_second_goal,
+  '72000000-0000-4000-8000-000000000005'::uuid as bruno_goal,
+  '71000000-0000-4000-8000-000000000005'::uuid as bruno_entry;
 
 insert into public.progress_entries (id, student_id, recorded_on, weight_kg, recorded_by)
 select ana_own_entry, ana_id, current_date, 68.4, ana_id from ctx
@@ -27,7 +31,32 @@ insert into public.student_goals (
 )
 select ana_goal, trainer_id, ana_id, 'weight'::public.goal_kind, 68.4, 64, current_date + 90, trainer_id from ctx
 union all
-select carla_goal, trainer_id, carla_id, 'weight'::public.goal_kind, 60, 58, current_date + 90, trainer_id from ctx;
+select carla_goal, trainer_id, carla_id, 'weight'::public.goal_kind, 60, 58, current_date + 90, trainer_id from ctx
+union all
+-- Meta de Ana criada por outro perfil (simula um personal anterior).
+select ana_other_trainer_goal, carla_id, ana_id, 'weight'::public.goal_kind, 70, 66, current_date + 90, carla_id from ctx
+union all
+select ana_second_goal, trainer_id, ana_id, 'weight'::public.goal_kind, 68, 65, current_date + 60, trainer_id from ctx
+union all
+select bruno_goal, trainer_id, bruno_id, 'weight'::public.goal_kind, 80, 75, current_date + 90, trainer_id from ctx;
+
+insert into public.progress_entries (id, student_id, recorded_on, weight_kg, recorded_by)
+select bruno_entry, bruno_id, current_date, 80, bruno_id from ctx;
+
+-- Vínculo de Bruno encerrado: o personal perde o acesso de edição.
+update public.trainer_student_relationships
+set status = 'ended', ended_at = now()
+where student_id = (select bruno_id from ctx);
+
+-- Permissão por coluna: nenhuma permissão de UPDATE na tabela inteira.
+select ok(
+  not has_table_privilege('authenticated', 'public.progress_entries', 'UPDATE'),
+  'authenticated não tem UPDATE na tabela progress_entries inteira'
+);
+select ok(
+  not has_table_privilege('authenticated', 'public.student_goals', 'UPDATE'),
+  'authenticated não tem UPDATE na tabela student_goals inteira'
+);
 
 create function pg_temp.login(user_id uuid) returns void language sql as $$
   select set_config('request.jwt.claim.sub', user_id::text, true);
@@ -146,6 +175,76 @@ with removed as (
   delete from public.student_goals where id = (select carla_goal from ctx) returning 1
 )
 select is((select count(*) from removed), 1::bigint, 'aluna apaga meta de personal antigo');
+
+-- Autoria da última alteração também nas metas.
+select pg_temp.login((select ana_id from ctx));
+update public.student_goals set target_value = 64.5 where id = (select ana_second_goal from ctx);
+select is(
+  (select updated_by from public.student_goals where id = (select ana_second_goal from ctx)),
+  (select ana_id from ctx),
+  'edição de meta registra quem alterou'
+);
+select throws_ok(
+  $$ update public.student_goals set updated_by = (select trainer_id from ctx)
+     where id = (select ana_second_goal from ctx) $$,
+  '42501', null,
+  'cliente não forja o autor da alteração da meta'
+);
+
+-- Personal: apaga meta própria com vínculo, não mexe em meta de outro personal nem sem vínculo.
+select pg_temp.login((select trainer_id from ctx));
+with changed as (
+  update public.student_goals set target_value = 65
+  where id = (select ana_other_trainer_goal from ctx) returning 1
+)
+select is((select count(*) from changed), 0::bigint, 'personal não edita meta de outro personal');
+with removed as (
+  delete from public.student_goals where id = (select ana_other_trainer_goal from ctx) returning 1
+)
+select is((select count(*) from removed), 0::bigint, 'personal não apaga meta de outro personal');
+with removed as (
+  delete from public.student_goals where id = (select ana_second_goal from ctx) returning 1
+)
+select is((select count(*) from removed), 1::bigint, 'personal apaga meta da aluna vinculada');
+with changed as (
+  update public.progress_entries set weight_kg = 79
+  where id = (select bruno_entry from ctx) returning 1
+)
+select is((select count(*) from changed), 0::bigint, 'personal com vínculo encerrado não edita registro');
+with removed as (
+  delete from public.student_goals where id = (select bruno_goal from ctx) returning 1
+)
+select is((select count(*) from removed), 0::bigint, 'personal com vínculo encerrado não apaga meta');
+
+-- Notificações não copiam valores de saúde.
+reset role;
+update public.trainer_student_relationships
+set status = 'active', ended_at = null
+where student_id = (select bruno_id from ctx);
+insert into public.progress_entries (student_id, recorded_on, weight_kg, recorded_by)
+select bruno_id, current_date, 81.3, bruno_id from ctx;
+select is(
+  (select count(*) from public.notifications
+   where user_id = (select trainer_id from ctx) and kind = 'progress_recorded'
+     and body like '%81%'),
+  0::bigint,
+  'notificação de progresso não contém o peso'
+);
+insert into public.student_goals (trainer_id, student_id, kind, initial_value, target_value, target_date, created_by)
+select trainer_id, bruno_id, 'weight'::public.goal_kind, 81.3, 77.7, current_date + 30, trainer_id from ctx;
+select is(
+  (select count(*) from public.notifications
+   where user_id = (select bruno_id from ctx) and kind = 'goal_created'
+     and (body like '%77%' or body like '%81%')),
+  0::bigint,
+  'notificação de meta não contém os valores'
+);
+select is(
+  (select count(*) from public.notifications
+   where kind in ('progress_recorded', 'goal_created') and body ~ '[0-9]'),
+  0::bigint,
+  'nenhuma notificação de progresso ou meta guarda números'
+);
 
 select * from finish();
 rollback;

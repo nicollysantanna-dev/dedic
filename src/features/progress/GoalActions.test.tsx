@@ -26,6 +26,7 @@ const goal: GoalWithExercise = {
   created_by: 'trainer-1',
   created_at: '2026-10-01T10:00:00Z',
   updated_at: '2026-10-01T10:00:00Z',
+  updated_by: null,
   exercise: null,
 }
 
@@ -38,7 +39,9 @@ describe('GoalActions', () => {
   it('edita valor-alvo e prazo da meta', async () => {
     render(<GoalActions goal={goal} studentId="student-1" />)
 
-    await userEvent.click(screen.getByRole('button', { name: 'Editar meta' }))
+    await userEvent.click(
+      screen.getByRole('button', { name: 'Editar meta com prazo em 31/12/2026' }),
+    )
     const dialog = screen.getByRole('dialog', { name: 'Editar meta' })
     const target = within(dialog).getByLabelText('Valor-alvo')
     expect(target).toHaveValue('64')
@@ -55,7 +58,9 @@ describe('GoalActions', () => {
   it('não salva valor-alvo igual ao inicial', async () => {
     render(<GoalActions goal={goal} studentId="student-1" />)
 
-    await userEvent.click(screen.getByRole('button', { name: 'Editar meta' }))
+    await userEvent.click(
+      screen.getByRole('button', { name: 'Editar meta com prazo em 31/12/2026' }),
+    )
     const dialog = screen.getByRole('dialog', { name: 'Editar meta' })
     const target = within(dialog).getByLabelText('Valor-alvo')
     await userEvent.clear(target)
@@ -71,7 +76,9 @@ describe('GoalActions', () => {
   it('exclui a meta só depois de confirmar', async () => {
     render(<GoalActions goal={goal} studentId="student-1" />)
 
-    await userEvent.click(screen.getByRole('button', { name: 'Excluir meta' }))
+    await userEvent.click(
+      screen.getByRole('button', { name: 'Excluir meta com prazo em 31/12/2026' }),
+    )
     expect(deleteGoal).not.toHaveBeenCalled()
     await userEvent.click(screen.getByRole('button', { name: 'Confirmar exclusão' }))
 

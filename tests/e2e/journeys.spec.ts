@@ -263,7 +263,7 @@ test('evolução: aluna registra peso e foto, personal define meta e a exclusão
   await expect(editDialog).toBeHidden()
   await expect(page.getByText(/68,2 kg em/)).toBeVisible()
 
-  await page.getByRole('button', { name: 'Editar meta' }).click()
+  await page.getByRole('button', { name: /^Editar meta/ }).click()
   const editGoal = page.getByRole('dialog', { name: 'Editar meta' })
   await editGoal.getByLabel('Valor-alvo').fill('63')
   await editGoal.getByRole('button', { name: 'Salvar meta' }).click()
@@ -278,7 +278,7 @@ test('evolução: aluna registra peso e foto, personal define meta e a exclusão
   await page.getByRole('button', { name: oldEntry }).click()
   await page.getByRole('button', { name: 'Confirmar exclusão' }).click()
   await expect(page.getByRole('button', { name: oldEntry })).toHaveCount(0)
-  await page.getByRole('button', { name: 'Excluir meta' }).click()
+  await page.getByRole('button', { name: /^Excluir meta/ }).click()
   await page.getByRole('button', { name: 'Confirmar exclusão' }).click()
   await expect(page.getByText('Seu personal ainda não definiu metas.')).toBeVisible()
   await logout(page)
