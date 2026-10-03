@@ -19,6 +19,8 @@
     "eslint.config.js",
     "tests/e2e/**/*.ts",
     "api/**/*.ts",
-    "scripts/dev-api-server.ts"
+    "scripts/dev-api-server.ts",
+    "scripts/build-config.ts",
+    "scripts/build-config.test.ts"
   ]
 }

@@ -1,5 +1,6 @@
-import { expect, test, type Page } from '@playwright/test'
+import { type Page } from '@playwright/test'
 
+import { expect, test } from './fixtures'
 import { futureDate, login, logout, users } from './helpers'
 
 // As jornadas dependem umas das outras (saldo, aulas), por isso rodam em série
