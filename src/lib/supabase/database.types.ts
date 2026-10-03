@@ -2120,6 +2120,7 @@ export type Database = {
         }
         Returns: undefined
       }
+      reject_deleted_accounts: { Args: never; Returns: undefined }
       replace_workout_exercise: {
         Args: { target_exercise_id: string; target_workout_exercise_id: string }
         Returns: undefined
