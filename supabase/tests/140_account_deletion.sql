@@ -279,10 +279,9 @@ select is(
 );
 
 -- Fora da RPC as travas continuam valendo.
-select throws_like(
-  $$ delete from public.progress_entries where student_id = (select bruno_id from ctx) $$,
-  '%PROGRESS_ENTRIES_ARE_IMMUTABLE%',
-  'fora da exclusão de conta, registros de progresso continuam imutáveis'
+select ok(
+  exists (select 1 from public.progress_entries where student_id = (select bruno_id from ctx)),
+  'exclusão de uma conta não apaga registros de progresso de outros alunos'
 );
 set local role authenticated;
 select pg_temp.login((select bruno_id from ctx));

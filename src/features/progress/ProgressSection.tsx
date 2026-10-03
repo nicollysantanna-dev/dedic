@@ -12,18 +12,19 @@ import {
 
 import { Button } from '@/components/ui/button'
 import { Dialog } from '@/components/ui/dialog'
+import { GoalActions } from '@/features/progress/GoalActions'
 import { prepareImage } from '@/features/progress/image'
+import { ProgressEntriesList } from '@/features/progress/ProgressEntriesList'
+import { ProgressEntryDialog } from '@/features/progress/ProgressEntryDialog'
 import {
   buildWeightSeries,
   daysUntil,
   goalProgress,
   latestMeasurements,
   measurementFields,
-  type MeasurementKey,
 } from '@/features/progress/progress-summary'
 import {
   photoLimit,
-  useAddProgressEntry,
   useCreateGoal,
   useDeletePhoto,
   useGoals,
@@ -33,6 +34,7 @@ import {
   useUpdateGoalStatus,
   useUploadPhoto,
   type GoalWithExercise,
+  type ProgressEntryWithAuthor,
 } from '@/features/progress/queries'
 import { ExercisePicker } from '@/features/workouts/ExercisePicker'
 import { exerciseDisplayName } from '@/features/workouts/queries'
@@ -101,6 +103,7 @@ export function ProgressSection({
     <div className="grid gap-5 lg:grid-cols-[1.2fr_0.8fr]">
       <div className="space-y-5">
         <WeightCard
+          entries={entries.data ?? []}
           series={series}
           latest={latest}
           studentId={studentId}
@@ -123,11 +126,13 @@ export function ProgressSection({
 }
 
 function WeightCard({
+  entries,
   series,
   latest,
   studentId,
   viewerId,
 }: {
+  entries: readonly ProgressEntryWithAuthor[]
   series: { date: string; weightKg: number }[]
   latest: ReturnType<typeof latestMeasurements>
   studentId: string
@@ -232,152 +237,19 @@ function WeightCard({
         })}
       </dl>
 
+      <div className="mt-5">
+        <h3 className="mb-2 text-sm font-bold text-slate-700">Histórico de registros</h3>
+        <ProgressEntriesList entries={entries} studentId={studentId} />
+      </div>
+
       {isAdding && (
         <ProgressEntryDialog
           studentId={studentId}
-          viewerId={viewerId}
+          mode={{ kind: 'create', recordedBy: viewerId }}
           onClose={() => setIsAdding(false)}
         />
       )}
     </section>
-  )
-}
-
-function ProgressEntryDialog({
-  studentId,
-  viewerId,
-  onClose,
-}: {
-  studentId: string
-  viewerId: string
-  onClose: () => void
-}) {
-  const [recordedOn, setRecordedOn] = useState(toIsoDate(new Date()))
-  const [weight, setWeight] = useState('')
-  const [measurements, setMeasurements] = useState<Record<MeasurementKey, string>>({
-    chest_cm: '',
-    waist_cm: '',
-    hips_cm: '',
-    arm_cm: '',
-    thigh_cm: '',
-  })
-  const [note, setNote] = useState('')
-  const [formError, setFormError] = useState('')
-  const add = useAddProgressEntry(studentId)
-
-  const submit = (event: FormEvent) => {
-    event.preventDefault()
-    setFormError('')
-    const weightKg = weight ? Number(weight.replace(',', '.')) : null
-    const parsedMeasurements: Record<string, number> = {}
-    for (const field of measurementFields) {
-      const raw = measurements[field.key]
-      if (!raw) continue
-      const value = Number(raw.replace(',', '.'))
-      if (!Number.isFinite(value) || value <= 0 || value > 300) {
-        setFormError(`Informe uma medida válida para ${field.label.toLowerCase()}.`)
-        return
-      }
-      parsedMeasurements[field.key] = value
-    }
-    if (
-      weightKg !== null &&
-      (!Number.isFinite(weightKg) || weightKg < 20 || weightKg > 400)
-    ) {
-      setFormError('Informe um peso entre 20 e 400 kg.')
-      return
-    }
-    if (weightKg === null && Object.keys(parsedMeasurements).length === 0) {
-      setFormError('Informe o peso ou pelo menos uma medida.')
-      return
-    }
-    add.mutate(
-      {
-        recordedOn,
-        weightKg,
-        measurements: parsedMeasurements,
-        note,
-        recordedBy: viewerId,
-      },
-      { onSuccess: onClose },
-    )
-  }
-
-  return (
-    <Dialog
-      title="Registrar peso e medidas"
-      eyebrow="Evolução"
-      onClose={onClose}
-      pending={add.isPending}
-    >
-      <form className="mt-5 space-y-4" onSubmit={submit}>
-        <div className="grid gap-4 sm:grid-cols-2">
-          <label className="block text-sm font-semibold">
-            Data
-            <input
-              className="field mt-2"
-              max={toIsoDate(new Date())}
-              onChange={(event) => setRecordedOn(event.target.value)}
-              required
-              type="date"
-              value={recordedOn}
-            />
-          </label>
-          <label className="block text-sm font-semibold">
-            Peso (kg)
-            <input
-              className="field mt-2"
-              inputMode="decimal"
-              onChange={(event) => setWeight(event.target.value)}
-              placeholder="Ex.: 68,5"
-              value={weight}
-            />
-          </label>
-        </div>
-        <fieldset>
-          <legend className="text-sm font-semibold">Medidas (cm, opcionais)</legend>
-          <div className="mt-2 grid grid-cols-2 gap-3 sm:grid-cols-3">
-            {measurementFields.map((field) => (
-              <label
-                key={field.key}
-                className="block text-xs font-semibold text-slate-600"
-              >
-                {field.label}
-                <input
-                  className="field mt-1"
-                  inputMode="decimal"
-                  onChange={(event) =>
-                    setMeasurements((current) => ({
-                      ...current,
-                      [field.key]: event.target.value,
-                    }))
-                  }
-                  value={measurements[field.key]}
-                />
-              </label>
-            ))}
-          </div>
-        </fieldset>
-        <label className="block text-sm font-semibold">
-          Observação (opcional)
-          <input
-            className="field mt-2"
-            maxLength={240}
-            onChange={(event) => setNote(event.target.value)}
-            value={note}
-          />
-        </label>
-        {(formError || add.error) && (
-          <p className="rounded-xl bg-red-50 p-3 text-sm text-red-700" role="alert">
-            {formError || 'Não foi possível salvar o registro. Tente novamente.'}
-          </p>
-        )}
-        <Button className="w-full" disabled={add.isPending} type="submit">
-          {add.isPending && <LoaderCircle className="animate-spin" size={17} />}
-          Salvar registro
-        </Button>
-      </form>
-    </Dialog>
   )
 }
 
@@ -504,6 +376,7 @@ function GoalsCard({
                   </Button>
                 </div>
               )}
+              <GoalActions goal={goal} studentId={studentId} />
             </li>
           )
         })}
@@ -530,6 +403,7 @@ function GoalsCard({
                 {Number(goal.initial_value).toLocaleString('pt-BR')} →{' '}
                 {Number(goal.target_value).toLocaleString('pt-BR')} ·{' '}
                 {goal.status === 'achieved' ? 'concluída' : 'encerrada'}
+                <GoalActions goal={goal} studentId={studentId} />
               </li>
             ))}
           </ul>

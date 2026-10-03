@@ -9,6 +9,12 @@ test.describe.configure({ mode: 'serial' })
 
 const bookingDay = 2 // dias a partir de hoje, fora da trava de mesmo dia
 
+/** YYYY-MM-DD → DD/MM/YYYY, como a interface mostra datas. */
+function brDate(isoDate: string) {
+  const [year, month, day] = isoDate.split('-')
+  return `${day}/${month}/${year}`
+}
+
 async function studentCredits(page: Page) {
   await page.goto('/app')
   const card = page.locator('article').filter({ hasText: 'Créditos disponíveis' })
@@ -220,7 +226,7 @@ test('evolução: aluna registra peso e foto, personal define meta e a exclusão
     await expect(dialog).toBeHidden()
   }
   await expect(page.getByText(/68,5 kg em/)).toBeVisible()
-  await expect(page.getByText('74 cm')).toBeVisible()
+  await expect(page.getByText('74 cm', { exact: true })).toBeVisible()
   await expect(page.locator('.recharts-line')).toBeVisible()
 
   // Envia uma foto: um recorte da própria tela serve como PNG válido.
@@ -246,12 +252,41 @@ test('evolução: aluna registra peso e foto, personal define meta e a exclusão
   await goalDialog.getByLabel('Data-alvo').fill(futureDate(60))
   await goalDialog.getByRole('button', { name: 'Salvar meta' }).click()
   await expect(page.getByText(/Peso: 68,5 → 64 kg/)).toBeVisible()
+
+  // Personal corrige o peso de hoje e ajusta a meta.
+  await page
+    .getByRole('button', { name: `Editar registro de ${brDate(futureDate(0))}` })
+    .click()
+  const editDialog = page.getByRole('dialog', { name: 'Editar registro' })
+  await editDialog.getByLabel('Peso (kg)').fill('68,2')
+  await editDialog.getByRole('button', { name: 'Salvar registro' }).click()
+  await expect(editDialog).toBeHidden()
+  await expect(page.getByText(/68,2 kg em/)).toBeVisible()
+
+  await page.getByRole('button', { name: 'Editar meta' }).click()
+  const editGoal = page.getByRole('dialog', { name: 'Editar meta' })
+  await editGoal.getByLabel('Valor-alvo').fill('63')
+  await editGoal.getByRole('button', { name: 'Salvar meta' }).click()
+  await expect(editGoal).toBeHidden()
+  await expect(page.getByText(/Peso: 68,5 → 63 kg/)).toBeVisible()
   await logout(page)
 
-  // Aluna vê a meta e exclui a foto.
+  // Aluna exclui um registro antigo e a meta.
   await login(page, users.student.email)
   await page.goto('/app/evolucao')
-  await expect(page.getByText(/Peso: 68,5 → 64 kg/)).toBeVisible()
+  const oldEntry = `Excluir registro de ${brDate(futureDate(-10))}`
+  await page.getByRole('button', { name: oldEntry }).click()
+  await page.getByRole('button', { name: 'Confirmar exclusão' }).click()
+  await expect(page.getByRole('button', { name: oldEntry })).toHaveCount(0)
+  await page.getByRole('button', { name: 'Excluir meta' }).click()
+  await page.getByRole('button', { name: 'Confirmar exclusão' }).click()
+  await expect(page.getByText('Seu personal ainda não definiu metas.')).toBeVisible()
+  await logout(page)
+
+  // Aluna vê o resultado e exclui a foto.
+  await login(page, users.student.email)
+  await page.goto('/app/evolucao')
+  await expect(page.getByText(/68,2 kg em/)).toBeVisible()
   page.once('dialog', (dialog) => void dialog.accept())
   await page.getByLabel(/Excluir foto/).click()
   await expect(page.getByRole('img', { name: 'Frente' })).toHaveCount(0)

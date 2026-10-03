@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { progressKeys } from '@/features/progress/keys'
 import { requireSupabase } from '@/lib/supabase/client'
 import type { Tables } from '@/lib/supabase/database.types'
+import type { ProgressEntryInput } from '@/features/progress/progress-entry-form'
 
 export const photosBucket = 'progress-photos'
 /** Espelha o limite aplicado em `enforce_progress_photo_limit()` (banco é a fonte da verdade). */
@@ -79,16 +80,14 @@ export function usePhotoUrl(path: string | null) {
   })
 }
 
+export type ProgressEntryWithAuthor = Tables<'progress_entries'> & {
+  author: Pick<Tables<'profiles'>, 'full_name'> | null
+}
+
 export function useAddProgressEntry(studentId: string) {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: async (input: {
-      recordedOn: string
-      weightKg: number | null
-      measurements: Record<string, number>
-      note: string
-      recordedBy: string
-    }) => {
+    mutationFn: async (input: ProgressEntryInput & { recordedBy: string }) => {
       const { error } = await requireSupabase()
         .from('progress_entries')
         .insert({
@@ -100,6 +99,46 @@ export function useAddProgressEntry(studentId: string) {
           recorded_by: input.recordedBy,
         })
       if (error) throw error
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: progressKeys.all }),
+  })
+}
+
+export function useUpdateProgressEntry(studentId: string) {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async (input: ProgressEntryInput & { entryId: string }) => {
+      const { data, error } = await requireSupabase()
+        .from('progress_entries')
+        .update({
+          recorded_on: input.recordedOn,
+          weight_kg: input.weightKg,
+          measurements: input.measurements,
+          note: input.note || null,
+        })
+        .eq('id', input.entryId)
+        .eq('student_id', studentId)
+        .select('id')
+      if (error) throw error
+      // RLS sem permissão não gera erro: só não altera nenhuma linha.
+      if (!data.length) throw new Error('PROGRESS_ENTRY_NOT_UPDATED')
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: progressKeys.all }),
+  })
+}
+
+export function useDeleteProgressEntry(studentId: string) {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async (entryId: string) => {
+      const { data, error } = await requireSupabase()
+        .from('progress_entries')
+        .delete()
+        .eq('id', entryId)
+        .eq('student_id', studentId)
+        .select('id')
+      if (error) throw error
+      if (!data.length) throw new Error('PROGRESS_ENTRY_NOT_DELETED')
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: progressKeys.all }),
   })
@@ -147,6 +186,46 @@ export function useUpdateGoalStatus(studentId: string) {
         .update({ status: input.status })
         .eq('id', input.goalId)
       if (error) throw error
+    },
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: progressKeys.goals(studentId) }),
+  })
+}
+
+export function useUpdateGoal(studentId: string) {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async (input: {
+      goalId: string
+      targetValue: number
+      targetDate: string
+    }) => {
+      const { data, error } = await requireSupabase()
+        .from('student_goals')
+        .update({ target_value: input.targetValue, target_date: input.targetDate })
+        .eq('id', input.goalId)
+        .eq('student_id', studentId)
+        .select('id')
+      if (error) throw error
+      if (!data.length) throw new Error('GOAL_NOT_UPDATED')
+    },
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: progressKeys.goals(studentId) }),
+  })
+}
+
+export function useDeleteGoal(studentId: string) {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async (goalId: string) => {
+      const { data, error } = await requireSupabase()
+        .from('student_goals')
+        .delete()
+        .eq('id', goalId)
+        .eq('student_id', studentId)
+        .select('id')
+      if (error) throw error
+      if (!data.length) throw new Error('GOAL_NOT_DELETED')
     },
     onSuccess: () =>
       queryClient.invalidateQueries({ queryKey: progressKeys.goals(studentId) }),

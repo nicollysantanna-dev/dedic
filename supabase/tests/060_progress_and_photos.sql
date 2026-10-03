@@ -33,9 +33,10 @@ select throws_ok(
   'aluna não registra peso de outro aluno'
 );
 select throws_ok(
-  $$ delete from public.progress_entries where student_id = (select ana_id from ctx) $$,
+  $$ update public.progress_entries set student_id = (select bruno_id from ctx)
+     where student_id = (select ana_id from ctx) $$,
   '42501', null,
-  'registros de progresso não podem ser apagados pelo cliente'
+  'registro de progresso não muda de aluno'
 );
 
 select pg_temp.login((select trainer_id from ctx));
@@ -74,8 +75,11 @@ select throws_ok(
   '42501', null,
   'aluna não cria metas'
 );
-with changed as (update public.student_goals set status = 'achieved' returning 1)
-select is((select count(*) from changed), 0::bigint, 'aluna não altera metas');
+select throws_ok(
+  $$ update public.student_goals set student_id = (select bruno_id from ctx) $$,
+  '42501', null,
+  'aluna não transfere meta para outro aluno'
+);
 
 -- Fotos: aluna envia (metadado + objeto), personal vê, outro aluno não.
 select pg_temp.login((select ana_id from ctx));

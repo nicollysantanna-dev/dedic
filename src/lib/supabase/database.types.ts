@@ -942,6 +942,8 @@ export type Database = {
           recorded_by: string
           recorded_on: string
           student_id: string
+          updated_at: string | null
+          updated_by: string | null
           weight_kg: number | null
         }
         Insert: {
@@ -952,6 +954,8 @@ export type Database = {
           recorded_by: string
           recorded_on: string
           student_id: string
+          updated_at?: string | null
+          updated_by?: string | null
           weight_kg?: number | null
         }
         Update: {
@@ -962,6 +966,8 @@ export type Database = {
           recorded_by?: string
           recorded_on?: string
           student_id?: string
+          updated_at?: string | null
+          updated_by?: string | null
           weight_kg?: number | null
         }
         Relationships: [
@@ -975,6 +981,13 @@ export type Database = {
           {
             foreignKeyName: 'progress_entries_student_id_fkey'
             columns: ['student_id']
+            isOneToOne: false
+            referencedRelation: 'profiles'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'progress_entries_updated_by_fkey'
+            columns: ['updated_by']
             isOneToOne: false
             referencedRelation: 'profiles'
             referencedColumns: ['id']
