@@ -2,7 +2,7 @@
 -- dados de saúde, limpa notas, encerra vínculos e anonimiza o perfil (LGPD).
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(31);
+select plan(33);
 
 create temporary table ctx as
 select
@@ -21,7 +21,11 @@ select
   'b0000000-0000-4000-8000-000000000001'::uuid as workout_id,
   'c0000000-0000-4000-8000-000000000001'::uuid as accepted_invitation_id,
   'c0000000-0000-4000-8000-000000000002'::uuid as pending_invitation_id,
-  ((public.local_today() + 1)::timestamp + time '10:00') at time zone 'America/Sao_Paulo' as tomorrow_slot;
+  ((public.local_today() + 1)::timestamp + time '10:00') at time zone 'America/Sao_Paulo' as tomorrow_slot,
+  -- As aulas "de hoje" ficam poucos minutos à frente; perto da meia-noite local elas
+  -- cairiam no dia seguinte, então as asserções que dependem do mesmo dia são puladas.
+  ((public.local_today() + 1)::timestamp at time zone 'America/Sao_Paulo') - now()
+    < interval '10 minutes' as near_local_midnight;
 
 create function pg_temp.login(user_id uuid) returns void language sql as $$
   select set_config('request.jwt.claim.sub', user_id::text, true);
@@ -43,20 +47,21 @@ $$;
 grant select on ctx to authenticated, service_role;
 
 -- Arrange (como postgres): aulas da Ana — amanhã, hoje ainda não iniciada e hoje já
--- iniciada — e uma aula de Bruno hoje e outra amanhã.
+-- iniciada — e uma aula de Bruno hoje e outra amanhã. As de hoje começam em poucos
+-- minutos, sem sobrepor a agenda do personal.
 select pg_temp.insert_appointment(
   (select ana_tomorrow_id from ctx), (select ana_id from ctx), (select ana_relationship_id from ctx),
   (select ana_package_id from ctx), (select tomorrow_slot from ctx),
   (select tomorrow_slot from ctx) + interval '1 hour', now());
 select pg_temp.insert_appointment(
   (select ana_today_id from ctx), (select ana_id from ctx), (select ana_relationship_id from ctx),
-  (select ana_package_id from ctx), now() + interval '2 hours', now() + interval '3 hours', now());
+  (select ana_package_id from ctx), now() + interval '2 minutes', now() + interval '3 minutes', now());
 select pg_temp.insert_appointment(
   (select ana_started_id from ctx), (select ana_id from ctx), (select ana_relationship_id from ctx),
   (select ana_package_id from ctx), now() - interval '10 minutes', now(), now() - interval '1 day');
 select pg_temp.insert_appointment(
   (select bruno_today_id from ctx), (select bruno_id from ctx), (select bruno_relationship_id from ctx),
-  (select bruno_package_id from ctx), now() + interval '1 minute', now() + interval '2 minutes', now());
+  (select bruno_package_id from ctx), now() + interval '4 minutes', now() + interval '5 minutes', now());
 select pg_temp.insert_appointment(
   (select bruno_tomorrow_id from ctx), (select bruno_id from ctx), (select bruno_relationship_id from ctx),
   (select bruno_package_id from ctx), (select tomorrow_slot from ctx) + interval '1 hour',
@@ -82,6 +87,25 @@ select pending_invitation_id, trainer_id, '+5511999990099' from ctx;
 insert into public.hevy_connections (user_id, secret_id)
 select ana_id, vault.create_secret('chave-hevy', 'hevy_api_key:' || ana_id::text) from ctx;
 
+-- Log de auditoria do Auth no formato do GoTrue: login da Ana (e-mail original em
+-- actor_username), ação administrativa sobre a Ana (uid em traits.user_id) e login de Bruno.
+insert into auth.audit_log_entries (id, payload, created_at)
+select gen_random_uuid(), json_build_object(
+  'action', 'login', 'actor_id', ana_id, 'actor_name', 'Ana Aluna',
+  'actor_username', 'aluna@dedic.local', 'log_type', 'account'), now()
+from ctx
+union all
+select gen_random_uuid(), json_build_object(
+  'action', 'user_modified', 'actor_id', '00000000-0000-0000-0000-000000000000',
+  'actor_username', 'service_role', 'log_type', 'user',
+  'traits', json_build_object('user_id', ana_id, 'user_email', 'aluna@dedic.local')), now()
+from ctx
+union all
+select gen_random_uuid(), json_build_object(
+  'action', 'login', 'actor_id', bruno_id, 'actor_name', 'Bruno Aluno',
+  'actor_username', 'bruno@dedic.local', 'log_type', 'account'), now()
+from ctx;
+
 -- Só service_role executa a RPC.
 set local role authenticated;
 select pg_temp.login((select ana_id from ctx));
@@ -105,11 +129,14 @@ select is(
   'cancelled_by_student'::public.appointment_status,
   'aula de amanhã cancelada pela aluna'
 );
-select is(
-  (select status from public.appointments where id = (select ana_today_id from ctx)),
-  'cancelled_by_student'::public.appointment_status,
-  'aula de hoje ainda não iniciada também é cancelada'
-);
+select case when (select near_local_midnight from ctx)
+  then skip('menos de 10 minutos para a meia-noite local: a aula cairia amanhã', 1)
+  else is(
+    (select status from public.appointments where id = (select ana_today_id from ctx)),
+    'cancelled_by_student'::public.appointment_status,
+    'aula de hoje ainda não iniciada também é cancelada'
+  )
+end;
 select is(
   (select status from public.appointments where id = (select ana_started_id from ctx)),
   'scheduled'::public.appointment_status,
@@ -222,6 +249,21 @@ select is(
   'notificações da aluna apagadas'
 );
 
+-- Log de auditoria do Auth sem o e-mail original.
+select is(
+  (select count(*) from auth.audit_log_entries
+   where payload->>'actor_id' = (select ana_id from ctx)::text
+     or payload->'traits'->>'user_id' = (select ana_id from ctx)::text),
+  0::bigint,
+  'log de auditoria do Auth da aluna apagado'
+);
+select is(
+  (select count(*) from auth.audit_log_entries
+   where payload->>'actor_id' = (select bruno_id from ctx)::text),
+  1::bigint,
+  'log de auditoria de outro usuário é mantido'
+);
+
 -- Idempotência: segunda chamada não devolve créditos adicionais.
 set local role service_role;
 select lives_ok(
@@ -244,11 +286,14 @@ select throws_like(
 );
 set local role authenticated;
 select pg_temp.login((select bruno_id from ctx));
-select throws_like(
-  $$ select public.cancel_appointment((select bruno_today_id from ctx)) $$,
-  '%SAME_DAY_APPOINTMENT_LOCKED%',
-  'fora da exclusão de conta, a trava do mesmo dia continua ativa'
-);
+select case when (select near_local_midnight from ctx)
+  then skip('menos de 10 minutos para a meia-noite local: a aula cairia amanhã', 1)
+  else throws_like(
+    $$ select public.cancel_appointment((select bruno_today_id from ctx)) $$,
+    '%SAME_DAY_APPOINTMENT_LOCKED%',
+    'fora da exclusão de conta, a trava do mesmo dia continua ativa'
+  )
+end;
 reset role;
 
 -- Cenário personal: cancela aulas dos alunos, encerra vínculos e convites.
