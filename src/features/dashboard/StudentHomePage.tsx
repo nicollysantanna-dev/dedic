@@ -24,6 +24,7 @@ import { buildStudentHomeSummary } from '@/features/dashboard/student-home-summa
 import { appointmentKeys } from '@/features/appointments/keys'
 import { creditKeys } from '@/features/credits/keys'
 import { paymentKeys } from '@/features/payments/keys'
+import { InstallAppCard } from '@/features/install/InstallAppCard'
 import {
   formatCurrency,
   formatDateOnly,
@@ -143,6 +144,8 @@ export function StudentHomePage() {
             Olá, {profile?.full_name.split(' ')[0]}.
           </h1>
         </header>
+
+        <InstallAppCard className="mt-6" />
 
         {!isInvitationNoticeDismissed && invitationClaimStatus === 'success' && (
           <p

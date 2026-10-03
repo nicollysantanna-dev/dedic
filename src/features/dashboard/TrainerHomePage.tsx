@@ -20,6 +20,7 @@ import { appointmentKeys } from '@/features/appointments/keys'
 import { paymentKeys } from '@/features/payments/keys'
 import { daysUntil } from '@/features/progress/progress-summary'
 import { buildStudentOverviews } from '@/features/students/student-overview'
+import { InstallAppCard } from '@/features/install/InstallAppCard'
 import {
   formatCurrency,
   formatDateOnly,
@@ -131,6 +132,8 @@ export function TrainerHomePage() {
             </Link>
           </Button>
         </header>
+
+        <InstallAppCard className="mt-6" />
 
         {hasError && (
           <p

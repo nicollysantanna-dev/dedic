@@ -53,6 +53,16 @@ describe('páginas legais', () => {
     ).toBeInTheDocument()
   })
 
+  it('política menciona a preferência do aviso de instalação', () => {
+    renderAt('/privacidade')
+
+    expect(
+      screen.getByText(
+        /guardar o convite até concluir o cadastro e lembrar se você dispensou o aviso de instalação do aplicativo\./,
+      ),
+    ).toBeInTheDocument()
+  })
+
   it('termos mostram título, vigência e 13 seções', () => {
     renderAt('/termos')
 
