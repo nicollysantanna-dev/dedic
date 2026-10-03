@@ -12,6 +12,7 @@ import {
 import { motion } from 'motion/react'
 import { NavLink, Outlet } from 'react-router-dom'
 
+import { AppLogo } from '@/components/brand/AppLogo'
 import { useAvatarUrl } from '@/features/account/avatar'
 import { useAuth } from '@/features/auth/auth-context'
 import { NotificationsBell } from '@/features/notifications/NotificationsBell'
@@ -44,9 +45,10 @@ export function AppShell() {
       <aside className="fixed inset-y-0 left-0 z-30 hidden w-56 flex-col border-r border-white/7 bg-[var(--sidebar-bg)] px-4 py-7 lg:flex">
         <div className="flex items-center justify-between px-2">
           <NavLink
-            className="text-2xl font-extrabold tracking-[-0.05em] text-white"
+            className="flex items-center gap-2 text-2xl font-extrabold tracking-[-0.05em] text-white"
             to="/app"
           >
+            <AppLogo className="size-8" />
             dedic.
           </NavLink>
           <NotificationsBell />
@@ -90,9 +92,10 @@ export function AppShell() {
       <div className="min-h-dvh lg:pl-56">
         <div className="flex items-center justify-between px-4 pt-3 lg:hidden">
           <NavLink
-            className="text-xl font-extrabold tracking-[-0.05em] text-white"
+            className="flex items-center gap-2 text-xl font-extrabold tracking-[-0.05em] text-white"
             to="/app"
           >
+            <AppLogo className="size-7" />
             dedic.
           </NavLink>
           <NotificationsBell />

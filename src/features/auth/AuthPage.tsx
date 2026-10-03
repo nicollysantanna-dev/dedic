@@ -1,9 +1,10 @@
 import { zodResolver } from '@hookform/resolvers/zod'
-import { ArrowLeft, Dumbbell, LoaderCircle } from 'lucide-react'
+import { ArrowLeft, LoaderCircle } from 'lucide-react'
 import { useState, type ReactNode } from 'react'
 import { useForm, useWatch } from 'react-hook-form'
 import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom'
 
+import { AppLogo } from '@/components/brand/AppLogo'
 import { Button } from '@/components/ui/button'
 import { useAuth } from '@/features/auth/auth-context'
 import { authPathWithInvitation } from '@/features/auth/invitation-session'
@@ -120,9 +121,7 @@ export function AuthPage({ mode }: AuthPageProps) {
         <div
           className={`${isSignUp ? 'mt-6' : 'mt-10'} rounded-[1.75rem] bg-white p-6 text-slate-950 shadow-[0_24px_70px_rgba(0,0,0,0.35)] sm:p-8`}
         >
-          <span className="grid size-11 place-items-center rounded-2xl bg-[var(--brand)] text-white">
-            <Dumbbell size={21} aria-hidden="true" />
-          </span>
+          <AppLogo className="size-12" label="Dedic" />
           <h1 className="mt-6 text-3xl font-bold tracking-[-0.04em] sm:text-4xl">
             {isSignUp ? 'Crie seu espaço.' : 'Que bom ter você de volta.'}
           </h1>
