@@ -96,6 +96,16 @@ const PaymentsPage = lazy(() =>
     default: module.PaymentsPage,
   })),
 )
+const TermsPage = lazy(() =>
+  import('@/features/legal/TermsPage').then((module) => ({
+    default: module.TermsPage,
+  })),
+)
+const PrivacyPage = lazy(() =>
+  import('@/features/legal/PrivacyPage').then((module) => ({
+    default: module.PrivacyPage,
+  })),
+)
 const NotFoundPage = lazy(() =>
   import('@/features/foundation/NotFoundPage').then((module) => ({
     default: module.NotFoundPage,
@@ -121,6 +131,8 @@ export function App() {
             <Route path="/cadastro" element={<AuthPage mode="signup" />} />
             <Route path="/recuperar" element={<PasswordRecoveryPage />} />
             <Route path="/nova-senha" element={<NewPasswordPage />} />
+            <Route path="/termos" element={<TermsPage />} />
+            <Route path="/privacidade" element={<PrivacyPage />} />
             <Route element={<RequireAuth />}>
               <Route element={<AppShell />}>
                 <Route path="/app" element={<HomePage />} />
