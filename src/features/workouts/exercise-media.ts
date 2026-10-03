@@ -1,11 +1,13 @@
 import { requireSupabase } from '@/lib/supabase/client'
 
 /**
- * Mídia de um exercício: imagens do catálogo (bucket exercise-media, domínio
- * público) e foto do aparelho tirada por quem usa o app (bucket exercise-photos).
+ * Mídia de um exercício: imagens do catálogo e GIF animado do pacote (bucket
+ * exercise-media) e foto do aparelho tirada por quem usa o app (bucket
+ * exercise-photos).
  */
 export type ExerciseMedia = {
   images: string[]
+  animationPath: string | null
   photoPath: string | null
   instructions: string[]
 }
@@ -13,7 +15,12 @@ export type ExerciseMedia = {
 export const exerciseMediaBucket = 'exercise-media'
 export const exercisePhotosBucket = 'exercise-photos'
 
-export const emptyMedia: ExerciseMedia = { images: [], photoPath: null, instructions: [] }
+export const emptyMedia: ExerciseMedia = {
+  images: [],
+  animationPath: null,
+  photoPath: null,
+  instructions: [],
+}
 
 function publicUrl(bucket: string, path: string | null | undefined) {
   if (!path) return null
@@ -28,6 +35,11 @@ export const exerciseImageUrl = (path: string | null | undefined) =>
 export const exercisePhotoUrl = (path: string | null | undefined) =>
   publicUrl(exercisePhotosBucket, path)
 
+/** Há algo para demonstrar o movimento: GIF animado ou imagens do catálogo. */
+export const hasExerciseDemonstration = (
+  media: Pick<ExerciseMedia, 'images' | 'animationPath'>,
+) => Boolean(media.animationPath) || media.images.length > 0
+
 /** Miniatura: foto do aparelho tem prioridade sobre a primeira imagem do catálogo. */
 export function exerciseThumbUrl(media: ExerciseMedia) {
   return exercisePhotoUrl(media.photoPath) ?? exerciseImageUrl(media.images[0]) ?? null
@@ -41,6 +53,7 @@ export function exerciseThumbUrl(media: ExerciseMedia) {
 export function exerciseMediaFrom(
   exercise: {
     image_paths: string[]
+    animation_path: string | null
     instructions: string[]
     photo_path: string | null
     aliases?: { trainer_id: string; photo_path: string | null }[]
@@ -52,6 +65,7 @@ export function exerciseMediaFrom(
     : undefined
   return {
     images: exercise.image_paths,
+    animationPath: exercise.animation_path,
     instructions: exercise.instructions,
     photoPath: exercise.photo_path ?? aliasPhoto ?? null,
   }

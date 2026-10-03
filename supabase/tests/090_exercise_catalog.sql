@@ -1,7 +1,7 @@
 -- Catálogo de exercícios: busca sem acento, apelidos, exercícios próprios e fotos.
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(21);
+select plan(34);
 
 create temporary table ctx as
 select
@@ -39,10 +39,77 @@ select ok(
   'busca em inglês também funciona'
 );
 select is(
-  (select array_length(image_paths, 1) from public.search_exercises('supino reto')
-   where external_id = 'Barbell_Bench_Press_-_Medium_Grip'),
+  (select array_length(image_paths, 1) from public.search_exercises('windmill avançado')
+   where external_id = 'Advanced_Kettlebell_Windmill'),
   2,
-  'busca devolve as imagens do catálogo'
+  'busca devolve as fotos do catálogo sem GIF'
+);
+
+-- Pacote de GIFs (ADR 0011): exercícios novos e animação nos casados.
+select ok(
+  (select count(*) from public.exercises where source = 'gif_pack' and retired_at is null) >= 300,
+  'exercícios do pacote de GIFs importados'
+);
+select ok(
+  not exists (
+    select 1 from public.exercises
+    where source = 'gif_pack' and (animation_path is null or array_length(image_paths, 1) <> 1)
+  ),
+  'todo exercício do pacote tem animação e miniatura'
+);
+select is(
+  (select animation_path from public.search_exercises('supino reto')
+   where external_id = 'Barbell_Bench_Press_-_Medium_Grip'),
+  'gif-pack/barbell-bench-press.webp',
+  'exercício casado ganha a animação'
+);
+select is(
+  (select image_paths from public.search_exercises('supino reto')
+   where external_id = 'Barbell_Bench_Press_-_Medium_Grip'),
+  array['gif-pack/barbell-bench-press.thumb.webp'],
+  'miniatura do GIF substitui as fotos do exercício casado'
+);
+select is(
+  (select animation_path from public.search_exercises('leg press horizontal', 'upper legs', 'leverage machine')
+   where external_id = 'gif-pack:horizontal-leg-press'),
+  'gif-pack/horizontal-leg-press.webp',
+  'exercício novo do pacote aparece na busca com filtro e animação'
+);
+select is(
+  (select animation_path is not null from public.search_exercises('leg press') limit 1),
+  true,
+  'busca põe exercícios animados antes das fotos'
+);
+
+-- Nomes dos personais: sinônimo global, nome anterior e duplicatas aposentadas.
+select is(
+  (select name_pt from public.search_exercises('extensao de quadril na polia') limit 1),
+  'Coice na polia',
+  'sinônimo leva ao mesmo exercício'
+);
+select is(
+  (select name_pt from public.search_exercises('rotação russa') limit 1),
+  'Russian twist',
+  'nome anterior continua encontrando o exercício renomeado'
+);
+select is(
+  (select name_pt from public.search_exercises('agachamento livre') limit 1),
+  'Agachamento livre',
+  'agachamento livre é o com barra, antes da versão sem peso'
+);
+select ok(
+  not exists (select 1 from public.search_exercises('desenvolvimento com halteres')
+              where external_id = 'Dumbbell_Shoulder_Press'),
+  'versão com foto duplicada sai da busca'
+);
+select is(
+  (select count(*) from (
+    select name_pt from public.exercises
+    where owner_id is null and retired_at is null
+    group by name_pt having count(*) > 1
+  ) duplicated),
+  0::bigint,
+  'nenhum nome repetido no catálogo ativo'
 );
 select ok(
   not exists (select 1 from public.search_exercises('supino', 'back')),
@@ -71,6 +138,17 @@ select throws_ok(
   $$ insert into public.exercises (source, external_id, name_en) values ('free_exercise_db', 'hack', 'Hack') $$,
   '42501', null,
   'personal não insere no catálogo global'
+);
+select throws_ok(
+  $$ insert into public.exercises (source, external_id, name_en) values ('gif_pack', 'gif-pack:hack', 'Hack') $$,
+  '42501', null,
+  'personal não insere no pacote de GIFs'
+);
+select throws_ok(
+  $$ update public.exercises set animation_path = 'gif-pack/outro.webp'
+     where owner_id = (select trainer_id from ctx) $$,
+  '23514', null,
+  'exercício próprio não recebe animação do pacote'
 );
 
 -- Foto do aparelho: cada um envia na própria pasta; aluna vinculada vê na busca.

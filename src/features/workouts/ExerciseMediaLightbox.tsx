@@ -5,12 +5,13 @@ import { createPortal } from 'react-dom'
 import {
   exerciseImageUrl,
   exercisePhotoUrl,
+  hasExerciseDemonstration,
   type ExerciseMedia,
 } from '@/features/workouts/exercise-media'
 
 /**
- * Execução do exercício em tela cheia: foto do aparelho (se houver) e as duas
- * posições do movimento alternando como animação. Fecha com toque ou Escape.
+ * Execução do exercício em tela cheia: foto do aparelho (se houver) e o GIF
+ * animado do exercício (ou as duas posições alternando). Fecha com toque ou Escape.
  */
 export function ExerciseMediaLightbox({
   media,
@@ -22,6 +23,7 @@ export function ExerciseMediaLightbox({
   onClose: () => void
 }) {
   const photoUrl = exercisePhotoUrl(media.photoPath)
+  const hasDemonstration = hasExerciseDemonstration(media)
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
@@ -67,8 +69,9 @@ export function ExerciseMediaLightbox({
             </figcaption>
           </figure>
         )}
-        {media.images.length > 0 && (
+        {hasDemonstration && (
           <ExerciseAnimation
+            animationPath={media.animationPath}
             className={
               photoUrl
                 ? 'max-h-[40dvh] w-full max-w-lg rounded-2xl bg-white object-contain'
@@ -78,7 +81,7 @@ export function ExerciseMediaLightbox({
             name={name}
           />
         )}
-        {!photoUrl && media.images.length === 0 && (
+        {!photoUrl && !hasDemonstration && (
           <span className="text-sm text-slate-300">
             Sem demonstração para este exercício.
           </span>
@@ -99,28 +102,33 @@ export function ExerciseMediaLightbox({
   )
 }
 
-/** Alterna as posições inicial e final do movimento, como um GIF de dois quadros. */
+/**
+ * Demonstração do movimento: o GIF animado do pacote quando existir; senão,
+ * alterna as posições inicial e final como um GIF de dois quadros.
+ */
 export function ExerciseAnimation({
   images,
+  animationPath = null,
   name,
   className,
   intervalMs = 900,
 }: {
   images: string[]
+  animationPath?: string | null
   name: string
   className?: string
   intervalMs?: number
 }) {
   const [frame, setFrame] = useState(0)
   useEffect(() => {
-    if (images.length < 2) return
+    if (animationPath || images.length < 2) return
     const timer = window.setInterval(
       () => setFrame((current) => (current + 1) % images.length),
       intervalMs,
     )
     return () => window.clearInterval(timer)
-  }, [images.length, intervalMs])
-  const src = exerciseImageUrl(images[frame] ?? images[0])
+  }, [animationPath, images.length, intervalMs])
+  const src = exerciseImageUrl(animationPath ?? images[frame] ?? images[0])
   if (!src) return null
   return <img alt={`Demonstração de ${name}`} className={className} src={src} />
 }

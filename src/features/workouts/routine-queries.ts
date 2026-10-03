@@ -10,7 +10,7 @@ const routineSelect = `
   routine_exercises(
     id, position, notes, rest_seconds,
     exercise:exercises(id, external_id, name_en, name_pt, source, body_parts, equipments, target_muscles,
-      photo_path, image_paths, instructions, aliases:exercise_aliases(alias, trainer_id, photo_path)),
+      photo_path, image_paths, animation_path, instructions, aliases:exercise_aliases(alias, trainer_id, photo_path)),
     routine_sets(id, position, target_weight_kg, target_reps)
   )
 `
@@ -33,6 +33,7 @@ export type RoutineWithExercises = Tables<'routines'> & {
       | 'target_muscles'
       | 'photo_path'
       | 'image_paths'
+      | 'animation_path'
       | 'instructions'
     > & {
       aliases: Pick<Tables<'exercise_aliases'>, 'alias' | 'trainer_id' | 'photo_path'>[]

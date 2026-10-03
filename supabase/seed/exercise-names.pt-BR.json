@@ -1,0 +1,295 @@
+{
+  "names": {
+    "EZ-Bar_Curl": {
+      "name_pt": "Rosca direta barra W"
+    },
+    "Dumbbell_Alternate_Bicep_Curl": {
+      "name_pt": "Rosca alternada"
+    },
+    "Dumbbell_Bicep_Curl": {
+      "name_pt": "Rosca simultânea"
+    },
+    "gif-pack:ez-bar-preacher-curl": {
+      "name_pt": "Rosca Scott barra W"
+    },
+    "Machine_Preacher_Curls": {
+      "name_pt": "Rosca Scott máquina"
+    },
+    "Incline_Dumbbell_Curl": {
+      "name_pt": "Rosca inclinada com halteres"
+    },
+    "Standing_Biceps_Cable_Curl": {
+      "name_pt": "Rosca na polia baixa"
+    },
+    "Standing_One-Arm_Cable_Curl": {
+      "name_pt": "Rosca unilateral na polia"
+    },
+    "Reverse_Barbell_Curl": {
+      "name_pt": "Rosca inversa"
+    },
+    "Triceps_Pushdown": {
+      "name_pt": "Tríceps pulley barra reta"
+    },
+    "Triceps_Pushdown_-_Rope_Attachment": {
+      "name_pt": "Tríceps pulley corda"
+    },
+    "Triceps_Pushdown_-_V-Bar_Attachment": {
+      "name_pt": "Tríceps pulley barra V"
+    },
+    "Standing_One-Arm_Dumbbell_Triceps_Extension": {
+      "name_pt": "Tríceps francês unilateral"
+    },
+    "Standing_Dumbbell_Triceps_Extension": {
+      "name_pt": "Tríceps francês bilateral"
+    },
+    "gif-pack:one-arm-dumbbell-triceps-kickback-bench-supported": {
+      "name_pt": "Tríceps coice"
+    },
+    "Close-Grip_Barbell_Bench_Press": {
+      "name_pt": "Supino pegada fechada"
+    },
+    "gif-pack:plate-loaded-seated-dip-machine": {
+      "name_pt": "Tríceps máquina"
+    },
+    "Cable_One_Arm_Tricep_Extension": {
+      "name_pt": "Tríceps unilateral na polia"
+    },
+    "Seated_Dumbbell_Press": {
+      "name_pt": "Desenvolvimento com halteres"
+    },
+    "Seated_Barbell_Military_Press": {
+      "name_pt": "Desenvolvimento com barra"
+    },
+    "Machine_Shoulder_Military_Press": {
+      "name_pt": "Desenvolvimento máquina"
+    },
+    "Standing_Military_Press": {
+      "name_pt": "Desenvolvimento militar"
+    },
+    "gif-pack:cable-one-arm-lateral-raise": {
+      "name_pt": "Elevação lateral na polia"
+    },
+    "gif-pack:machine-lateral-raise": {
+      "name_pt": "Elevação lateral máquina"
+    },
+    "Standing_Low-Pulley_Deltoid_Raise": {
+      "name_pt": "Elevação frontal na polia"
+    },
+    "Reverse_Machine_Flyes": {
+      "name_pt": "Crucifixo inverso máquina"
+    },
+    "Upright_Barbell_Row": {
+      "name_pt": "Remada alta"
+    },
+    "Barbell_Full_Squat": {
+      "name_pt": "Agachamento livre"
+    },
+    "Bodyweight_Squat": {
+      "name_pt": "Agachamento livre sem peso"
+    },
+    "Front_Barbell_Squat": {
+      "name_pt": "Agachamento frontal"
+    },
+    "Hack_Squat": {
+      "name_pt": "Agachamento hack"
+    },
+    "gif-pack:dumbbell-goblet-squat": {
+      "name_pt": "Agachamento goblet"
+    },
+    "Leg_Press": {
+      "name_pt": "Leg press 45°"
+    },
+    "Bodyweight_Walking_Lunge": {
+      "name_pt": "Passada",
+      "synonyms": [
+        "Avanço"
+      ]
+    },
+    "Split_Squats": {
+      "name_pt": "Afundo búlgaro"
+    },
+    "Dumbbell_Step_Ups": {
+      "name_pt": "Step-up",
+      "synonyms": [
+        "Subida no banco"
+      ]
+    },
+    "Barbell_Hip_Thrust": {
+      "name_pt": "Elevação pélvica com barra",
+      "synonyms": [
+        "Hip thrust"
+      ]
+    },
+    "One-Legged_Cable_Kickback": {
+      "name_pt": "Coice na polia",
+      "synonyms": [
+        "Extensão de quadril na polia"
+      ]
+    },
+    "gif-pack:standing-machine-glute-kickback": {
+      "name_pt": "Coice máquina"
+    },
+    "gif-pack:cable-hip-abduction": {
+      "name_pt": "Abdução na polia"
+    },
+    "Cable_Hip_Adduction": {
+      "name_pt": "Adução na polia"
+    },
+    "gif-pack:single-leg-lying-leg-curl": {
+      "name_pt": "Flexora unilateral"
+    },
+    "Good_Morning": {
+      "name_pt": "Good morning"
+    },
+    "gif-pack:nordic-hamstring-curl": {
+      "name_pt": "Nordic curl"
+    },
+    "Butt_Lift_Bridge": {
+      "name_pt": "Ponte de glúteos"
+    },
+    "gif-pack:bodyweight-standing-calf-raise-on-stairs": {
+      "name_pt": "Panturrilha em pé"
+    },
+    "Standing_Calf_Raises": {
+      "name_pt": "Panturrilha máquina em pé"
+    },
+    "Seated_Calf_Raise": {
+      "name_pt": "Panturrilha sentada",
+      "synonyms": [
+        "Panturrilha máquina sentada"
+      ]
+    },
+    "Smith_Machine_Calf_Raise": {
+      "name_pt": "Panturrilha no Smith"
+    },
+    "gif-pack:single-leg-standing-calf-raise": {
+      "name_pt": "Panturrilha unilateral em pé"
+    },
+    "Crunches": {
+      "name_pt": "Abdominal tradicional"
+    },
+    "Ab_Crunch_Machine": {
+      "name_pt": "Abdominal máquina"
+    },
+    "Cable_Crunch": {
+      "name_pt": "Abdominal na polia"
+    },
+    "Reverse_Crunch": {
+      "name_pt": "Abdominal infra"
+    },
+    "gif-pack:lying-leg-raise": {
+      "name_pt": "Elevação de pernas"
+    },
+    "gif-pack:hanging-knee-raise": {
+      "name_pt": "Elevação de joelhos"
+    },
+    "gif-pack:tuck-up-v-sit-tuck": {
+      "name_pt": "Abdominal remador"
+    },
+    "gif-pack:oblique-knee-to-elbow-crunch": {
+      "name_pt": "Abdominal oblíquo"
+    },
+    "Russian_Twist": {
+      "name_pt": "Russian twist"
+    },
+    "Mountain_Climbers": {
+      "name_pt": "Mountain climber"
+    },
+    "gif-pack:barbell-wrist-curl-over-bench": {
+      "name_pt": "Rosca de punho"
+    },
+    "Palms-Down_Wrist_Curl_Over_A_Bench": {
+      "name_pt": "Rosca de punho inversa"
+    },
+    "Farmers_Walk": {
+      "name_pt": "Farmer's walk"
+    },
+    "gif-pack:dead-hang": {
+      "name_pt": "Suspensão na barra"
+    },
+    "Decline_Barbell_Bench_Press": {
+      "name_pt": "Supino declinado"
+    },
+    "Machine_Bench_Press": {
+      "name_pt": "Supino máquina"
+    },
+    "Smith_Machine_Bench_Press": {
+      "name_pt": "Supino no Smith"
+    },
+    "Incline_Dumbbell_Flyes": {
+      "name_pt": "Crucifixo inclinado"
+    },
+    "Butterfly": {
+      "name_pt": "Crucifixo na máquina",
+      "synonyms": [
+        "Peck deck",
+        "Voador"
+      ]
+    },
+    "Cable_Crossover": {
+      "name_pt": "Crossover na polia alta"
+    },
+    "gif-pack:standing-cable-fly-mid-pulley": {
+      "name_pt": "Crossover na polia média"
+    },
+    "gif-pack:lying-dumbbell-pullover": {
+      "name_pt": "Pullover com halter"
+    },
+    "Wide-Grip_Lat_Pulldown": {
+      "name_pt": "Puxada frontal aberta"
+    },
+    "Close-Grip_Front_Lat_Pulldown": {
+      "name_pt": "Puxada frontal fechada"
+    },
+    "V-Bar_Pulldown": {
+      "name_pt": "Puxada pegada neutra",
+      "synonyms": [
+        "Puxada com triângulo"
+      ]
+    },
+    "Underhand_Cable_Pulldowns": {
+      "name_pt": "Puxada supinada"
+    },
+    "Pullups": {
+      "name_pt": "Barra fixa pronada"
+    },
+    "Seated_Cable_Rows": {
+      "name_pt": "Remada baixa"
+    },
+    "One-Arm_Dumbbell_Row": {
+      "name_pt": "Remada unilateral com halter",
+      "synonyms": [
+        "Serrote"
+      ]
+    },
+    "T-Bar_Row_with_Handle": {
+      "name_pt": "Remada cavalinho",
+      "synonyms": [
+        "Barra T"
+      ]
+    },
+    "gif-pack:plate-loaded-chest-supported-row": {
+      "name_pt": "Remada articulada máquina"
+    },
+    "Seated_One-arm_Cable_Pulley_Rows": {
+      "name_pt": "Remada unilateral na polia"
+    },
+    "Rope_Straight-Arm_Pulldown": {
+      "name_pt": "Pullover na polia"
+    },
+    "Barbell_Deadlift": {
+      "name_pt": "Levantamento terra"
+    }
+  },
+  "retire": {
+    "Barbell_Shoulder_Press": "Seated_Barbell_Military_Press",
+    "Dumbbell_Shoulder_Press": "Seated_Dumbbell_Press",
+    "Goblet_Squat": "gif-pack:dumbbell-goblet-squat",
+    "Oblique_Crunches": "gif-pack:oblique-knee-to-elbow-crunch",
+    "Bodyweight_Mid_Row": "Inverted_Row",
+    "Decline_Smith_Press": "Smith_Machine_Decline_Press",
+    "EZ-Bar_Skullcrusher": "Lying_Triceps_Press",
+    "Straight-Arm_Dumbbell_Pullover": "gif-pack:lying-dumbbell-pullover",
+    "Leverage_Iso_Row": "gif-pack:plate-loaded-chest-supported-row"
+  }
+}

@@ -14,8 +14,9 @@ type RawSearchResult =
 /** O tipo gerado perde a nulabilidade das colunas da função; aqui ela é explícita. */
 export type ExerciseSearchResult = Omit<
   RawSearchResult,
-  'alias' | 'name_pt' | 'external_id' | 'photo_path'
+  'alias' | 'name_pt' | 'external_id' | 'photo_path' | 'animation_path'
 > & {
+  animation_path: string | null
   alias: string | null
   name_pt: string | null
   external_id: string | null
@@ -32,10 +33,14 @@ export function exerciseDisplayName(
 }
 
 export function searchResultMedia(
-  exercise: Pick<ExerciseSearchResult, 'image_paths' | 'photo_path' | 'instructions'>,
+  exercise: Pick<
+    ExerciseSearchResult,
+    'image_paths' | 'animation_path' | 'photo_path' | 'instructions'
+  >,
 ): ExerciseMedia {
   return {
     images: exercise.image_paths,
+    animationPath: exercise.animation_path,
     photoPath: exercise.photo_path,
     instructions: exercise.instructions,
   }
@@ -191,7 +196,7 @@ export function useCreateCustomExercise(ownerId: string) {
           photo_path: photoPath,
         })
         .select(
-          'id, source, external_id, name_en, name_pt, photo_path, image_paths, instructions, body_parts, equipments, target_muscles, secondary_muscles',
+          'id, source, external_id, name_en, name_pt, photo_path, image_paths, animation_path, instructions, body_parts, equipments, target_muscles, secondary_muscles',
         )
         .single()
       if (error) {

@@ -175,6 +175,26 @@ imagens. Para atualizar o catálogo: `node scripts/import-free-exercise-db.mjs`,
 revise `supabase/seed/exercises.pt-BR.json` e gere a migração com
 `node scripts/build-catalog-migration.mjs <timestamp>`.
 
+### GIFs animados (ADR 0011)
+
+As animações do pacote de GIFs também vão para `exercise-media`, na pasta
+`gif-pack/`. Os GIFs originais ficam fora do repositório (`../dedic-media/gif-pack/raw`).
+Converta uma vez (requer Pillow) e envie para cada projeto:
+
+```bash
+python3 scripts/convert-gif-pack.py ../dedic-media/gif-pack/raw ../dedic-media/gif-pack/webp
+SUPABASE_URL=https://<ref>.supabase.co SUPABASE_SERVICE_ROLE_KEY=... \
+  node scripts/sync-gif-pack-media.mjs ../dedic-media/gif-pack/webp
+```
+
+Para mudar nomes ou classificação, edite `supabase/seed/gif-pack.json` e gere a
+migração com `node scripts/build-gif-pack-migration.mjs <timestamp>` (sempre
+depois de uma nova migração do free-exercise-db).
+
+Os nomes no vocabulário dos personais, os sinônimos e as duplicatas aposentadas
+ficam em `supabase/seed/exercise-names.pt-BR.json`; gere a migração com
+`node scripts/build-exercise-names-migration.mjs <timestamp>`, sempre por último.
+
 ## Autenticar a CLI posteriormente
 
 Quando a CLI estiver autenticada, conecte este diretório ao projeto:

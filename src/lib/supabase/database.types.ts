@@ -403,6 +403,7 @@ export type Database = {
       }
       exercises: {
         Row: {
+          animation_path: string | null
           body_parts: string[]
           created_at: string
           equipments: string[]
@@ -417,9 +418,11 @@ export type Database = {
           retired_at: string | null
           secondary_muscles: string[]
           source: Database['public']['Enums']['exercise_source']
+          synonyms: string[]
           target_muscles: string[]
         }
         Insert: {
+          animation_path?: string | null
           body_parts?: string[]
           created_at?: string
           equipments?: string[]
@@ -434,9 +437,11 @@ export type Database = {
           retired_at?: string | null
           secondary_muscles?: string[]
           source: Database['public']['Enums']['exercise_source']
+          synonyms?: string[]
           target_muscles?: string[]
         }
         Update: {
+          animation_path?: string | null
           body_parts?: string[]
           created_at?: string
           equipments?: string[]
@@ -451,6 +456,7 @@ export type Database = {
           retired_at?: string | null
           secondary_muscles?: string[]
           source?: Database['public']['Enums']['exercise_source']
+          synonyms?: string[]
           target_muscles?: string[]
         }
         Relationships: [
@@ -2223,6 +2229,7 @@ export type Database = {
         }
         Returns: {
           alias: string
+          animation_path: string
           body_parts: string[]
           equipments: string[]
           external_id: string
@@ -2308,7 +2315,7 @@ export type Database = {
         | 'appointment_consumption'
         | 'cancellation_refund'
         | 'manual_adjustment'
-      exercise_source: 'exercisedb' | 'custom' | 'free_exercise_db'
+      exercise_source: 'exercisedb' | 'custom' | 'free_exercise_db' | 'gif_pack'
       goal_kind: 'weight' | 'attendance' | 'exercise_load'
       goal_status: 'active' | 'achieved' | 'abandoned'
       invitation_status: 'pending' | 'accepted' | 'declined' | 'expired' | 'cancelled'
@@ -2479,7 +2486,7 @@ export const Constants = {
         'cancellation_refund',
         'manual_adjustment',
       ],
-      exercise_source: ['exercisedb', 'custom', 'free_exercise_db'],
+      exercise_source: ['exercisedb', 'custom', 'free_exercise_db', 'gif_pack'],
       goal_kind: ['weight', 'attendance', 'exercise_load'],
       goal_status: ['active', 'achieved', 'abandoned'],
       invitation_status: ['pending', 'accepted', 'declined', 'expired', 'cancelled'],

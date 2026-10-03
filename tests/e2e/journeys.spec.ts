@@ -680,8 +680,8 @@ test('aluna cria um exercício próprio com foto pelo seletor e substitui exerc�
 
   // O seletor mostra miniaturas do catálogo em toda linha.
   await page.getByRole('button', { name: 'Adicionar exercício' }).click()
-  await page.getByPlaceholder('Buscar exercício').fill('supino declinado com barra')
-  const row = page.getByRole('button', { name: /Supino declinado com barra/ }).first()
+  await page.getByPlaceholder('Buscar exercício').fill('supino declinado')
+  const row = page.getByRole('button', { name: /Supino declinado Peitorais/ }).first()
   await expect(row.getByRole('button', { name: /Ver execução/ })).toBeVisible()
   await row.click()
 
@@ -704,8 +704,8 @@ test('aluna cria um exercício próprio com foto pelo seletor e substitui exerc�
   ).toBeVisible()
 
   // Substituir mantém o bloco (séries) e troca só o exercício.
-  await page.getByLabel('Carga da série 1 de Supino declinado com barra').fill('30')
-  await page.getByRole('button', { name: 'Opções de Supino declinado com barra' }).click()
+  await page.getByLabel('Carga da série 1 de Supino declinado').fill('30')
+  await page.getByRole('button', { name: 'Opções de Supino declinado' }).click()
   await page.getByRole('button', { name: 'Substituir exercício' }).click()
   const replaceSheet = page.getByRole('dialog', { name: 'Substituir exercício' })
   await replaceSheet
@@ -735,11 +735,11 @@ test('aluna cria um exercício próprio com foto pelo seletor e substitui exerc�
     .getByPlaceholder('Buscar exercício')
     .fill('leg press')
   await page
-    .getByRole('button', { name: /Leg press Quadríceps/ })
+    .getByRole('button', { name: /Leg press 45° Quadríceps/ })
     .first()
     .click()
   await expect(
-    page.getByRole('heading', { name: 'Leg press', exact: true }),
+    page.getByRole('heading', { name: 'Leg press 45°', exact: true }),
   ).toBeVisible()
   await expect(page.getByRole('heading', { name: 'Leg press da academia' })).toHaveCount(
     0,

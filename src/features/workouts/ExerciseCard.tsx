@@ -13,6 +13,7 @@ import {
   ExerciseAnimation,
   ExerciseMediaLightbox,
 } from '@/features/workouts/ExerciseMediaLightbox'
+import { hasExerciseDemonstration } from '@/features/workouts/exercise-media'
 import {
   exerciseDisplayName,
   exercisePhotoUrl,
@@ -132,7 +133,7 @@ function ExerciseDetail({
   return (
     <div className="mt-4 grid gap-4 border-t border-slate-100 pt-4 sm:grid-cols-[12rem_1fr]">
       <div className="overflow-hidden rounded-xl bg-slate-100">
-        {media.images.length === 0 ? (
+        {!hasExerciseDemonstration(media) ? (
           <Placeholder text="Exercício próprio, sem demonstração." />
         ) : (
           <button
@@ -142,7 +143,8 @@ function ExerciseDetail({
             type="button"
           >
             <ExerciseAnimation
-              className="aspect-square w-full object-cover"
+              animationPath={media.animationPath}
+              className="aspect-square w-full bg-white object-contain"
               images={media.images}
               name={exerciseDisplayName(exercise)}
             />

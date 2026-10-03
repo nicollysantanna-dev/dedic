@@ -24,7 +24,7 @@ const workoutSelect = `
   *,
   workout_exercises(
     id, position, notes, rest_seconds,
-    exercise:exercises(id, external_id, name_en, name_pt, source, photo_path, image_paths, instructions,
+    exercise:exercises(id, external_id, name_en, name_pt, source, photo_path, image_paths, animation_path, instructions,
       aliases:exercise_aliases(alias, trainer_id, photo_path)),
     workout_sets(id, position, set_type, weight_kg, reps, previous_weight_kg, previous_reps, completed_at, record_kinds)
   )
@@ -55,6 +55,7 @@ export type WorkoutExercise = Pick<
     | 'source'
     | 'photo_path'
     | 'image_paths'
+    | 'animation_path'
     | 'instructions'
   > & {
     aliases: Pick<Tables<'exercise_aliases'>, 'alias' | 'trainer_id' | 'photo_path'>[]
@@ -123,7 +124,7 @@ export function useOpenWorkout(studentId: string) {
 }
 
 const exerciseSummarySelect =
-  'id, external_id, name_en, name_pt, source, photo_path, image_paths, instructions, aliases:exercise_aliases(alias, trainer_id, photo_path)'
+  'id, external_id, name_en, name_pt, source, photo_path, image_paths, animation_path, instructions, aliases:exercise_aliases(alias, trainer_id, photo_path)'
 
 export type WorkoutHistoryItem = Pick<
   Tables<'workouts'>,
