@@ -33,15 +33,12 @@ describe('páginas legais', () => {
     expect(screen.getAllByRole('heading', { level: 2 })).toHaveLength(10)
   })
 
-  it('política só promete a exclusão de dados de saúde que o app permite', () => {
+  it('política descreve a edição e exclusão de dados de saúde', () => {
     renderAt('/privacidade')
 
     expect(
-      screen.queryByText(/excluindo os registros ou a conta/),
-    ).not.toBeInTheDocument()
-    expect(
       screen.getByText(
-        /Você pode excluir fotos de evolução a qualquer momento; os demais dados de saúde são apagados quando você exclui a conta ou pede a eliminação pelo e-mail de contato\./,
+        /O registro desses dados é opcional, e você pode editá-los ou apagá-los a qualquer momento, ou excluir a conta\./,
       ),
     ).toBeInTheDocument()
   })

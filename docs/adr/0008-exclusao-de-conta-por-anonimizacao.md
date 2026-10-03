@@ -154,3 +154,8 @@ Resíduos aceitos:
 - Vitest do endpoint e Testing Library do diálogo.
 - Playwright: usuário exclui a conta, vê o aviso e não consegue entrar de novo.
 - Reavaliar os resíduos aceitos quando houver termos de uso e política de privacidade.
+
+## Atualização (03/10/2026)
+
+`progress_entries` deixou de ser imutável ([ADR 0010](0010-evolucao-editavel.md)); a exceção
+por GUC continua necessária apenas para a trava de aula no mesmo dia.

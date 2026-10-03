@@ -81,7 +81,7 @@ para nicollyengenheira@gmail.com.
 - Prestar o serviço que você contratou ao criar a conta — agenda, créditos, pagamentos,
   treinos e notificações (execução de contrato, LGPD art. 7º, V).
 - Dados de saúde: registrar e mostrar sua evolução para você e para o personal vinculado,
-  com o seu consentimento (LGPD art. 11, I). O registro desses dados é opcional. Você pode excluir fotos de evolução a qualquer momento; os demais dados de saúde são apagados quando você exclui a conta ou pede a eliminação pelo e-mail de contato.
+  com o seu consentimento (LGPD art. 11, I). O registro desses dados é opcional, e você pode editá-los ou apagá-los a qualquer momento, ou excluir a conta.
 - Segurança, prevenção de fraude e cumprimento de obrigações legais (LGPD art. 7º, II e IX).
 
 Não vendemos seus dados, não exibimos anúncios e não criamos perfis para publicidade.

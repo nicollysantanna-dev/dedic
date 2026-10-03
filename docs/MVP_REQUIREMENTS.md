@@ -316,6 +316,8 @@ Deve exibir:
 - Uma meta deve possuir valor inicial, valor-alvo, data-alvo e estado.
 - Personal e aluno devem visualizar a evolução do peso em gráfico e por período.
 - Personal e aluno podem registrar peso, com autoria e data preservadas.
+- Aluno e personal com vínculo ativo podem editar e excluir registros de peso/medidas e metas
+  do aluno; a última alteração guarda autor e data ([ADR 0010](adr/0010-evolucao-editavel.md)).
 
 ### RF-23 — Fotos de evolução
 
