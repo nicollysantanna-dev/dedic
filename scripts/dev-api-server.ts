@@ -9,10 +9,12 @@ import { createServer, type IncomingMessage, type ServerResponse } from 'node:ht
 
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 
-try {
-  process.loadEnvFile('.env')
-} catch {
-  // .env é opcional; as variáveis também podem já estar no ambiente.
+if (process.env.DEDIC_SKIP_DOTENV !== '1') {
+  try {
+    process.loadEnvFile('.env')
+  } catch {
+    // .env é opcional; as variáveis também podem já estar no ambiente.
+  }
 }
 
 const routes: Record<
@@ -21,6 +23,7 @@ const routes: Record<
 > = {
   '/api/hevy-sync': () => import('../api/hevy-sync'),
   '/api/hevy-sync-cron': () => import('../api/hevy-sync-cron'),
+  '/api/delete-account': () => import('../api/delete-account'),
 }
 
 const port = Number(process.env.DEV_API_PORT ?? 3002)

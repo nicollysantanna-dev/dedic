@@ -9,3 +9,4 @@ supabase/seed/*.json
 supabase/migrations/*_exercise_catalog_data.sql
 supabase/migrations/*_free_exercise_db_data.sql
 .claude/
+.superpowers/
