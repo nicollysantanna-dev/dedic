@@ -13,6 +13,7 @@ dados demonstrativos; autenticação e persistência começam no Marco 2.
 - [Requisitos do MVP](docs/MVP_REQUIREMENTS.md)
 - [Harness de desenvolvimento](docs/DEVELOPMENT_HARNESS.md)
 - [Plano incremental](docs/IMPLEMENTATION_PLAN.md)
+- [Roteiro do piloto](docs/PILOT_PLAN.md)
 - [Configuração do Supabase](docs/SUPABASE_SETUP.md)
 - [Registros de decisão](docs/adr/README.md)
 
