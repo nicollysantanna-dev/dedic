@@ -134,7 +134,7 @@ function ExerciseDetail({
     <div className="mt-4 grid gap-4 border-t border-slate-100 pt-4 sm:grid-cols-[12rem_1fr]">
       <div className="overflow-hidden rounded-xl bg-slate-100">
         {!hasExerciseDemonstration(media) ? (
-          <Placeholder text="Exercício próprio, sem demonstração." />
+          <Placeholder text="Sem demonstração para este exercício." />
         ) : (
           <button
             aria-label={`Ampliar demonstração de ${exerciseDisplayName(exercise)}`}
@@ -145,7 +145,6 @@ function ExerciseDetail({
             <ExerciseAnimation
               animationPath={media.animationPath}
               className="aspect-square w-full bg-white object-contain"
-              images={media.images}
               name={exerciseDisplayName(exercise)}
             />
           </button>

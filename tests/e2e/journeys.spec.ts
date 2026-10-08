@@ -414,7 +414,7 @@ test('biblioteca de exercícios: busca em português, apelido e exercício próp
   await expect(card).toBeVisible()
   await expect(card).toContainText('Barbell Bench Press - Medium Grip')
 
-  // Demonstração vem do nosso bucket (imagens do free-exercise-db).
+  // Demonstração é o GIF animado do nosso bucket (ADR 0012).
   await card.getByRole('button', { name: 'Ver demonstração' }).click()
   await expect(
     card.getByRole('img', { name: 'Demonstração de Supino reto com barra' }),

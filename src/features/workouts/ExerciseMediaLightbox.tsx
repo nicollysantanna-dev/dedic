@@ -1,5 +1,5 @@
 import { X } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { useEffect } from 'react'
 import { createPortal } from 'react-dom'
 
 import {
@@ -11,7 +11,7 @@ import {
 
 /**
  * Execução do exercício em tela cheia: foto do aparelho (se houver) e o GIF
- * animado do exercício (ou as duas posições alternando). Fecha com toque ou Escape.
+ * animado do exercício. Fecha com toque ou Escape.
  */
 export function ExerciseMediaLightbox({
   media,
@@ -77,7 +77,6 @@ export function ExerciseMediaLightbox({
                 ? 'max-h-[40dvh] w-full max-w-lg rounded-2xl bg-white object-contain'
                 : 'max-h-full w-full max-w-lg rounded-2xl bg-white object-contain'
             }
-            images={media.images}
             name={name}
           />
         )}
@@ -102,33 +101,17 @@ export function ExerciseMediaLightbox({
   )
 }
 
-/**
- * Demonstração do movimento: o GIF animado do pacote quando existir; senão,
- * alterna as posições inicial e final como um GIF de dois quadros.
- */
+/** Demonstração do movimento: o GIF animado do pacote; sem ele, nada. */
 export function ExerciseAnimation({
-  images,
-  animationPath = null,
+  animationPath,
   name,
   className,
-  intervalMs = 900,
 }: {
-  images: string[]
-  animationPath?: string | null
+  animationPath: string | null
   name: string
   className?: string
-  intervalMs?: number
 }) {
-  const [frame, setFrame] = useState(0)
-  useEffect(() => {
-    if (animationPath || images.length < 2) return
-    const timer = window.setInterval(
-      () => setFrame((current) => (current + 1) % images.length),
-      intervalMs,
-    )
-    return () => window.clearInterval(timer)
-  }, [animationPath, images.length, intervalMs])
-  const src = exerciseImageUrl(animationPath ?? images[frame] ?? images[0])
+  const src = exerciseImageUrl(animationPath)
   if (!src) return null
   return <img alt={`Demonstração de ${name}`} className={className} src={src} />
 }

@@ -332,7 +332,7 @@ Deve exibir:
 
 ### RF-24 — Treinos e fichas
 
-- O catálogo de exercícios (free-exercise-db, domínio público) deve ter nome em português, imagens servidas do próprio projeto e instruções; nenhuma chamada a API externa em tempo de execução.
+- O catálogo de exercícios deve ter nome em português e demonstração por GIF animado 3D servido do próprio projeto, sem fotos ou vídeos de pessoas (ADR 0012); nenhuma chamada a API externa em tempo de execução.
 - Personal e aluno devem montar fichas (exercícios em ordem, séries-alvo, descanso, notas), editar as fichas um do outro e duplicá-las.
 - Personal e aluno devem criar exercícios próprios com nome e foto do aparelho; o exercício é visível a quem tem vínculo ativo com o dono.
 - O personal deve poder apelidar e fotografar qualquer exercício do catálogo para seus alunos.

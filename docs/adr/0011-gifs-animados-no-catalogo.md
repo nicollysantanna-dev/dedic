@@ -1,6 +1,6 @@
 # ADR 0011 — GIFs animados no catálogo de exercícios
 
-- Status: aceita
+- Status: aceita; complementada pela ADR 0012 (catálogo só com GIF)
 - Data: 2026-10-03
 - Responsáveis: Nicolly
 

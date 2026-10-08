@@ -1,7 +1,7 @@
 import { requireSupabase } from '@/lib/supabase/client'
 
 /**
- * Mídia de um exercício: imagens do catálogo e GIF animado do pacote (bucket
+ * Mídia de um exercício: miniatura e GIF animado do pacote (bucket
  * exercise-media) e foto do aparelho tirada por quem usa o app (bucket
  * exercise-photos).
  */
@@ -35,10 +35,16 @@ export const exerciseImageUrl = (path: string | null | undefined) =>
 export const exercisePhotoUrl = (path: string | null | undefined) =>
   publicUrl(exercisePhotosBucket, path)
 
-/** Há algo para demonstrar o movimento: GIF animado ou imagens do catálogo. */
-export const hasExerciseDemonstration = (
-  media: Pick<ExerciseMedia, 'images' | 'animationPath'>,
-) => Boolean(media.animationPath) || media.images.length > 0
+/** O catálogo só demonstra com GIF animado 3D; nenhuma foto de pessoa (ADR 0012). */
+const animatedCatalogFolder = 'gif-pack/'
+
+/** Imagens do catálogo que podem aparecer: só as do pacote de GIFs. */
+export const catalogImages = (paths: string[]) =>
+  paths.filter((path) => path.startsWith(animatedCatalogFolder))
+
+/** Há algo para demonstrar o movimento: o GIF animado. */
+export const hasExerciseDemonstration = (media: Pick<ExerciseMedia, 'animationPath'>) =>
+  Boolean(media.animationPath)
 
 /** Miniatura: foto do aparelho tem prioridade sobre a primeira imagem do catálogo. */
 export function exerciseThumbUrl(media: ExerciseMedia) {
@@ -64,7 +70,7 @@ export function exerciseMediaFrom(
     ? exercise.aliases?.find((item) => item.trainer_id === trainerId)?.photo_path
     : undefined
   return {
-    images: exercise.image_paths,
+    images: catalogImages(exercise.image_paths),
     animationPath: exercise.animation_path,
     instructions: exercise.instructions,
     photoPath: exercise.photo_path ?? aliasPhoto ?? null,

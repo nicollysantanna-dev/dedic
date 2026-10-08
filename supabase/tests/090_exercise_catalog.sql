@@ -1,7 +1,7 @@
 -- Catálogo de exercícios: busca sem acento, apelidos, exercícios próprios e fotos.
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(34);
+select plan(37);
 
 create temporary table ctx as
 select
@@ -38,11 +38,31 @@ select ok(
   exists (select 1 from public.search_exercises('bench press') where external_id = 'Barbell_Bench_Press_-_Medium_Grip'),
   'busca em inglês também funciona'
 );
+-- Catálogo só com GIF animado 3D (ADR 0012).
+select ok(
+  not exists (select 1 from public.search_exercises('windmill avançado')
+              where external_id = 'Advanced_Kettlebell_Windmill'),
+  'exercício só com fotos sai da busca'
+);
+select ok(
+  not exists (
+    select 1 from public.exercises
+    where owner_id is null and retired_at is null
+      and (animation_path is null or exists (
+        select 1 from unnest(image_paths) as path where path not like 'gif-pack/%'
+      ))
+  ),
+  'catálogo ativo só tem GIF animado e miniatura do pacote'
+);
 select is(
-  (select array_length(image_paths, 1) from public.search_exercises('windmill avançado')
-   where external_id = 'Advanced_Kettlebell_Windmill'),
-  2,
-  'busca devolve as fotos do catálogo sem GIF'
+  (select name_pt from public.search_exercises('agachamento livre com barra') limit 1),
+  'Agachamento livre',
+  'nome da duplicata com foto leva à versão com GIF'
+);
+select ok(
+  exists (select 1 from public.exercises
+          where external_id = 'Barbell_Squat' and retired_at is not null),
+  'versão com foto aposentada continua existindo para fichas antigas'
 );
 
 -- Pacote de GIFs (ADR 0011): exercícios novos e animação nos casados.
@@ -74,11 +94,6 @@ select is(
    where external_id = 'gif-pack:horizontal-leg-press'),
   'gif-pack/horizontal-leg-press.webp',
   'exercício novo do pacote aparece na busca com filtro e animação'
-);
-select is(
-  (select animation_path is not null from public.search_exercises('leg press') limit 1),
-  true,
-  'busca põe exercícios animados antes das fotos'
 );
 
 -- Nomes dos personais: sinônimo global, nome anterior e duplicatas aposentadas.
@@ -150,6 +165,13 @@ select throws_ok(
   '23514', null,
   'exercício próprio não recebe animação do pacote'
 );
+reset role;
+select throws_ok(
+  $$ update public.exercises set retired_at = null where external_id = 'Barbell_Squat' $$,
+  '23514', null,
+  'catálogo global não reativa exercício sem animação'
+);
+set local role authenticated;
 
 -- Foto do aparelho: cada um envia na própria pasta; aluna vinculada vê na busca.
 select lives_ok(

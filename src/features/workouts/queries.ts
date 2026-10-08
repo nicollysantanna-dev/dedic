@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 
 import {
+  catalogImages,
   exercisePhotosBucket,
   type ExerciseMedia,
 } from '@/features/workouts/exercise-media'
@@ -39,7 +40,7 @@ export function searchResultMedia(
   >,
 ): ExerciseMedia {
   return {
-    images: exercise.image_paths,
+    images: catalogImages(exercise.image_paths),
     animationPath: exercise.animation_path,
     photoPath: exercise.photo_path,
     instructions: exercise.instructions,

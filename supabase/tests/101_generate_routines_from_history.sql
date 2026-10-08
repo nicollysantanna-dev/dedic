@@ -10,7 +10,7 @@ select
   '00000000-0000-4000-8000-000000000002'::uuid as ana_id,
   '00000000-0000-4000-8000-000000000003'::uuid as bruno_id,
   (select id from public.exercises where external_id = 'Barbell_Bench_Press_-_Medium_Grip') as bench_id,
-  (select id from public.exercises where external_id = 'Barbell_Squat') as squat_id;
+  (select id from public.exercises where external_id = 'Barbell_Full_Squat') as squat_id;
 
 create function pg_temp.login(user_id uuid) returns void language sql as $$
   select set_config('request.jwt.claim.sub', user_id::text, true);
@@ -59,7 +59,7 @@ select public.import_hevy_workout(
     'name', 'Quarta', 'started_at', now() - interval '7 days',
     'finished_at', now() - interval '7 days' + interval '30 minutes',
     'exercises', jsonb_build_array(jsonb_build_object(
-      'template_id', 'squat', 'title', 'Barbell Squat',
+      'template_id', 'squat', 'title', 'Barbell Full Squat',
       'sets', jsonb_build_array(
         jsonb_build_object('type', 'normal', 'weight_kg', 60, 'reps', 8),
         jsonb_build_object('type', 'warmup', 'weight_kg', 20, 'reps', 12)

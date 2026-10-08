@@ -20,12 +20,11 @@ vi.mock('@/lib/supabase/client', () => ({
 afterEach(() => vi.useRealTimers())
 
 describe('ExerciseAnimation', () => {
-  it('mostra o GIF animado do pacote e não alterna as fotos', () => {
+  it('mostra o GIF animado do pacote', () => {
     vi.useFakeTimers()
     render(
       <ExerciseAnimation
         animationPath="gif-pack/barbell-curl.webp"
-        images={['gif-pack/barbell-curl.thumb.webp']}
         name="Rosca direta"
       />,
     )
@@ -43,15 +42,9 @@ describe('ExerciseAnimation', () => {
     )
   })
 
-  it('sem animação, alterna as duas posições do catálogo', () => {
-    vi.useFakeTimers()
-    render(<ExerciseAnimation images={['Curl/0.jpg', 'Curl/1.jpg']} name="Rosca" />)
-    const image = screen.getByRole('img', { name: 'Demonstração de Rosca' })
-    expect(image).toHaveAttribute('src', 'https://cdn.test/exercise-media/Curl/0.jpg')
-    act(() => {
-      vi.advanceTimersByTime(900)
-    })
-    expect(image).toHaveAttribute('src', 'https://cdn.test/exercise-media/Curl/1.jpg')
+  it('sem animação, não mostra nada', () => {
+    const { container } = render(<ExerciseAnimation animationPath={null} name="Rosca" />)
+    expect(container).toBeEmptyDOMElement()
   })
 })
 
@@ -72,6 +65,18 @@ describe('ExerciseMediaLightbox', () => {
     expect(screen.queryByText('Sem demonstração para este exercício.')).toBeNull()
     await userEvent.click(screen.getByRole('button', { name: 'Fechar' }))
     expect(onClose).toHaveBeenCalled()
+  })
+
+  it('trata fotos de pessoas como falta de demonstração', () => {
+    render(
+      <ExerciseMediaLightbox
+        media={{ ...emptyMedia, images: ['Curl/0.jpg', 'Curl/1.jpg'] }}
+        name="Rosca"
+        onClose={vi.fn()}
+      />,
+    )
+    expect(screen.queryByRole('img')).toBeNull()
+    expect(screen.getByText('Sem demonstração para este exercício.')).toBeInTheDocument()
   })
 
   it('avisa quando não há nenhuma demonstração', () => {
