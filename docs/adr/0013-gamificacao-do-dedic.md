@@ -93,8 +93,14 @@ valor.
 
 ## Em aberto
 
-- Direção visual 2D: a responsável pelo produto traz um esboço. Até lá, os
-  ícones das medalhas ficam num único catálogo trocável.
+- Direção visual 2D: definida como pixel art para o card do relatório
+  ([referência](../brand/relatorio-mensal-card.png)); falta estender ao restante
+  das telas de gamificação. Os ícones das medalhas ficam num único catálogo
+  trocável.
+- Biblioteca de ícones pixel art: o pacote de gamificação do Pxlkit
+  (pxlkit.xyz) foi avaliado e adiado por ainda haver poucos usos. Código MIT,
+  mas os ícones exigem atribuição visível ou licença paga (Indie, US$ 9,50,
+  pagamento único). Reavaliar no nível 2.
 - Nome do personagem e do universo do nível 2.
 
 ## Validação

@@ -23,8 +23,9 @@ conforme a ADR 0013.
 - **Mês em andamento**: título "Até agora", semana atual com quantos check-ins
   faltam para batê-la. Sem botão de compartilhar.
 - **Mês fechado**: visão final e botão **Compartilhar**.
-- **Notificação no dia 1**, só para quem teve pelo menos 1 check-in no mês
-  anterior: "Seu resumo de setembro chegou 🎉", com link para o mês.
+- **Notificação no fechamento do mês** (na segunda-feira em que a última semana
+  do mês fecha), só para quem teve pelo menos 1 check-in no mês: "Seu resumo de
+  setembro chegou 🎉", com link para o mês.
 
 ### Personal
 
@@ -63,8 +64,9 @@ No máximo um por dia; o dia guarda se teve treino, aula ou os dois.
 
 ### Semanas e sequência
 
-- Semana: segunda a domingo. Semana do mês: aquela cuja segunda-feira cai no
-  mês.
+- Semana: segunda a domingo. Semana do mês: aquela cuja **quinta-feira** cai no
+  mês (convenção ISO 8601), para cada semana pertencer a um só mês e o
+  calendário mostrar as semanas do mês nas próprias linhas.
 - Meta semanal: `target_value` da meta `attendance` ativa do aluno no momento do
   fechamento; sem meta, 3.
 - O resultado de cada semana é gravado no fechamento (segunda às 03h de
@@ -73,6 +75,9 @@ No máximo um por dia; o dia guarda se teve treino, aula ou os dois.
 - Sequência atual: semanas batidas seguidas terminando na última semana fechada,
   mais 1 se a semana atual já foi batida.
 - Recorde: maior sequência da história do aluno, incluindo a atual.
+- **Fechamento do mês**: o mês fecha quando sua última semana fecha, isto é, na
+  segunda-feira seguinte à semana da última quinta-feira do mês (entre o dia 1 e
+  o dia 7 do mês seguinte). Só então o relatório deixa de estar em andamento.
 
 ### Medalhas
 
@@ -107,11 +112,11 @@ No máximo um por dia; o dia guarda se teve treino, aula ou os dois.
 - **`award_achievements(student_id)`**: `security definer`, idempotente; concede
   o que faltar. Chamada por gatilho quando um treino é finalizado ou uma aula
   passa a `completed`, depois do fechamento semanal e no fechamento mensal.
-- **`close_weeks()`**: grava as semanas anteriores ainda não fechadas e chama
-  `award_achievements`; `pg_cron` às segundas, 03h de Brasília.
-- **`close_month()`**: concede `full_month` e cria a notificação
-  (`notification_kind` novo `monthly_report`); `pg_cron` no dia 1, 03h30 de
-  Brasília, depois de `close_weeks`.
+- **`close_weeks()`**: grava as semanas anteriores ainda não fechadas, chama
+  `award_achievements` (que concede `full_month` quando todas as semanas do mês
+  estão fechadas e batidas) e, para cada mês que acabou de fechar, cria a
+  notificação (`notification_kind` novo `monthly_report`); `pg_cron` às
+  segundas, 03h de Brasília. Não há tarefa mensal separada.
 - **`monthly_report(student_id, month)`**: RPC que devolve o JSON da tela: dias,
   semanas do mês com resultado, sequência atual e recorde, medalhas do mês,
   próxima medalha com progresso, aulas no mês, `in_progress`.
@@ -130,8 +135,9 @@ No máximo um por dia; o dia guarda se teve treino, aula ou os dois.
 
 - `queries.ts` e `keys.ts`: `monthly_report` via TanStack Query.
 - `schemas.ts`: Zod do JSON da RPC.
-- `achievement-catalog.ts`: código → nome, descrição e ícone (SVG simples e
-  trocável até a direção visual 2D).
+- `achievement-catalog.ts`: código → nome, descrição e ícone em pixel art
+  (SVG próprio, desenhado em grade de 16×16), concentrados aqui para serem
+  trocáveis.
 - `MonthlyReportPage.tsx`: orquestra a rota do aluno.
 - `MonthlyReport.tsx`: corpo reutilizado pelo aluno e pelo personal
   (`readOnly`).
@@ -139,8 +145,29 @@ No máximo um por dia; o dia guarda se teve treino, aula ou os dois.
   `MonthSummaryCard` (card da home).
 - `ShareCard.tsx` + `share-image.ts`: card 1080×1920 renderizado fora da tela,
   convertido em PNG com `html-to-image` e enviado por `navigator.share` com
-  arquivo; sem suporte, o botão vira **Baixar imagem**. O card mostra só mês,
-  nome, check-ins, calendário, sequência e medalhas do mês.
+  arquivo; sem suporte, o botão vira **Baixar imagem**.
+
+### Card compartilhável
+
+Referência visual: [docs/brand/relatorio-mensal-card.png](../../brand/relatorio-mensal-card.png).
+
+- Pixel art 2D sobre azul-noite (`#090f1f`), faixa de título azul (`#2f6fed`),
+  dias com check-in em verde (`#22c55e`), detalhes em dourado; fonte pixel nos
+  títulos e números.
+- De cima para baixo: marca Dedic; faixa de título; mês/ano e nome do aluno;
+  número de check-ins; "N de M semanas batidas · meta Nx por semana";
+  calendário com coluna **META** (bandeira nas semanas batidas) e estrela nos
+  dias com aula; legenda; **linha com até 3 medalhas do mês** (as mais raras
+  primeiro); frase final.
+- Título: **"MÊS COMPLETO!"** quando todas as semanas do mês foram batidas;
+  **"RESUMO DO MÊS"** caso contrário, com a faixa menos festiva.
+- Calendário com 4 a 6 linhas, sempre com as semanas do mês (regra da
+  quinta-feira); dias de outros meses aparecem vazios.
+- Sem medalhas no mês, a linha mostra a próxima medalha com progresso.
+- Nome do aluno: primeiro e último nome, cortado com reticências se não couber
+  numa linha.
+- Nada de peso, fotos, dados financeiros ou dados do personal além da marca
+  Dedic.
 
 ## Testes
 
@@ -148,7 +175,8 @@ No máximo um por dia; o dia guarda se teve treino, aula ou os dois.
   dia; treino às 23h30 de Brasília conta no dia local; treino descartado não
   conta; semana fechada usa a meta da época e não muda depois; meta padrão 3;
   sequência e recorde; cada medalha concedida uma vez (idempotência);
-  `early_bird` e `comeback`; notificação só com check-in no mês; isolamento entre
+  `early_bird` e `comeback`; semana pertence ao mês da sua quinta-feira; mês só
+  fecha (e notifica) quando sua última semana fecha; notificação só com check-in no mês; isolamento entre
   alunos; personal sem vínculo não lê; ninguém grava diretamente.
 - **Unitários**: progresso da próxima medalha; rótulos de mês.
 - **Testing Library**: estados do relatório; modo só leitura sem compartilhar;
