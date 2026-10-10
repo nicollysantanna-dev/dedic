@@ -39,6 +39,7 @@ import {
 import { ExercisePicker } from '@/features/workouts/ExercisePicker'
 import { exerciseDisplayName } from '@/features/workouts/queries'
 import { useExerciseRecords } from '@/features/workouts/workout-queries'
+import { groupPhotosByPosition } from '@/features/progress/photo-grid'
 import { useActivitySummary } from '@/features/students/queries'
 import { formatDateOnly, toIsoDate } from '@/lib/format'
 import type { Tables } from '@/lib/supabase/database.types'
@@ -707,40 +708,49 @@ function PhotosCard({
           <p className="mt-4 text-xs text-slate-500">
             Toque em duas fotos para compará-las lado a lado.
           </p>
-          <ul className="mt-2 grid grid-cols-3 gap-2 sm:grid-cols-4">
-            {photos.map((photo) => (
-              <li key={photo.id}>
-                <PhotoThumb
-                  photo={photo}
-                  selectedIndex={compare.indexOf(photo.id)}
-                  onSelect={() =>
-                    setCompare((current) => {
-                      if (current.includes(photo.id)) {
-                        return current.map((id) =>
-                          id === photo.id ? null : id,
-                        ) as typeof current
-                      }
-                      if (current[0] === null) return [photo.id, current[1]]
-                      return [current[0], photo.id]
-                    })
-                  }
-                  onDelete={
-                    canManage
-                      ? () => {
-                          if (
-                            window.confirm(
-                              'Excluir esta foto? Esta ação não pode ser desfeita.',
-                            )
-                          ) {
-                            remove.mutate(photo)
-                          }
+          <div className="mt-2 grid gap-4">
+            {groupPhotosByPosition(photos).map((row) => (
+              <section key={row.position} aria-label={positionLabels[row.position]}>
+                <h3 className="text-xs font-bold uppercase tracking-wide text-slate-500">
+                  {positionLabels[row.position]}
+                </h3>
+                <ul className="mt-2 flex snap-x gap-2 overflow-x-auto pb-2">
+                  {row.photos.map((photo) => (
+                    <li key={photo.id} className="w-28 flex-none snap-start sm:w-36">
+                      <PhotoThumb
+                        photo={photo}
+                        selectedIndex={compare.indexOf(photo.id)}
+                        onSelect={() =>
+                          setCompare((current) => {
+                            if (current.includes(photo.id)) {
+                              return current.map((id) =>
+                                id === photo.id ? null : id,
+                              ) as typeof current
+                            }
+                            if (current[0] === null) return [photo.id, current[1]]
+                            return [current[0], photo.id]
+                          })
                         }
-                      : undefined
-                  }
-                />
-              </li>
+                        onDelete={
+                          canManage
+                            ? () => {
+                                if (
+                                  window.confirm(
+                                    'Excluir esta foto? Esta ação não pode ser desfeita.',
+                                  )
+                                ) {
+                                  remove.mutate(photo)
+                                }
+                              }
+                            : undefined
+                        }
+                      />
+                    </li>
+                  ))}
+                </ul>
+              </section>
             ))}
-          </ul>
+          </div>
           {remove.error && (
             <p
               className="mt-3 rounded-xl bg-red-50 p-3 text-sm text-red-700"
@@ -809,8 +819,8 @@ function PhotoThumb({
         type="button"
       >
         <PhotoImage path={photo.storage_path} alt={positionLabels[photo.position]} />
-        <span className="block px-2 py-1 text-[0.65rem] text-slate-600">
-          {formatDateOnly(photo.taken_on)} · {positionLabels[photo.position]}
+        <span className="block px-2 py-1 text-xs text-slate-600">
+          {formatDateOnly(photo.taken_on)}
         </span>
       </button>
       {selectedIndex >= 0 && (
