@@ -1,9 +1,17 @@
 import { useQueryClient } from '@tanstack/react-query'
+import { useRef, useState } from 'react'
 import { Navigate, useNavigate, useParams } from 'react-router-dom'
 
 import { useAuth } from '@/features/auth/auth-context'
 import { useFirstCheckInDay, useMonthlyReport } from '@/features/gamification/queries'
 import { MonthlyReportView } from '@/features/gamification/MonthlyReportView'
+import { ShareCard } from '@/features/gamification/ShareCard'
+import {
+  deliverCard,
+  renderCardBlob,
+  shareButtonLabel,
+} from '@/features/gamification/share-image'
+import { shareFileName } from '@/features/gamification/report-share'
 import {
   currentReportMonth,
   formatMonthTitle,
@@ -19,6 +27,9 @@ export function MonthlyReportPage() {
   const { month: monthParam } = useParams()
   const navigate = useNavigate()
   const queryClient = useQueryClient()
+  const cardRef = useRef<HTMLDivElement>(null)
+  const [shareError, setShareError] = useState('')
+  const [sharing, setSharing] = useState(false)
 
   const studentId = profile?.id ?? ''
   const today = todayInSaoPaulo()
@@ -92,6 +103,52 @@ export function MonthlyReportPage() {
           )}
 
           {report.data && <MonthlyReportView report={report.data} today={today} />}
+
+          {/* Compartilhar só depois que o mês fecha; o card é gerado fora da tela. */}
+          {report.data && !report.data.in_progress && report.data.check_ins > 0 && (
+            <div className="mt-4">
+              <button
+                className="min-h-12 w-full rounded-xl bg-[var(--brand)] px-4 text-sm font-semibold text-white disabled:opacity-60"
+                disabled={sharing}
+                onClick={() => {
+                  void (async () => {
+                    if (!cardRef.current) return
+                    setSharing(true)
+                    setShareError('')
+                    try {
+                      const blob = await renderCardBlob(cardRef.current)
+                      await deliverCard(blob, shareFileName(month))
+                    } catch {
+                      setShareError('Não foi possível gerar a imagem. Tente novamente.')
+                    } finally {
+                      setSharing(false)
+                    }
+                  })()
+                }}
+                type="button"
+              >
+                {sharing ? 'Gerando imagem…' : shareButtonLabel()}
+              </button>
+              {shareError && (
+                <p className="mt-2 text-sm text-red-300" role="alert">
+                  {shareError}
+                </p>
+              )}
+              {/* 1080px de largura: fica longe da tela para não sobrepor o conteúdo. */}
+              <div
+                aria-hidden="true"
+                className="pointer-events-none fixed top-0 left-[-10000px]"
+              >
+                {report.data && (
+                  <ShareCard
+                    cardRef={cardRef}
+                    report={report.data}
+                    studentName={profile.full_name}
+                  />
+                )}
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </main>
