@@ -74,11 +74,17 @@ from ctx, (values
   (timestamp '2026-03-25 09:00' at time zone 'America/Sao_Paulo'),
   (timestamp '2026-03-26 09:00' at time zone 'America/Sao_Paulo')
 ) as carla_days(s);
--- Davi: uma aula concluída em 11/3 (gatilho de aulas).
-insert into public.appointments (trainer_id, student_id, starts_at, ends_at, status)
-select trainer_id, davi_id,
+-- Bruno: uma aula concluída em 11/3 (gatilho de aulas). Usa o vínculo e o pacote do Bruno
+-- da seed; a semana de 9/3 continua abaixo da meta, então a volta por cima não muda.
+insert into public.appointments (
+  trainer_id, student_id, relationship_id, package_id, starts_at, ends_at,
+  status, booking_request_id, created_by
+)
+select trainer_id, bruno_id,
+  '10000000-0000-4000-8000-000000000002', '20000000-0000-4000-8000-000000000002',
   timestamp '2026-03-11 10:00' at time zone 'America/Sao_Paulo',
-  timestamp '2026-03-11 11:00' at time zone 'America/Sao_Paulo', 'completed'
+  timestamp '2026-03-11 11:00' at time zone 'America/Sao_Paulo', 'completed',
+  gen_random_uuid(), trainer_id
 from ctx;
 
 -- Fechamento e semanas.
@@ -195,10 +201,10 @@ select throws_ok(
   'ninguém grava medalhas diretamente');
 reset role;
 
--- Aula concluída aparece no relatório de Davi.
-select pg_temp.login((select davi_id from ctx));
+-- Aula concluída aparece no relatório de Bruno.
+select pg_temp.login((select bruno_id from ctx));
 select is(
-  (public.monthly_report((select davi_id from ctx), date '2026-03-01') ->> 'lessons_completed')::integer,
+  (public.monthly_report((select bruno_id from ctx), date '2026-03-01') ->> 'lessons_completed')::integer,
   1, 'aula concluída aparece no relatório');
 
 select * from finish();
