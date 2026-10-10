@@ -57,7 +57,7 @@ export function ShareCard({
 
       <div
         style={{
-          marginTop: 56,
+          marginTop: 40,
           width: '100%',
           background: '#2f6fed',
           padding: '36px 0',
@@ -70,12 +70,12 @@ export function ShareCard({
         {shareTitle(report)}
       </div>
 
-      <p style={{ fontSize: 38, color: '#cbd5e1', margin: '56px 0 0' }}>
+      <p style={{ fontSize: 38, color: '#cbd5e1', margin: '40px 0 0' }}>
         {formatMonthTitle(`${report.month}-01`)}
       </p>
       <p style={{ fontSize: 46, fontWeight: 700, margin: '12px 0 0' }}>{studentName}</p>
 
-      <p style={{ fontSize: 150, fontWeight: 800, margin: '48px 0 0', lineHeight: 1 }}>
+      <p style={{ fontSize: 150, fontWeight: 800, margin: '36px 0 0', lineHeight: 1 }}>
         {report.check_ins}
         <span style={{ fontSize: 56, marginLeft: 20, color: '#22c55e' }}>check-ins</span>
       </p>
@@ -83,7 +83,7 @@ export function ShareCard({
         style={{
           fontSize: 36,
           color: '#cbd5e1',
-          margin: '28px 0 0',
+          margin: '20px 0 0',
           textAlign: 'center',
         }}
       >
@@ -92,7 +92,7 @@ export function ShareCard({
 
       <div
         style={{
-          marginTop: 72,
+          marginTop: 56,
           width: '100%',
           background: '#111a2e',
           border: '3px solid #1e2b45',
@@ -187,16 +187,11 @@ export function ShareCard({
         </span>
       </div>
 
-      <div style={{ marginTop: 64, width: '100%', textAlign: 'center', fontSize: 36 }}>
+      <div style={{ marginTop: 40, width: '100%', textAlign: 'center', fontSize: 36 }}>
         {medals.length > 0 ? (
-          medals.map((medal) => (
-            <p
-              key={`${medal.code}-${medal.period_start ?? 'unica'}`}
-              style={{ margin: '12px 0' }}
-            >
-              {achievementName(medal.code)}
-            </p>
-          ))
+          <p style={{ margin: 0, lineHeight: 1.4 }}>
+            {medals.map((medal) => achievementName(medal.code)).join(' · ')}
+          </p>
         ) : next ? (
           <p style={{ margin: 0, color: '#cbd5e1' }}>
             Próxima: {achievementName(next.code)} · {next.current}/{next.target}
@@ -204,9 +199,7 @@ export function ShareCard({
         ) : null}
       </div>
 
-      <p
-        style={{ marginTop: 'auto', fontSize: 40, color: '#e2e8f0', textAlign: 'center' }}
-      >
+      <p style={{ marginTop: 56, fontSize: 40, color: '#e2e8f0', textAlign: 'center' }}>
         Um mês de treino. Uma conquista sua.
       </p>
     </div>

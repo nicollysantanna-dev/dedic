@@ -21,7 +21,8 @@ conforme a ADR 0013.
 - **Relatório** em `/app/resumo` (mês atual) e `/app/resumo/AAAA-MM`, com
   seletor de mês do primeiro mês com check-in até o atual.
 - **Mês em andamento**: título "Até agora", semana atual com quantos check-ins
-  faltam para batê-la. Sem botão de compartilhar.
+  faltam para batê-la. Compartilhar também está disponível (decisão de 2026-10-10: o
+  card do mês pode ser compartilhado a qualquer momento, com check-ins).
 - **Mês fechado**: visão final e botão **Compartilhar**.
 - **Notificação no fechamento do mês** (na segunda-feira em que a última semana
   do mês fecha), só para quem teve pelo menos 1 check-in no mês: "Seu resumo de

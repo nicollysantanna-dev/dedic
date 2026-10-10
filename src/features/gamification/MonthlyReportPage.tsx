@@ -104,8 +104,8 @@ export function MonthlyReportPage() {
 
           {report.data && <MonthlyReportView report={report.data} today={today} />}
 
-          {/* Compartilhar só depois que o mês fecha; o card é gerado fora da tela. */}
-          {report.data && !report.data.in_progress && report.data.check_ins > 0 && (
+          {/* Compartilhar vale para qualquer mês com check-ins, inclusive o em andamento; o card é gerado fora da tela. */}
+          {report.data && report.data.check_ins > 0 && (
             <div className="mt-4">
               <button
                 className="min-h-12 w-full rounded-xl bg-[var(--brand)] px-4 text-sm font-semibold text-white disabled:opacity-60"
