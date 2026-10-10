@@ -1170,6 +1170,38 @@ export type Database = {
           },
         ]
       }
+      student_achievements: {
+        Row: {
+          code: string
+          earned_at: string
+          id: string
+          period_start: string | null
+          student_id: string
+        }
+        Insert: {
+          code: string
+          earned_at?: string
+          id?: string
+          period_start?: string | null
+          student_id: string
+        }
+        Update: {
+          code?: string
+          earned_at?: string
+          id?: string
+          period_start?: string | null
+          student_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'student_achievements_student_id_fkey'
+            columns: ['student_id']
+            isOneToOne: false
+            referencedRelation: 'profiles'
+            referencedColumns: ['id']
+          },
+        ]
+      }
       student_goals: {
         Row: {
           created_at: string
@@ -1305,6 +1337,41 @@ export type Database = {
           {
             foreignKeyName: 'student_invitations_trainer_id_fkey'
             columns: ['trainer_id']
+            isOneToOne: false
+            referencedRelation: 'profiles'
+            referencedColumns: ['id']
+          },
+        ]
+      }
+      student_week_results: {
+        Row: {
+          check_ins: number
+          closed_at: string
+          met: boolean
+          student_id: string
+          target: number
+          week_start: string
+        }
+        Insert: {
+          check_ins: number
+          closed_at?: string
+          met: boolean
+          student_id: string
+          target: number
+          week_start: string
+        }
+        Update: {
+          check_ins?: number
+          closed_at?: string
+          met?: boolean
+          student_id?: string
+          target?: number
+          week_start?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'student_week_results_student_id_fkey'
+            columns: ['student_id']
             isOneToOne: false
             referencedRelation: 'profiles'
             referencedColumns: ['id']
@@ -1646,6 +1713,16 @@ export type Database = {
           },
         ]
       }
+      student_check_ins: {
+        Row: {
+          day: string | null
+          early: boolean | null
+          had_lesson: boolean | null
+          had_workout: boolean | null
+          student_id: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       activate_lesson_package: {
@@ -1708,6 +1785,14 @@ export type Database = {
       }
       archive_routine: {
         Args: { target_routine_id: string }
+        Returns: undefined
+      }
+      award_achievements: {
+        Args: { target_student_id: string }
+        Returns: undefined
+      }
+      award_monthly_achievements: {
+        Args: { month_start: string; target_student_id: string }
         Returns: undefined
       }
       book_appointment: {
@@ -1867,6 +1952,7 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      close_weeks: { Args: never; Returns: number }
       complete_appointment: {
         Args: {
           requested_outcome: Database['public']['Enums']['appointment_status']
@@ -2093,6 +2179,12 @@ export type Database = {
         }
         Returns: string
       }
+      month_closes_on: { Args: { month_start: string }; Returns: string }
+      month_name_pt: { Args: { month_start: string }; Returns: string }
+      monthly_report: {
+        Args: { report_month: string; target_student_id: string }
+        Returns: Json
+      }
       notify_user: {
         Args: {
           notification_body?: string
@@ -2253,6 +2345,17 @@ export type Database = {
         }
         Returns: string
       }
+      student_check_ins_in_week: {
+        Args: { target_student_id: string; week: string }
+        Returns: number
+      }
+      student_streaks: {
+        Args: { target_student_id: string; today: string }
+        Returns: {
+          streak_best: number
+          streak_now: number
+        }[]
+      }
       update_own_avatar: {
         Args: { requested_avatar_path?: string }
         Returns: {
@@ -2297,6 +2400,11 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      week_start_of: { Args: { day: string }; Returns: string }
+      weekly_check_in_target: {
+        Args: { target_student_id: string }
+        Returns: number
+      }
     }
     Enums: {
       app_role: 'student' | 'trainer'
@@ -2331,6 +2439,7 @@ export type Database = {
         | 'progress_recorded'
         | 'routine_assigned'
         | 'workout_finished'
+        | 'monthly_report'
       package_kind: 'package' | 'single'
       package_status: 'draft' | 'active' | 'exhausted' | 'expired' | 'cancelled'
       payment_status: 'pending' | 'paid' | 'overdue' | 'cancelled'
@@ -2502,6 +2611,7 @@ export const Constants = {
         'progress_recorded',
         'routine_assigned',
         'workout_finished',
+        'monthly_report',
       ],
       package_kind: ['package', 'single'],
       package_status: ['draft', 'active', 'exhausted', 'expired', 'cancelled'],

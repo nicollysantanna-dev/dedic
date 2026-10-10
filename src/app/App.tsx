@@ -36,6 +36,11 @@ const StudentProgressPage = lazy(() =>
     default: module.StudentProgressPage,
   })),
 )
+const MonthlyReportPage = lazy(() =>
+  import('@/features/gamification/MonthlyReportPage').then((module) => ({
+    default: module.MonthlyReportPage,
+  })),
+)
 const NotificationsPage = lazy(() =>
   import('@/features/notifications/NotificationsPage').then((module) => ({
     default: module.NotificationsPage,
@@ -156,10 +161,8 @@ export function App() {
                   path="/app/treinos/sessao/:workoutId"
                   element={<WorkoutSessionPage />}
                 />
-                <Route
-                  path="/app/resumo"
-                  element={<Navigate to="/app/alunos" replace />}
-                />
+                <Route path="/app/resumo" element={<MonthlyReportPage />} />
+                <Route path="/app/resumo/:month" element={<MonthlyReportPage />} />
                 <Route
                   path="/app/pagamentos"
                   element={<Navigate to="/app/financeiro" replace />}

@@ -20,6 +20,7 @@ import { Link } from 'react-router-dom'
 
 import { Button } from '@/components/ui/button'
 import { useAuth } from '@/features/auth/auth-context'
+import { MonthSummaryCard } from '@/features/gamification/MonthSummaryCard'
 import { buildStudentHomeSummary } from '@/features/dashboard/student-home-summary'
 import { appointmentKeys } from '@/features/appointments/keys'
 import { creditKeys } from '@/features/credits/keys'
@@ -295,6 +296,10 @@ export function StudentHomePage() {
                   Ver vínculo <ArrowRight size={15} />
                 </Link>
               </aside>
+            </section>
+
+            <section className="mt-5">
+              <MonthSummaryCard studentId={studentId} />
             </section>
 
             <section className="mt-5 grid grid-cols-2 gap-3 lg:grid-cols-4">
