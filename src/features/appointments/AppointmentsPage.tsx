@@ -83,6 +83,9 @@ export function AppointmentsPage() {
     // Mantém a grade montada ao navegar para um período ainda não carregado; sem
     // isso o calendário desmonta e volta para a semana atual na visão padrão.
     placeholderData: keepPreviousData,
+    // Alterações feitas pelo personal não chegam por realtime; ao voltar para a tela,
+    // a agenda busca de novo (só se os dados estiverem velhos pelo staleTime padrão).
+    refetchOnWindowFocus: true,
     queryFn: async () => {
       const { data, error } = await requireSupabase()
         .from('appointments')
