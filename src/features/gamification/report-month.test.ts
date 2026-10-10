@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 
 import {
   addDays,
+  calendarWeekStarts,
   checkInsRemaining,
   currentReportMonth,
   formatMonthTitle,
@@ -94,5 +95,28 @@ describe('progressPercent', () => {
 
   it('evita divisão por zero', () => {
     expect(progressPercent(3, 0)).toBe(0)
+  })
+})
+
+describe('calendarWeekStarts', () => {
+  it('cobre todos os dias do mês, incluindo a semana que atravessa a virada', () => {
+    // Setembro/2026 começa numa terça (semana de 31/08) e termina numa quarta (semana de 28/09).
+    expect(calendarWeekStarts('2026-09')).toEqual([
+      '2026-08-31',
+      '2026-09-07',
+      '2026-09-14',
+      '2026-09-21',
+      '2026-09-28',
+    ])
+  })
+
+  it('não cria semana extra quando o mês começa numa segunda', () => {
+    expect(calendarWeekStarts('2026-06')).toEqual([
+      '2026-06-01',
+      '2026-06-08',
+      '2026-06-15',
+      '2026-06-22',
+      '2026-06-29',
+    ])
   })
 })

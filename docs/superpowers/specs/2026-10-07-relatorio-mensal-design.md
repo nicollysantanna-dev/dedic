@@ -161,8 +161,10 @@ Referência visual: [docs/brand/relatorio-mensal-card.png](../../brand/relatorio
   primeiro); frase final.
 - Título: **"MÊS COMPLETO!"** quando todas as semanas do mês foram batidas;
   **"RESUMO DO MÊS"** caso contrário, com a faixa menos festiva.
-- Calendário com 4 a 6 linhas, sempre com as semanas do mês (regra da
-  quinta-feira); dias de outros meses aparecem vazios.
+- Calendário com 4 a 6 linhas, cobrindo **todos os dias do mês** (inclusive a
+  semana que atravessa a virada, para o aluno ver cada dia contado). A meta (bandeira)
+  só aparece nas semanas do mês, pela regra da quinta-feira; dias de outros meses
+  aparecem vazios. Decisão de 2026-10-10, para bater o total com os dias visíveis.
 - Sem medalhas no mês, a linha mostra a próxima medalha com progresso.
 - Nome do aluno: primeiro e último nome, cortado com reticências se não couber
   numa linha.

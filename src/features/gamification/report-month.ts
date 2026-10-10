@@ -77,3 +77,30 @@ export function progressPercent(current: number, target: number): number {
   if (target <= 0) return 0
   return Math.min(100, Math.round((current / target) * 100))
 }
+
+/**
+ * Segundas-feiras das semanas que tocam o mês, do primeiro ao último dia. Diferente da
+ * regra de pontuação (semana pela quinta), o calendário mostra todos os dias do mês.
+ */
+export function calendarWeekStarts(month: string): string[] {
+  const [year, number] = month.split('-').map(Number)
+  const firstDay = `${month}-01`
+  const nextMonthFirst = new Date(Date.UTC(year, number, 1)).toISOString().slice(0, 10)
+  const lastDay = addDays(nextMonthFirst, -1)
+  const weeks: string[] = []
+  for (let week = weekStartOf(firstDay); week <= lastDay; week = addDays(week, 7)) {
+    weeks.push(week)
+  }
+  return weeks
+}
+
+/** Linhas do calendário: uma por semana que toca o mês. Só a semana do mês tem META. */
+export function calendarRows(report: {
+  month: string
+  weeks: { week_start: string; met: boolean }[]
+}) {
+  return calendarWeekStarts(report.month).map((weekStart) => {
+    const week = report.weeks.find((item) => item.week_start === weekStart)
+    return { week_start: weekStart, met: week?.met ?? false }
+  })
+}

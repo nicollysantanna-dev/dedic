@@ -2,7 +2,12 @@ import { Flag, Star } from 'lucide-react'
 import { Fragment, type Ref } from 'react'
 
 import { achievementName } from '@/features/gamification/achievement-catalog'
-import { addDays, formatMonthTitle, monthKey } from '@/features/gamification/report-month'
+import {
+  addDays,
+  calendarRows,
+  formatMonthTitle,
+  monthKey,
+} from '@/features/gamification/report-month'
 import type { MonthlyReport } from '@/features/gamification/schemas'
 import {
   rarestMedals,
@@ -109,7 +114,7 @@ export function ShareCard({
         ))}
         <span style={{ textAlign: 'center', fontSize: 26, color: '#facc15' }}>META</span>
 
-        {report.weeks.map((week) => (
+        {calendarRows(report).map((week) => (
           <Fragment key={week.week_start}>
             {Array.from({ length: 7 }, (_, offset) =>
               addDays(week.week_start, offset),

@@ -7,6 +7,7 @@ import {
 } from '@/features/gamification/achievement-catalog'
 import {
   addDays,
+  calendarRows,
   checkInsRemaining,
   formatMonthTitle,
   monthKey,
@@ -149,7 +150,7 @@ function CheckInCalendar({ report }: { report: MonthlyReport }) {
       ))}
       <span className="text-[0.65rem] font-semibold text-slate-400">Meta</span>
 
-      {report.weeks.map((week) => (
+      {calendarRows(report).map((week) => (
         <Fragment key={week.week_start}>
           {Array.from({ length: 7 }, (_, offset) => addDays(week.week_start, offset)).map(
             (day) => {
