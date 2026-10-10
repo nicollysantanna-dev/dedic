@@ -363,6 +363,15 @@ Deve exibir:
 - O sistema deve apresentar evolução da receita dos últimos seis meses e movimentações recentes.
 - Receita recebida e receita prevista não podem ser misturadas no mesmo indicador.
 
+### RF-28 — Constância e relatório mensal
+
+- Um check-in é um dia (horário de São Paulo) com treino finalizado ou aula concluída; no máximo um por dia.
+- A semana vai de segunda a domingo e pertence ao mês da sua quinta-feira. A semana é batida ao atingir a meta de frequência ativa (padrão 3) e é gravada no fechamento, sem alteração posterior.
+- O aluno vê o card "Seu mês" na tela inicial e o relatório mensal, com calendário, sequência atual e recorde, medalhas do mês e próxima medalha com progresso.
+- Ao fechar o mês, o aluno recebe um aviso e pode compartilhar o resumo como imagem. O personal vê o mesmo relatório, só para leitura, enquanto o vínculo estiver ativo.
+- Medalhas concedidas não são revogadas. Quem não tem vínculo com o aluno não lê o relatório nem os check-ins.
+- Detalhes em [ADR 0013](adr/0013-gamificacao-do-dedic.md) e [spec do relatório mensal](superpowers/specs/2026-10-07-relatorio-mensal-design.md).
+
 ### RF-20 — Histórico e auditoria
 
 - O sistema deve registrar criação, cancelamento, remarcação e mudança de estado das aulas.
