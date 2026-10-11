@@ -19,6 +19,10 @@ create function pg_temp.login(user_id uuid) returns void language sql as $$
 $$;
 
 -- Arrange (como postgres).
+-- Meta de frequência 3 para os cenários abaixo não dependerem da meta padrão (hoje 5).
+insert into public.student_goals (trainer_id, student_id, kind, initial_value, target_value, target_date, created_by)
+select trainer_id, student, 'attendance', 0, 3, current_date + 30, trainer_id
+from ctx, unnest(array[ana_id, bruno_id, carla_id]) as student;
 -- Ana: semana de 2/3 com 3 dias; semana de 9/3 com 2 dias (23h30 de 10/3 conta no dia
 -- local); treino descartado em 13/3 não conta; dois treinos em 4/3 viram um dia.
 insert into public.workouts (student_id, trainer_id, name, started_at, finished_at, recorded_by)
@@ -120,7 +124,7 @@ select ok(
 select is(
   (select target from public.student_week_results
     where student_id = (select ana_id from ctx) and week_start = date '2026-03-02'),
-  3, 'sem meta de frequência, a meta semanal é 3');
+  3, 'meta de frequência ativa define a meta semanal');
 select is(public.close_weeks(), 0, 'segundo fechamento não altera nada');
 
 -- Avisos: o primeiro fechamento não avisa o histórico.

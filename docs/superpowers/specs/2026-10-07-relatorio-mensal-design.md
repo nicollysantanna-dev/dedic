@@ -69,7 +69,7 @@ No máximo um por dia; o dia guarda se teve treino, aula ou os dois.
   mês (convenção ISO 8601), para cada semana pertencer a um só mês e o
   calendário mostrar as semanas do mês nas próprias linhas.
 - Meta semanal: `target_value` da meta `attendance` ativa do aluno no momento do
-  fechamento; sem meta, 3.
+  fechamento; sem meta, 5 (era 3 até 2026-10-11).
 - O resultado de cada semana é gravado no fechamento (segunda às 03h de
   Brasília, referente à semana anterior), a partir da semana do primeiro
   check-in do aluno. Semana fechada não muda mais.
@@ -176,7 +176,7 @@ Referência visual: [docs/brand/relatorio-mensal-card.png](../../brand/relatorio
 
 - **Banco** (`supabase/tests/`): um check-in por dia com treino e aula no mesmo
   dia; treino às 23h30 de Brasília conta no dia local; treino descartado não
-  conta; semana fechada usa a meta da época e não muda depois; meta padrão 3;
+  conta; semana fechada usa a meta da época e não muda depois; meta padrão 5;
   sequência e recorde; cada medalha concedida uma vez (idempotência);
   `early_bird` e `comeback`; semana pertence ao mês da sua quinta-feira; mês só
   fecha (e notifica) quando sua última semana fecha; notificação só com check-in no mês; isolamento entre

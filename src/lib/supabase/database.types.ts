@@ -2409,6 +2409,7 @@ export type Database = {
         Args: { target_student_id: string }
         Returns: number
       }
+      workout_summary: { Args: { target_workout_id: string }; Returns: Json }
     }
     Enums: {
       app_role: 'student' | 'trainer'
