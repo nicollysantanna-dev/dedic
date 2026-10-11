@@ -15,6 +15,7 @@ import { Button } from '@/components/ui/button'
 import { Dialog } from '@/components/ui/dialog'
 import { useAuth } from '@/features/auth/auth-context'
 import { exerciseMediaFrom } from '@/features/workouts/exercise-media'
+import { WorkoutShare } from '@/features/workouts/WorkoutShare'
 import { ExercisePicker, ExerciseThumb } from '@/features/workouts/ExercisePicker'
 import { RestTimer } from '@/features/workouts/RestTimer'
 import { restOptions } from '@/features/workouts/routine-model'
@@ -125,6 +126,11 @@ export function WorkoutSessionPage() {
               : `${summary.records} recordes pessoais batidos!`}
           </p>
         )}
+        <WorkoutShare
+          isStudent={profile.id === workout.student_id}
+          studentName={profile.full_name}
+          workoutId={workout.id}
+        />
         <Button asChild className="mt-6">
           <Link to={backTo}>Concluir</Link>
         </Button>
