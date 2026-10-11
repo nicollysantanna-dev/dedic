@@ -3,6 +3,7 @@ export const workoutKeys = {
   exerciseSearch: (term: string, bodyPart: string | null, equipment: string | null) =>
     ['workouts', 'exercises', 'search', term, bodyPart ?? '', equipment ?? ''] as const,
   aliases: (trainerId: string) => ['workouts', 'aliases', trainerId] as const,
+  summary: (workoutId: string) => ['workouts', 'summary', workoutId] as const,
 }
 
 export const routineKeys = {
