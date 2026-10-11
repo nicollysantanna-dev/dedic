@@ -108,3 +108,13 @@ gamificação:
 
 Compartilhar treinos antigos do histórico, lista de exercícios no card, card para o
 personal, ícones pixel art (seguem no item próprio).
+
+## Estado
+
+- Implementado em 2026-10-11: migração `20261011140000_workout_summary_and_default_target.sql`
+  (teste `180_workout_summary.sql`, 16 asserções), regras em `workout-share.ts`, card em
+  `WorkoutShareCard.tsx` e botão/diálogo em `WorkoutShare.tsx`.
+- Verificado no navegador em 390 px: o 5º treino da semana abre o card com
+  **SEMANA BATIDA!**; um segundo treino no mesmo dia com carga maior abre com **RECORDE!**
+  (sem contar a semana de novo); PNG 1080×1920 baixado; sem rolagem horizontal.
+- Desempate do "primeiro treino do dia": ordem de finalização e, no empate, de início.
