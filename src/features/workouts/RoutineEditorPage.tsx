@@ -401,23 +401,35 @@ function ExerciseBlock({
         </select>
       </label>
 
-      <table className="mt-3 w-full text-sm">
-        <thead>
-          <tr className="text-[0.65rem] font-semibold uppercase tracking-wide text-slate-400">
-            <th className="w-12 pb-1 text-left">Série</th>
-            <th className="pb-1 text-left">Kg</th>
-            <th className="pb-1 text-left">Reps</th>
-            <th className="w-9" />
-          </tr>
-        </thead>
-        <tbody>
-          {exercise.sets.map((set, index) => (
-            <tr key={set.id} className="border-t border-slate-50">
-              <td className="py-1.5 font-semibold text-slate-500">{index + 1}</td>
-              <td className="py-1.5 pr-2">
+      <div className="mt-3 text-sm">
+        <div className="grid grid-cols-[2.25rem_2.25rem_minmax(0,1fr)_minmax(0,1fr)_2rem] items-center gap-x-2 pb-1 text-[0.65rem] font-semibold uppercase tracking-wide text-slate-400">
+          <span aria-hidden="true" />
+          <span>Série</span>
+          <span>Kg</span>
+          <span>Reps</span>
+          <span />
+        </div>
+        <SortableList
+          className="gap-0"
+          handleClassName="size-9"
+          items={exercise.sets}
+          label={`séries de ${exercise.name}`}
+          onReorder={(orderedIds) =>
+            onChange({
+              sets: orderedIds.flatMap((id) =>
+                exercise.sets.filter((item) => item.id === id),
+              ),
+            })
+          }
+          renderItem={(set, dragHandle) => {
+            const index = exercise.sets.findIndex((item) => item.id === set.id)
+            return (
+              <div className="grid grid-cols-[2.25rem_2.25rem_minmax(0,1fr)_minmax(0,1fr)_2rem] items-center gap-x-2 border-t border-slate-50 py-1.5">
+                {dragHandle}
+                <span className="font-semibold text-slate-500">{index + 1}</span>
                 <input
                   aria-label={`Carga da série ${index + 1} de ${exercise.name}`}
-                  className={cn('field h-9 rounded-lg bg-slate-50 px-2 text-center')}
+                  className="field h-9 rounded-lg bg-slate-50 px-2 text-center"
                   inputMode="decimal"
                   onChange={(event) =>
                     updateSet(set.id, { weightKg: event.target.value })
@@ -425,8 +437,6 @@ function ExerciseBlock({
                   placeholder="—"
                   value={set.weightKg}
                 />
-              </td>
-              <td className="py-1.5 pr-2">
                 <input
                   aria-label={`Repetições da série ${index + 1} de ${exercise.name}`}
                   className="field h-9 rounded-lg bg-slate-50 px-2 text-center"
@@ -435,8 +445,6 @@ function ExerciseBlock({
                   placeholder="—"
                   value={set.reps}
                 />
-              </td>
-              <td className="py-1.5 text-right">
                 <button
                   aria-label={`Remover série ${index + 1} de ${exercise.name}`}
                   className="grid size-8 place-items-center rounded-lg text-slate-400 hover:bg-red-50 hover:text-red-600"
@@ -447,11 +455,11 @@ function ExerciseBlock({
                 >
                   <Trash2 size={14} />
                 </button>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+              </div>
+            )
+          }}
+        />
+      </div>
       <button
         className="mt-2 w-full rounded-xl bg-slate-100 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-200"
         onClick={() =>

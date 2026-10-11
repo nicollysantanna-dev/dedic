@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 
 import { routineKeys } from '@/features/workouts/keys'
+import { applyOrder } from '@/features/workouts/reorder'
 import { requireSupabase } from '@/lib/supabase/client'
 import type { Json, Tables } from '@/lib/supabase/database.types'
 
@@ -193,6 +194,15 @@ export function useReorderRoutines() {
       })
       if (error) throw error
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: routineKeys.all }),
+    // Mostra a nova ordem na hora; o servidor confirma em seguida.
+    onMutate: async (orderedIds) => {
+      await queryClient.cancelQueries({ queryKey: routineKeys.all })
+      queryClient.setQueriesData<RoutineWithExercises[]>(
+        { queryKey: routineKeys.all },
+        (current) => (Array.isArray(current) ? applyOrder(current, orderedIds) : current),
+      )
+    },
+    // Em caso de falha, volta para a ordem salva no servidor.
+    onSettled: () => queryClient.invalidateQueries({ queryKey: routineKeys.all }),
   })
 }

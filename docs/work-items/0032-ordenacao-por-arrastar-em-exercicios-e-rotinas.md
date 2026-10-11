@@ -33,9 +33,10 @@ Permitir que aluno e personal deixem as fichas e os exercícios de cada ficha na
 
 ## Estado da implementação
 
-- Feito: alça de arrastar nas fichas (lista do aluno e do personal) e nos exercícios do editor; funciona com toque (testado com toque simulado) e mouse; o teclado (espaço e setas) está configurado, mas ainda não foi verificado.
-- Feito: migração `20261011120000_routine_ordering.sql` (coluna `position` nas fichas, fichas novas no topo, função `reorder_routines`) e teste `170_routine_ordering.sql` (8 asserções).
-- Diferença do texto acima: a ordem dos exercícios é salva pelo botão **Salvar** do editor (fluxo que já existia), não ao soltar. Reordenar fichas salva ao soltar.
+- Feito: alça de arrastar nas fichas (lista do aluno e do personal), nos exercícios do editor e nas séries de cada exercício.
+- Verificado no navegador em 390 px: toque simulado e mouse (fichas, exercícios e séries) e teclado (espaço e setas) nas fichas.
+- Fichas: a nova ordem aparece na hora e é salva ao soltar; se falhar, aparece mensagem e a lista volta à ordem salva.
+- Exercícios e séries: a ordem é salva pelo botão **Salvar** do editor (fluxo que já existia), não ao soltar.
+- Banco: migração `20261011120000_routine_ordering.sql` (coluna `position`, fichas novas no topo, função `reorder_routines`) e teste `170_routine_ordering.sql` (8 asserções).
 - Dependências novas: `@dnd-kit/core`, `@dnd-kit/sortable`, `@dnd-kit/utilities`.
-- Pendente: mensagem de erro quando salvar a nova ordem das fichas falha (hoje a lista apenas não muda).
-- Pendente: teste de componente para o arraste (hoje verificado com navegador, não com teste automatizado).
+- Teste automatizado: `tests/e2e/routine-ordering.spec.ts` (arrastar com mouse e reordenar pelo teclado, no desktop e no celular). Avisos para leitor de tela em português.

@@ -5,7 +5,7 @@ export const users = {
   student: { email: 'aluna@dedic.local', name: 'Ana' },
 }
 
-const password = 'dedic-local-2026'
+export const password = 'dedic-local-2026'
 
 export async function login(page: Page, email: string) {
   await page.goto('/')

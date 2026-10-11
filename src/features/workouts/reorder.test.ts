@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { reorderItems } from '@/features/workouts/reorder'
+import { applyOrder, reorderItems } from '@/features/workouts/reorder'
 
 describe('reorderItems', () => {
   it('move um item para uma posição mais abaixo', () => {
@@ -24,5 +24,25 @@ describe('reorderItems', () => {
   it('ignora índices fora da lista', () => {
     expect(reorderItems(['a', 'b'], 5, 0)).toEqual(['a', 'b'])
     expect(reorderItems(['a', 'b'], 0, 9)).toEqual(['a', 'b'])
+  })
+})
+
+describe('applyOrder', () => {
+  const items = [{ id: 'a' }, { id: 'b' }, { id: 'c' }]
+
+  it('ordena os itens pela lista de ids', () => {
+    expect(applyOrder(items, ['c', 'a', 'b']).map((item) => item.id)).toEqual([
+      'c',
+      'a',
+      'b',
+    ])
+  })
+
+  it('mantém no fim, na ordem original, itens que não estão na lista de ids', () => {
+    expect(applyOrder(items, ['b']).map((item) => item.id)).toEqual(['b', 'a', 'c'])
+  })
+
+  it('ignora ids que não existem na lista', () => {
+    expect(applyOrder(items, ['x', 'c']).map((item) => item.id)).toEqual(['c', 'a', 'b'])
   })
 })

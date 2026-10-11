@@ -68,6 +68,11 @@ export function StudentRoutinesSection({
           </p>
         </div>
       )}
+      {reorder.isError && (
+        <p className="rounded-xl bg-red-50 p-3 text-sm text-red-700" role="alert">
+          Não foi possível salvar a nova ordem. A ordem anterior foi mantida.
+        </p>
+      )}
       {routines.data && (
         <SortableList
           className="lg:grid-cols-2"

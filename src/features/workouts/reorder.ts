@@ -9,3 +9,20 @@ export function reorderItems<T>(items: T[], fromIndex: number, toIndex: number):
   next.splice(toIndex, 0, moved)
   return next
 }
+
+/**
+ * Aplica uma ordem de ids a uma lista. Itens fora da ordem ficam no fim, na ordem em que
+ * estavam; ids desconhecidos são ignorados.
+ */
+export function applyOrder<T extends { id: string }>(
+  items: T[],
+  orderedIds: string[],
+): T[] {
+  const byId = new Map(items.map((item) => [item.id, item]))
+  const ordered = orderedIds.flatMap((id) => {
+    const item = byId.get(id)
+    return item ? [item] : []
+  })
+  const placed = new Set(ordered.map((item) => item.id))
+  return [...ordered, ...items.filter((item) => !placed.has(item.id))]
+}

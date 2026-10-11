@@ -167,6 +167,11 @@ export function StudentWorkoutsPage() {
           </section>
         )}
         <div className="mt-3 grid gap-3">
+          {tab === 'fichas' && reorder.isError && (
+            <p className="rounded-xl bg-red-50 p-3 text-sm text-red-700" role="alert">
+              Não foi possível salvar a nova ordem. A ordem anterior foi mantida.
+            </p>
+          )}
           {tab === 'fichas' && routines.data && (
             <SortableList
               items={routines.data}

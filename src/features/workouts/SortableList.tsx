@@ -5,6 +5,7 @@ import {
   PointerSensor,
   useSensor,
   useSensors,
+  type Announcements,
   type DragEndEvent,
 } from '@dnd-kit/core'
 import {
@@ -32,17 +33,33 @@ export function SortableList<T extends Identified>({
   onReorder,
   renderItem,
   className,
+  handleClassName,
 }: {
   items: T[]
   label: string
   onReorder: (orderedIds: string[]) => void
   renderItem: (item: T, handle: ReactNode) => ReactNode
   className?: string
+  handleClassName?: string
 }) {
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
   )
+
+  // Avisos para leitor de tela em português (o padrão do dnd-kit é em inglês).
+  const position = (id: string | number) => items.findIndex((item) => item.id === id) + 1
+  const announcements: Announcements = {
+    onDragStart: ({ active }) =>
+      `Item ${position(active.id)} de ${items.length} pego. Use as setas para mover e espaço para soltar.`,
+    onDragOver: ({ over }) =>
+      over ? `Posição ${position(over.id)} de ${items.length}.` : 'Fora da lista.',
+    onDragEnd: ({ over }) =>
+      over
+        ? `Item solto na posição ${position(over.id)} de ${items.length}.`
+        : 'Item solto.',
+    onDragCancel: () => 'Movimento cancelado. O item voltou para a posição original.',
+  }
 
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event
@@ -55,6 +72,13 @@ export function SortableList<T extends Identified>({
 
   return (
     <DndContext
+      accessibility={{
+        announcements,
+        screenReaderInstructions: {
+          draggable:
+            'Para reordenar, pressione espaço para pegar o item, use as setas para mover e espaço para soltar. Esc cancela.',
+        },
+      }}
       collisionDetection={closestCenter}
       onDragEnd={handleDragEnd}
       sensors={sensors}
@@ -65,7 +89,12 @@ export function SortableList<T extends Identified>({
       >
         <ul className={cn('grid gap-3', className)} aria-label={label}>
           {items.map((item) => (
-            <SortableItem key={item.id} id={item.id} label={label}>
+            <SortableItem
+              handleClassName={handleClassName}
+              id={item.id}
+              key={item.id}
+              label={label}
+            >
               {(handle) => renderItem(item, handle)}
             </SortableItem>
           ))}
@@ -78,10 +107,12 @@ export function SortableList<T extends Identified>({
 function SortableItem({
   id,
   label,
+  handleClassName,
   children,
 }: {
   id: string
   label: string
+  handleClassName?: string
   children: (handle: ReactNode) => ReactNode
 }) {
   const {
@@ -97,7 +128,10 @@ function SortableItem({
   const handle = (
     <button
       aria-label={`Arrastar para reordenar: ${label}`}
-      className="grid size-10 shrink-0 touch-none cursor-grab place-items-center rounded-lg text-slate-400 hover:bg-white/10 hover:text-white active:cursor-grabbing"
+      className={cn(
+        'grid size-10 shrink-0 touch-none cursor-grab place-items-center rounded-lg text-slate-400 hover:bg-slate-400/15 active:cursor-grabbing',
+        handleClassName,
+      )}
       ref={setActivatorNodeRef}
       type="button"
       {...attributes}
