@@ -1,5 +1,8 @@
 # Sincronização automática diária do Hevy (polling)
 
+> **Revertido em 2026-10-11** pelo item 0033: a sincronização volta a ser só
+> manual ("Sincronizar agora").
+
 ## Resultado esperado
 
 Todo usuário com conta Hevy conectada tem seu histórico de treinos, recordes

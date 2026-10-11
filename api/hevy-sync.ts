@@ -4,9 +4,9 @@ import { SYNC_ERROR_MESSAGES, createAdminClient, syncHevyPage } from './hevy-syn
 
 /**
  * Sincroniza uma página do histórico de treinos do Hevy para o aluno
- * autenticado. Chamada sob demanda pelo botão "Sincronizar agora" — a
- * sincronização diária automática vive em `/api/hevy-sync-cron.ts` (ver ADR
- * 0007). Paginável: o cliente chama de novo com o `nextPage` devolvido
+ * autenticado. Chamada sob demanda pelo botão "Sincronizar agora", que é a
+ * única forma de sincronizar (a sincronização diária automática foi desativada
+ * em 2026-10-11, ver ADR 0007 e item 0033). Paginável: o cliente chama de novo com o `nextPage` devolvido
  * enquanto `hasMore` vier true.
  */
 export default async function handler(req: VercelRequest, res: VercelResponse) {

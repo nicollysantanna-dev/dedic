@@ -105,6 +105,10 @@ próprios (a criar quando entrarem em rodada):
   `/api/hevy-sync` uma vez por dia para cada conta conectada, mantendo o botão
   "Sincronizar agora" para quem quiser forçar antes disso. Ver
   `docs/work-items/0029-hevy-sync-diario-automatico.md`.
+  **Revertida em 2026-10-11:** o Dedic passa a ser o lugar principal de registro
+  dos treinos, então a sincronização volta a acontecer só pelo botão
+  "Sincronizar agora". O agendamento foi removido do `vercel.json`. Ver
+  `docs/work-items/0033-remover-sync-diario-do-hevy.md`.
 - **Gerar ficha (rotina) a partir do histórico do Hevy**: a importação hoje só
   traz treinos realizados (`workouts`), não fichas — a ideia é detectar o
   padrão recorrente do histórico importado (ex.: "Quarta: Peito + Tríceps"

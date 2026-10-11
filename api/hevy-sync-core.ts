@@ -63,9 +63,8 @@ async function checkHevyFailure(hevyResponse: Response): Promise<SyncPageResult 
  * mais antiga (`page_count`); chamadas seguintes usam o `nextPage` devolvido
  * até ele vir `null`.
  *
- * Reaproveitada tanto por `/api/hevy-sync` (uma página por invocação, sob
- * demanda) quanto por `/api/hevy-sync-cron` (todas as páginas de um usuário,
- * uma vez por dia).
+ * Usada por `/api/hevy-sync` (uma página por invocação, sob demanda). A
+ * sincronização diária automática foi desativada (item 0033).
  */
 export async function syncHevyPage(
   admin: SupabaseClient<Database>,

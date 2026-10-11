@@ -23,3 +23,11 @@ Deixar de sincronizar o Hevy automaticamente todos os dias. O Dedic passa a ser 
 - "Sincronizar agora" continua funcionando, sem duplicar treinos já importados.
 - O build e a configuração da Vercel não referenciam mais o endpoint de cron.
 - A remoção de arquivos é confirmada com a responsável pelo produto antes de ser feita.
+
+## Estado da implementação
+
+- Feito: entrada `crons` e configuração de `api/hevy-sync-cron.ts` removidas de `vercel.json`; rota removida do servidor de API local (`scripts/dev-api-server.ts`); comentários, ADR 0007 e item 0029 atualizados.
+- A interface não prometia sincronização automática; nenhum texto de tela mudou.
+- Pendente (aguarda confirmação): apagar `api/hevy-sync-cron.ts`. Enquanto existir, a Vercel publica o arquivo como função, mas ele só responde a quem tiver o `CRON_SECRET` e não é mais chamado por agendamento.
+- Pendente (fora do código): remover a variável `CRON_SECRET` do projeto na Vercel depois do deploy.
+- O agendamento só deixa de rodar depois do próximo deploy na Vercel.

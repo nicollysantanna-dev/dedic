@@ -26,8 +26,6 @@
   ],
   "functions": {
     "api/hevy-sync.ts": { "maxDuration": 60 },
-    "api/hevy-sync-cron.ts": { "maxDuration": 60 },
     "api/delete-account.ts": { "maxDuration": 30 }
-  },
-  "crons": [{ "path": "/api/hevy-sync-cron", "schedule": "0 1 * * *" }]
+  }
 }

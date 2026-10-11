@@ -22,7 +22,6 @@ const routes: Record<
   () => Promise<{ default: (req: VercelRequest, res: VercelResponse) => Promise<void> }>
 > = {
   '/api/hevy-sync': () => import('../api/hevy-sync'),
-  '/api/hevy-sync-cron': () => import('../api/hevy-sync-cron'),
   '/api/delete-account': () => import('../api/delete-account'),
 }
 
