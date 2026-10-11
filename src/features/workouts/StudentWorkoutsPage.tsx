@@ -6,10 +6,12 @@ import { useAuth } from '@/features/auth/auth-context'
 import { ExerciseRecordsSection } from '@/features/workouts/ExerciseRecordsSection'
 import { GenerateRoutinesFromHistoryButton } from '@/features/workouts/GenerateRoutinesFromHistoryButton'
 import { RoutineCard } from '@/features/workouts/RoutineCard'
+import { SortableList } from '@/features/workouts/SortableList'
 import { WorkoutHistorySection } from '@/features/workouts/WorkoutHistorySection'
 import {
   useArchiveRoutine,
   useDuplicateRoutine,
+  useReorderRoutines,
   useStudentRoutines,
 } from '@/features/workouts/routine-queries'
 import { useOpenWorkout, useStartWorkout } from '@/features/workouts/workout-queries'
@@ -37,6 +39,7 @@ export function StudentWorkoutsPage() {
   const start = useStartWorkout()
   const archive = useArchiveRoutine()
   const duplicate = useDuplicateRoutine()
+  const reorder = useReorderRoutines()
 
   const begin = (input: { routineId?: string; name?: string }) =>
     start.mutate(input, {
@@ -164,53 +167,64 @@ export function StudentWorkoutsPage() {
           </section>
         )}
         <div className="mt-3 grid gap-3">
-          {tab === 'fichas' &&
-            routines.data?.map((routine) => (
-              <RoutineCard
-                key={routine.id}
-                routine={routine}
-                viewerId={studentId}
-                trainerId={routine.trainer_id}
-                actions={
-                  <>
-                    <Button
-                      className="h-10"
-                      disabled={start.isPending || Boolean(open.data)}
-                      onClick={() => begin({ routineId: routine.id })}
-                    >
-                      <Play size={16} /> Iniciar ficha
-                    </Button>
-                    <Button asChild className="h-10 px-3 text-xs" variant="outline">
-                      <Link to={`/app/fichas/${routine.id}`}>
-                        <PencilLine size={14} /> Editar
-                      </Link>
-                    </Button>
-                    <Button
-                      className="h-10 px-3 text-xs"
-                      disabled={duplicate.isPending}
-                      onClick={() =>
-                        duplicate.mutate({ routineId: routine.id, studentId: null })
+          {tab === 'fichas' && routines.data && (
+            <SortableList
+              items={routines.data}
+              label="fichas"
+              onReorder={(orderedIds) => reorder.mutate(orderedIds)}
+              renderItem={(routine, dragHandle) => (
+                <div className="flex items-start gap-2">
+                  {dragHandle}
+                  <div className="min-w-0 flex-1">
+                    <RoutineCard
+                      key={routine.id}
+                      routine={routine}
+                      viewerId={studentId}
+                      trainerId={routine.trainer_id}
+                      actions={
+                        <>
+                          <Button
+                            className="h-10"
+                            disabled={start.isPending || Boolean(open.data)}
+                            onClick={() => begin({ routineId: routine.id })}
+                          >
+                            <Play size={16} /> Iniciar ficha
+                          </Button>
+                          <Button asChild className="h-10 px-3 text-xs" variant="outline">
+                            <Link to={`/app/fichas/${routine.id}`}>
+                              <PencilLine size={14} /> Editar
+                            </Link>
+                          </Button>
+                          <Button
+                            className="h-10 px-3 text-xs"
+                            disabled={duplicate.isPending}
+                            onClick={() =>
+                              duplicate.mutate({ routineId: routine.id, studentId: null })
+                            }
+                            variant="outline"
+                          >
+                            <Copy size={14} /> Duplicar
+                          </Button>
+                          <Button
+                            className="h-10 px-3 text-xs text-red-700 hover:bg-red-50"
+                            disabled={archive.isPending}
+                            onClick={() => {
+                              if (window.confirm(`Arquivar a ficha "${routine.name}"?`)) {
+                                archive.mutate(routine.id)
+                              }
+                            }}
+                            variant="ghost"
+                          >
+                            <Trash2 size={14} /> Arquivar
+                          </Button>
+                        </>
                       }
-                      variant="outline"
-                    >
-                      <Copy size={14} /> Duplicar
-                    </Button>
-                    <Button
-                      className="h-10 px-3 text-xs text-red-700 hover:bg-red-50"
-                      disabled={archive.isPending}
-                      onClick={() => {
-                        if (window.confirm(`Arquivar a ficha "${routine.name}"?`)) {
-                          archive.mutate(routine.id)
-                        }
-                      }}
-                      variant="ghost"
-                    >
-                      <Trash2 size={14} /> Arquivar
-                    </Button>
-                  </>
-                }
-              />
-            ))}
+                    />
+                  </div>
+                </div>
+              )}
+            />
+          )}
         </div>
       </div>
     </main>

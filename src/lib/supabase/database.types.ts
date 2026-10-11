@@ -1120,6 +1120,7 @@ export type Database = {
           id: string
           name: string
           notes: string | null
+          position: number
           student_id: string | null
           trainer_id: string | null
           updated_at: string
@@ -1131,6 +1132,7 @@ export type Database = {
           id?: string
           name: string
           notes?: string | null
+          position?: number
           student_id?: string | null
           trainer_id?: string | null
           updated_at?: string
@@ -1142,6 +1144,7 @@ export type Database = {
           id?: string
           name?: string
           notes?: string | null
+          position?: number
           student_id?: string | null
           trainer_id?: string | null
           updated_at?: string
@@ -2219,6 +2222,7 @@ export type Database = {
         Returns: undefined
       }
       reject_deleted_accounts: { Args: never; Returns: undefined }
+      reorder_routines: { Args: { ordered_ids: string[] }; Returns: undefined }
       replace_workout_exercise: {
         Args: { target_exercise_id: string; target_workout_exercise_id: string }
         Returns: undefined

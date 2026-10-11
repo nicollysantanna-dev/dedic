@@ -9,7 +9,8 @@ import {
   Timer,
   Trash2,
 } from 'lucide-react'
-import { useState } from 'react'
+import { SortableList } from '@/features/workouts/SortableList'
+import { useState, type ReactNode } from 'react'
 import { Link, Navigate, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 
 import { Button } from '@/components/ui/button'
@@ -216,22 +217,34 @@ export function RoutineEditorPage() {
         </section>
 
         <div className="mt-4 space-y-4">
-          {draft.exercises.map((exercise, index) => (
-            <ExerciseBlock
-              key={exercise.id}
-              exercise={exercise}
-              isFirst={index === 0}
-              isLast={index === draft.exercises.length - 1}
-              onChange={(patch) => updateExercise(exercise.id, patch)}
-              onMove={(direction) => moveExercise(exercise.id, direction)}
-              onReplace={() => setPicker({ mode: 'replace', id: exercise.id })}
-              onRemove={() =>
-                update({
-                  exercises: draft.exercises.filter((item) => item.id !== exercise.id),
-                })
-              }
-            />
-          ))}
+          <SortableList
+            className="space-y-4"
+            items={draft.exercises}
+            label="exercícios da ficha"
+            onReorder={(orderedIds) =>
+              update({
+                exercises: orderedIds.flatMap((id) =>
+                  draft.exercises.filter((item) => item.id === id),
+                ),
+              })
+            }
+            renderItem={(exercise, dragHandle) => (
+              <ExerciseBlock
+                dragHandle={dragHandle}
+                exercise={exercise}
+                isFirst={draft.exercises[0]?.id === exercise.id}
+                isLast={draft.exercises.at(-1)?.id === exercise.id}
+                onChange={(patch) => updateExercise(exercise.id, patch)}
+                onMove={(direction) => moveExercise(exercise.id, direction)}
+                onReplace={() => setPicker({ mode: 'replace', id: exercise.id })}
+                onRemove={() =>
+                  update({
+                    exercises: draft.exercises.filter((item) => item.id !== exercise.id),
+                  })
+                }
+              />
+            )}
+          />
         </div>
 
         <Button
@@ -280,6 +293,7 @@ export function RoutineEditorPage() {
 }
 
 function ExerciseBlock({
+  dragHandle,
   exercise,
   isFirst,
   isLast,
@@ -288,6 +302,7 @@ function ExerciseBlock({
   onReplace,
   onRemove,
 }: {
+  dragHandle: ReactNode
   exercise: RoutineExerciseDraft
   isFirst: boolean
   isLast: boolean
@@ -306,6 +321,7 @@ function ExerciseBlock({
   return (
     <section className="rounded-[1.5rem] bg-white p-4 text-slate-950 sm:p-5">
       <div className="flex items-center gap-3">
+        {dragHandle}
         <ExerciseThumb media={exercise.media} name={exercise.name} />
         <h3 className="min-w-0 flex-1 truncate font-semibold text-[var(--brand)]">
           {exercise.name}

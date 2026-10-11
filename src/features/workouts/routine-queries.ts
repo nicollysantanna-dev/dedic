@@ -80,7 +80,7 @@ export function useTrainerRoutines(trainerId: string, studentId?: string) {
         .select(routineSelect)
         .eq('trainer_id', trainerId)
         .is('archived_at', null)
-        .order('updated_at', { ascending: false })
+        .order('position', { ascending: true })
       if (studentId) query = query.eq('student_id', studentId)
       const { data, error } = await query
       if (error) throw error
@@ -99,7 +99,7 @@ export function useStudentRoutines(studentId: string) {
         .select(routineSelect)
         .eq('student_id', studentId)
         .is('archived_at', null)
-        .order('updated_at', { ascending: false })
+        .order('position', { ascending: true })
       if (error) throw error
       return data.map((routine) => sortRoutine(routine as RoutineWithExercises))
     },
@@ -178,6 +178,20 @@ export function useGenerateRoutinesFromHistory() {
       )
       if (error) throw error
       return data
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: routineKeys.all }),
+  })
+}
+
+/** Grava a ordem das fichas de uma lista (personal ou aluno) de uma vez. */
+export function useReorderRoutines() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async (orderedIds: string[]) => {
+      const { error } = await requireSupabase().rpc('reorder_routines', {
+        ordered_ids: orderedIds,
+      })
+      if (error) throw error
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: routineKeys.all }),
   })

@@ -3,9 +3,11 @@ import { Link, useNavigate } from 'react-router-dom'
 
 import { Button } from '@/components/ui/button'
 import { RoutineCard } from '@/features/workouts/RoutineCard'
+import { SortableList } from '@/features/workouts/SortableList'
 import {
   useArchiveRoutine,
   useDuplicateRoutine,
+  useReorderRoutines,
   useTrainerRoutines,
 } from '@/features/workouts/routine-queries'
 import { useOpenWorkout, useStartWorkout } from '@/features/workouts/workout-queries'
@@ -21,6 +23,7 @@ export function StudentRoutinesSection({
   const routines = useTrainerRoutines(trainerId, studentId)
   const archive = useArchiveRoutine()
   const duplicate = useDuplicateRoutine()
+  const reorder = useReorderRoutines()
   const open = useOpenWorkout(studentId)
   const start = useStartWorkout()
   const navigate = useNavigate()
@@ -65,60 +68,73 @@ export function StudentRoutinesSection({
           </p>
         </div>
       )}
-      <div className="grid gap-3 lg:grid-cols-2">
-        {routines.data?.map((routine) => (
-          <RoutineCard
-            key={routine.id}
-            routine={routine}
-            viewerId={trainerId}
-            trainerId={trainerId}
-            actions={
-              <>
-                <Button
-                  className="h-9 px-3 text-xs"
-                  disabled={start.isPending || Boolean(open.data)}
-                  onClick={() =>
-                    start.mutate(
-                      { routineId: routine.id, studentId },
-                      {
-                        onSuccess: (workoutId) =>
-                          void navigate(`/app/treinos/sessao/${workoutId}`),
-                      },
-                    )
+      {routines.data && (
+        <SortableList
+          className="lg:grid-cols-2"
+          items={routines.data}
+          label="fichas"
+          onReorder={(orderedIds) => reorder.mutate(orderedIds)}
+          renderItem={(routine, dragHandle) => (
+            <div className="flex items-start gap-2">
+              {dragHandle}
+              <div className="min-w-0 flex-1">
+                <RoutineCard
+                  key={routine.id}
+                  routine={routine}
+                  viewerId={trainerId}
+                  trainerId={trainerId}
+                  actions={
+                    <>
+                      <Button
+                        className="h-9 px-3 text-xs"
+                        disabled={start.isPending || Boolean(open.data)}
+                        onClick={() =>
+                          start.mutate(
+                            { routineId: routine.id, studentId },
+                            {
+                              onSuccess: (workoutId) =>
+                                void navigate(`/app/treinos/sessao/${workoutId}`),
+                            },
+                          )
+                        }
+                      >
+                        <Play size={14} /> Iniciar
+                      </Button>
+                      <Button asChild className="h-9 px-3 text-xs" variant="outline">
+                        <Link to={`/app/fichas/${routine.id}`}>
+                          <PencilLine size={14} /> Editar
+                        </Link>
+                      </Button>
+                      <Button
+                        className="h-9 px-3 text-xs"
+                        disabled={duplicate.isPending}
+                        onClick={() =>
+                          duplicate.mutate({ routineId: routine.id, studentId })
+                        }
+                        variant="outline"
+                      >
+                        <Copy size={14} /> Duplicar
+                      </Button>
+                      <Button
+                        className="h-9 px-3 text-xs text-red-700 hover:bg-red-50"
+                        disabled={archive.isPending}
+                        onClick={() => {
+                          if (window.confirm(`Arquivar a ficha "${routine.name}"?`)) {
+                            archive.mutate(routine.id)
+                          }
+                        }}
+                        variant="ghost"
+                      >
+                        <Trash2 size={14} /> Arquivar
+                      </Button>
+                    </>
                   }
-                >
-                  <Play size={14} /> Iniciar
-                </Button>
-                <Button asChild className="h-9 px-3 text-xs" variant="outline">
-                  <Link to={`/app/fichas/${routine.id}`}>
-                    <PencilLine size={14} /> Editar
-                  </Link>
-                </Button>
-                <Button
-                  className="h-9 px-3 text-xs"
-                  disabled={duplicate.isPending}
-                  onClick={() => duplicate.mutate({ routineId: routine.id, studentId })}
-                  variant="outline"
-                >
-                  <Copy size={14} /> Duplicar
-                </Button>
-                <Button
-                  className="h-9 px-3 text-xs text-red-700 hover:bg-red-50"
-                  disabled={archive.isPending}
-                  onClick={() => {
-                    if (window.confirm(`Arquivar a ficha "${routine.name}"?`)) {
-                      archive.mutate(routine.id)
-                    }
-                  }}
-                  variant="ghost"
-                >
-                  <Trash2 size={14} /> Arquivar
-                </Button>
-              </>
-            }
-          />
-        ))}
-      </div>
+                />
+              </div>
+            </div>
+          )}
+        />
+      )}
     </section>
   )
 }
