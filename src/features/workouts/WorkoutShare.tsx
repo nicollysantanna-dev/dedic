@@ -63,6 +63,7 @@ export function WorkoutShare({
       const result = await deliverCard(
         blob,
         `dedic-treino-${data.finished_at.slice(0, 10)}.png`,
+        'Meu treino',
       )
       if (result !== 'cancelled') close()
     } catch {

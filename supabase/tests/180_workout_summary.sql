@@ -3,7 +3,7 @@
 -- o desempate de "primeiro treino do dia" é pela ordem de início.
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(16);
+select plan(17);
 
 create temporary table ctx as
 select
@@ -81,11 +81,17 @@ select is((pg_temp.summary('ana_sexta') ->> 'recorded_by_student')::boolean, tru
   'treino finalizado pela própria aluna');
 
 -- Segundo treino no mesmo dia não comemora de novo.
+-- now() é igual na transação inteira: as medalhas que a Ana já tem vão para o passado,
+-- para que só uma medalha concedida por este treino possa aparecer como nova.
+update public.student_achievements set earned_at = earned_at - interval '1 day'
+where student_id = (select ana_id from ctx);
 insert into ids select 'ana_sexta_tarde', pg_temp.open(ana_id, date '2026-09-11', 18) from ctx;
 select pg_temp.set((select id from ids where key = 'ana_sexta_tarde'), exercise_a, 10, 10) from ctx;
 select public.finish_workout((select id from ids where key = 'ana_sexta_tarde'));
 select is((pg_temp.summary('ana_sexta_tarde') -> 'week' ->> 'met_now')::boolean, false,
   'segundo treino no mesmo dia não é semana batida');
+select is(pg_temp.summary('ana_sexta_tarde') -> 'new_achievements', '[]'::jsonb,
+  'medalhas de treinos anteriores não aparecem como novas');
 
 -- Ana, semana de 21/09: aula concluída no mesmo dia do treino que completaria a meta.
 select pg_temp.done(ana_id, d, 9, ana_id) from ctx,

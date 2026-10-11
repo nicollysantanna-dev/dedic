@@ -117,7 +117,7 @@ export function MonthlyReportPage() {
                     setShareError('')
                     try {
                       const blob = await renderCardBlob(cardRef.current)
-                      await deliverCard(blob, shareFileName(month))
+                      await deliverCard(blob, shareFileName(month), 'Meu resumo do mês')
                     } catch {
                       setShareError('Não foi possível gerar a imagem. Tente novamente.')
                     } finally {

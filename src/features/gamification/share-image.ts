@@ -10,12 +10,16 @@ export async function renderCardBlob(node: HTMLElement): Promise<Blob> {
 }
 
 /** Compartilha o PNG com `navigator.share`; sem suporte, baixa o arquivo. */
-export async function deliverCard(blob: Blob, fileName: string): Promise<CardDelivery> {
+export async function deliverCard(
+  blob: Blob,
+  fileName: string,
+  title: string,
+): Promise<CardDelivery> {
   const file = new File([blob], fileName, { type: 'image/png' })
 
   if (navigator.share && navigator.canShare?.({ files: [file] })) {
     try {
-      await navigator.share({ files: [file], title: 'Meu resumo do mês' })
+      await navigator.share({ files: [file], title })
       return 'shared'
     } catch (error) {
       if (error instanceof DOMException && error.name === 'AbortError') return 'cancelled'

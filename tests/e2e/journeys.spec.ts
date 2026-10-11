@@ -513,6 +513,15 @@ test('aluna registra uma sessão pela ficha e a próxima sessão traz a carga an
   await dialog.getByRole('button', { name: 'Finalizar treino' }).click()
   await expect(page.getByRole('heading', { name: 'Treino finalizado!' })).toBeVisible()
   await expect(page.getByText('1 recorde pessoal batido!')).toBeVisible()
+  // O resumo é calculado no banco; é o primeiro check-in da aluna, então o card do
+  // treino abre sozinho com a medalha nova e precisa ser fechado antes de seguir.
+  await expect(
+    page.getByRole('button', { name: 'Compartilhar', exact: true }),
+  ).toBeEnabled()
+  const shareCard = page.getByRole('dialog', { name: 'MEDALHA NOVA!' })
+  await expect(shareCard).toContainText('Primeiro passo')
+  await shareCard.getByRole('button', { name: 'Agora não' }).click()
+  await expect(shareCard).toBeHidden()
   await page.getByRole('link', { name: 'Concluir' }).click()
   await expect(page).toHaveURL(/\/app\/treinos$/)
 
