@@ -200,6 +200,10 @@ button {
   background: rgb(37 99 235 / 8%);
 }
 
+.dedic-scheduler .dedic-calendar-check-in {
+  background: rgb(34 197 94 / 12%);
+}
+
 .dedic-scheduler .dedic-calendar-block {
   background: repeating-linear-gradient(
     135deg,

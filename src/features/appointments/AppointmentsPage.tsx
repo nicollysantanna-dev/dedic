@@ -107,6 +107,23 @@ export function AppointmentsPage() {
     },
   })
 
+  // Check-ins (treino finalizado ou aula concluída) aparecem para o aluno no próprio calendário.
+  const checkIns = useQuery({
+    queryKey: appointmentKeys.checkIns(userId, calendarRange.start, calendarRange.end),
+    enabled: Boolean(userId) && !isTrainer,
+    placeholderData: keepPreviousData,
+    queryFn: async () => {
+      const { data, error } = await requireSupabase()
+        .from('student_check_ins')
+        .select('day')
+        .eq('student_id', userId)
+        .gte('day', toIsoDate(calendarRange.start))
+        .lt('day', toIsoDate(calendarRange.end))
+      if (error) throw error
+      return data.flatMap((row) => (row.day ? [row.day] : []))
+    },
+  })
+
   const students = useQuery({
     queryKey: ['agenda-students', userId],
     enabled: Boolean(userId) && isTrainer,
@@ -421,6 +438,12 @@ export function AppointmentsPage() {
                 <span className="size-3 rounded-sm bg-blue-100 ring-1 ring-blue-600" />
                 Aula agendada
               </span>
+              {!isTrainer && (
+                <span className="inline-flex items-center gap-2">
+                  <span className="size-3 rounded-sm bg-emerald-100 ring-1 ring-emerald-300" />
+                  Dia com check-in
+                </span>
+              )}
               {schedulerTrainerId && (
                 <>
                   <span className="inline-flex items-center gap-2">
@@ -438,6 +461,7 @@ export function AppointmentsPage() {
               appointments={appointments.data}
               availableSlots={availableSlots.data ?? []}
               blockedPeriods={blockedPeriods.data ?? []}
+              checkInDays={checkIns.data ?? []}
               canCreate={Boolean(schedulerTrainerId)}
               restrictCreationToAvailableSlots={!isTrainer}
               lessonDurationMinutes={lessonDurationMinutes}
