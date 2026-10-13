@@ -17,3 +17,6 @@ dev-dist/
 .vercel
 supabase/.temp/
 .env*
+
+# Configuração local do Claude Code (permissões pessoais)
+.claude/

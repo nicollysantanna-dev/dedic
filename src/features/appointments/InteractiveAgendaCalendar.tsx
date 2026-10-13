@@ -18,6 +18,7 @@ import { getAppointmentStatusLabel } from '@/features/appointments/appointment-s
 import { canMoveAppointment } from '@/features/appointments/appointment-drag'
 import { isSelectionWithinAvailableSlots } from '@/features/appointments/available-slot-selection'
 import {
+  checkInBackgroundEvents,
   calendarViewLabels,
   getInitialCalendarView,
   type CalendarView,
@@ -40,6 +41,7 @@ export function InteractiveAgendaCalendar({
   appointments,
   availableSlots = [],
   blockedPeriods = [],
+  checkInDays = [],
   canCreate = false,
   restrictCreationToAvailableSlots = false,
   lessonDurationMinutes = 60,
@@ -51,6 +53,7 @@ export function InteractiveAgendaCalendar({
   appointments: readonly CalendarAppointment[]
   availableSlots?: readonly CalendarSlot[]
   blockedPeriods?: readonly CalendarBlock[]
+  checkInDays?: readonly string[]
   canCreate?: boolean
   restrictCreationToAvailableSlots?: boolean
   lessonDurationMinutes?: number
@@ -81,6 +84,7 @@ export function InteractiveAgendaCalendar({
         display: 'background',
         classNames: ['dedic-calendar-block'],
       })),
+      ...checkInBackgroundEvents(checkInDays),
       ...appointments.map((appointment) => ({
         id: appointment.id,
         title: appointment.profiles?.full_name ?? 'Aula',
@@ -92,7 +96,7 @@ export function InteractiveAgendaCalendar({
         extendedProps: { status: appointment.status },
       })),
     ],
-    [appointments, availableSlots, blockedPeriods, canCreate, view],
+    [appointments, availableSlots, blockedPeriods, checkInDays, canCreate, view],
   )
 
   const isAvailableSelection = (startsAt: Date, endsAt: Date) =>

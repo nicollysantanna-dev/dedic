@@ -6,6 +6,7 @@ import {
 } from '@tanstack/react-query'
 
 import { appointmentKeys } from '@/features/appointments/keys'
+import { applySetPatch, type SetPatch } from '@/features/workouts/session-cache'
 import { requireSupabase } from '@/lib/supabase/client'
 import type { Tables } from '@/lib/supabase/database.types'
 
@@ -248,22 +249,30 @@ function useSessionMutation<TInput>(
   })
 }
 
+/**
+ * Atualização otimista: a série muda no cache na hora e o treino NÃO é
+ * recarregado após o sucesso (o cliente já tem o estado completo). Só em erro
+ * o cache é recarregado do servidor, para desfazer a mudança local.
+ */
 export function useUpdateSet(workoutId: string) {
-  return useSessionMutation(
-    workoutId,
-    async (input: {
-      setId: string
-      patch: Partial<
-        Pick<Tables<'workout_sets'>, 'weight_kg' | 'reps' | 'completed_at' | 'set_type'>
-      >
-    }) => {
+  const queryClient = useQueryClient()
+  const key = workoutSessionKeys.detail(workoutId)
+  return useMutation({
+    mutationFn: async (input: { setId: string; patch: SetPatch }) => {
       const { error } = await requireSupabase()
         .from('workout_sets')
         .update(input.patch)
         .eq('id', input.setId)
       if (error) throw error
     },
-  )
+    onMutate: async (input) => {
+      await queryClient.cancelQueries({ queryKey: key })
+      queryClient.setQueryData<WorkoutSession | null>(key, (current) =>
+        current ? applySetPatch(current, input.setId, input.patch) : current,
+      )
+    },
+    onError: () => queryClient.invalidateQueries({ queryKey: key }),
+  })
 }
 
 export function useAddSet(workoutId: string) {

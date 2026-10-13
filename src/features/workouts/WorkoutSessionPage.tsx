@@ -19,6 +19,7 @@ import { WorkoutShare } from '@/features/workouts/WorkoutShare'
 import { ExercisePicker, ExerciseThumb } from '@/features/workouts/ExercisePicker'
 import { RestTimer } from '@/features/workouts/RestTimer'
 import { restOptions } from '@/features/workouts/routine-model'
+import type { SetPatch } from '@/features/workouts/session-cache'
 import {
   estimateOneRepMax,
   formatDuration,
@@ -428,13 +429,7 @@ function ExerciseSessionBlock({
               records={recordsBySet.get(set.id) ?? []}
               readOnly={readOnly}
               onChange={(patch) => updateSet.mutate({ setId: set.id, patch })}
-              onComplete={(completed) => {
-                updateSet.mutate({
-                  setId: set.id,
-                  patch: { completed_at: completed ? new Date().toISOString() : null },
-                })
-                if (completed) onSetCompleted(exercise.rest_seconds)
-              }}
+              onComplete={() => onSetCompleted(exercise.rest_seconds)}
               onRemove={() => removeSet.mutate(set.id)}
             />
           ))}
@@ -477,8 +472,8 @@ function SetRow({
   name: string
   records: RecordKind[]
   readOnly: boolean
-  onChange: (patch: { weight_kg?: number | null; reps?: number | null }) => void
-  onComplete: (completed: boolean) => void
+  onChange: (patch: SetPatch) => void
+  onComplete: () => void
   onRemove: () => void
 }) {
   const [weight, setWeight] = useState(
@@ -520,7 +515,10 @@ function SetRow({
           className="field h-9 rounded-lg bg-slate-50 px-2 text-center disabled:bg-transparent"
           disabled={readOnly}
           inputMode="decimal"
-          onBlur={() => onChange({ weight_kg: parse(weight) })}
+          onBlur={() => {
+            const value = parse(weight)
+            if (value !== set.weight_kg) onChange({ weight_kg: value })
+          }}
           onChange={(event) => setWeight(event.target.value)}
           placeholder={
             set.previous_weight_kg === null ? '—' : String(set.previous_weight_kg)
@@ -534,7 +532,10 @@ function SetRow({
           className="field h-9 rounded-lg bg-slate-50 px-2 text-center disabled:bg-transparent"
           disabled={readOnly}
           inputMode="numeric"
-          onBlur={() => onChange({ reps: parse(reps) })}
+          onBlur={() => {
+            const value = parse(reps)
+            if (value !== set.reps) onChange({ reps: value })
+          }}
           onChange={(event) => setReps(event.target.value)}
           placeholder={set.previous_reps === null ? '—' : String(set.previous_reps)}
           value={reps}
@@ -554,9 +555,13 @@ function SetRow({
                 : 'bg-slate-100 text-slate-400 hover:bg-slate-200',
             )}
             onClick={() => {
-              // Garante que os valores digitados sejam gravados antes de concluir.
-              onChange({ weight_kg: parse(weight), reps: parse(reps) })
-              onComplete(!done)
+              // Um único envio grava os valores digitados e a conclusão.
+              onChange({
+                weight_kg: parse(weight),
+                reps: parse(reps),
+                completed_at: done ? null : new Date().toISOString(),
+              })
+              if (!done) onComplete()
             }}
             onContextMenu={(event) => {
               event.preventDefault()

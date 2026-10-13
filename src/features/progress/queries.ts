@@ -272,14 +272,14 @@ export function useDeletePhoto(studentId: string) {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: async (photo: Pick<Tables<'progress_photos'>, 'id' | 'storage_path'>) => {
-      const removal = await requireSupabase()
-        .storage.from(photosBucket)
-        .remove([photo.storage_path])
-      if (removal.error) throw removal.error
+      // Marca a foto como excluída primeiro: a partir daqui ela some da tela e a
+      // política do Storage já bloqueia o arquivo, mesmo que a remoção abaixo falhe.
       const { error } = await requireSupabase().rpc('delete_progress_photo', {
         target_photo_id: photo.id,
       })
       if (error) throw error
+      // Limpeza do arquivo. Falha aqui não reexibe a foto: ela continua oculta.
+      await requireSupabase().storage.from(photosBucket).remove([photo.storage_path])
     },
     onSuccess: () =>
       queryClient.invalidateQueries({ queryKey: progressKeys.photos(studentId) }),
